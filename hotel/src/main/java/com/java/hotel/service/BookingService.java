@@ -4,28 +4,38 @@ import com.java.hotel.model.Booking;
 import com.java.hotel.model.Room;
 import com.java.hotel.model.User;
 import com.java.hotel.repository.BookingRepository;
+import com.java.hotel.repository.UserRepository;
+import com.java.hotel.security.services.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
-    // Phương thức tạo mới một booking
-    public Booking createBooking(LocalDateTime checkIn, LocalDateTime checkOut, float totalPrice, boolean payment) {
+    @Autowired
+    private StoreService storeService;
+
+    public Booking createBooking(LocalDateTime checkIn, LocalDateTime checkOut, float totalPrice, boolean payment) throws ExecutionException, InterruptedException {
+        User user = storeService.getCurrentUser();
         Booking booking = new Booking();
         booking.setCheckIn(checkIn);
         booking.setCheckOut(checkOut);
         booking.setTotalPrice(totalPrice);
         booking.setPayment(payment);
+        booking.setUser(user);
 
-         bookingRepository.save(booking);
-
+        bookingRepository.save(booking);
         return booking;
     }
 

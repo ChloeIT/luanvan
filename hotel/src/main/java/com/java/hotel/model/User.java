@@ -1,13 +1,18 @@
 package com.java.hotel.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Entity
-//@Table(name="account")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,15 +20,38 @@ public class User {
     private String fullName;
     @Email
     private String email;
+
+    @NotBlank
+    @Size(min = 6, max = 20)
     private String username;
+
+    @JsonIgnore
+    @NotBlank
+    @Size(min = 6, max = 120)
     private String password;
     private int phone;
     private String image;
+    private String address;
+    private String gender; // Example: "Male", "Female", etc.
+
+    @Temporal(TemporalType.DATE)
+    private Date birthDate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Booking> bookings;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
+
     public User() {}
+
+    public User(String username , String email, String password) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+    }
 
     public User(Long id, String fullName, String email, String username, String password, int phone, String image, List<Booking> bookings) {
         this.id = id;
@@ -98,5 +126,37 @@ public class User {
 
     public void setBookings(List<Booking> bookings) {
         this.bookings = bookings;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public Date getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(Date birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 }

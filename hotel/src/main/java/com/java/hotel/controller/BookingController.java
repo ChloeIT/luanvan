@@ -3,16 +3,21 @@ package com.java.hotel.controller;
 import com.java.hotel.model.Booking;
 import com.java.hotel.model.Room;
 import com.java.hotel.model.User;
+import com.java.hotel.security.services.UserDetailsImpl;
 import com.java.hotel.service.BookingService;
 import org.hibernate.internal.build.AllowSysOut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/booking") // URL gốc cho các API về booking
@@ -27,8 +32,7 @@ public class BookingController {
             @RequestParam(required = false) LocalDateTime checkIn,
             @RequestParam(required = false) LocalDateTime checkOut,
             @RequestParam float totalPrice,
-            @RequestParam boolean payment) {
-        System.out.println(totalPrice);
+            @RequestParam boolean payment) throws ExecutionException, InterruptedException {
         Booking newBooking = BookingService.createBooking(checkIn, checkOut, totalPrice, payment);
 
         return ResponseEntity.ok(newBooking);
