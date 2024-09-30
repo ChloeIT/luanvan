@@ -1,0 +1,57 @@
+SELECT * FROM hotelnln.room;
+create database hotelnln
+use hotelnln
+DESCRIBE booking;
+
+INSERT INTO Hotel (name, address, phone, rating, image, amenities)
+VALUES 
+('Hotel 1', '123 Main St', '1234567890', 4.5, 'image1.jpg', 'Free WiFi, Pool, Parking'),
+('Hotel 2', '456 Park Ave', '1234567891', 4.2, 'image2.jpg', 'Free WiFi, Gym, Spa'),
+('Hotel 3', '789 Broadway', '1234567892', 4.8, 'image3.jpg', 'Free WiFi, Parking, Restaurant'),
+('Hotel 4', '321 Elm St', '1234567893', 3.9, 'image4.jpg', 'Gym, Spa, Pool'),
+('Hotel 5', '654 Maple St', '1234567894', 4.7, 'image5.jpg', 'Free WiFi, Parking, Gym'),
+('Hotel 6', '987 Oak St', '1234567895', 4.0, 'image6.jpg', 'Free WiFi, Gym, Pool'),
+('Hotel 7', '555 Pine St', '1234567896', 3.8, 'image7.jpg', 'Free WiFi, Parking'),
+('Hotel 8', '222 Cedar St', '1234567897', 4.6, 'image8.jpg', 'Free WiFi, Spa, Gym'),
+('Hotel 9', '111 Birch St', '1234567898', 4.3, 'image9.jpg', 'Free WiFi, Pool, Gym'),
+('Hotel 10', '888 Spruce St', '1234567899', 4.1, 'image10.jpg', 'Free WiFi, Parking, Spa'),
+('Hotel 11', '777 Redwood St', '1234567800', 4.5, 'image11.jpg', 'Free WiFi, Gym, Pool'),
+('Hotel 12', '999 Walnut St', '1234567801', 4.0, 'image12.jpg', 'Parking, Gym, Spa'),
+('Hotel 13', '444 Cherry St', '1234567802', 4.2, 'image13.jpg', 'Free WiFi, Gym, Pool'),
+('Hotel 14', '666 Ash St', '1234567803', 3.7, 'image14.jpg', 'Gym, Spa, Parking'),
+('Hotel 15', '333 Sycamore St', '1234567804', 4.9, 'image15.jpg', 'Free WiFi, Pool, Parking'),
+('Hotel 16', '555 Poplar St', '1234567805', 4.3, 'image16.jpg', 'Gym, Pool, Free WiFi'),
+('Hotel 17', '444 Alder St', '1234567806', 4.1, 'image17.jpg', 'Parking, Gym, Pool'),
+('Hotel 18', '222 Linden St', '1234567807', 3.9, 'image18.jpg', 'Spa, Gym, Free WiFi'),
+('Hotel 19', '777 Palm St', '1234567808', 4.5, 'image19.jpg', 'Parking, Pool, Gym'),
+('Hotel 20', '111 Willow St', '1234567809', 4.7, 'image20.jpg', 'Free WiFi, Spa, Gym');
+
+-- Chèn 2 phòng cho Hotel 1
+INSERT INTO Room (name, capacity, price, type, image, create_at, update_at, availability, hotel_id)
+VALUES 
+('Deluxe Room 1', 2, 150.0, 'Deluxe', 'deluxe1.jpg', '2024-09-10', '2024-09-10', TRUE, 1),
+('Standard Room 1', 2, 100.0, 'Standard', 'standard1.jpg', '2024-09-10', '2024-09-10', TRUE, 1);
+
+-- Chèn 2 phòng cho Hotel 2
+INSERT INTO Room (name, capacity, price, type, image, create_at, update_at, availability, hotel_id)
+VALUES 
+('Deluxe Room 2', 3, 180.0, 'Deluxe', 'deluxe2.jpg', '2024-09-10', '2024-09-10', TRUE, 2),
+('Standard Room 2', 2, 120.0, 'Standard', 'standard2.jpg', '2024-09-10', '2024-09-10', TRUE, 2);
+
+-- Chèn 2 phòng cho Hotel 3
+INSERT INTO Room (name, capacity, price, type, image, create_at, update_at, availability, hotel_id)
+VALUES 
+('Deluxe Room 3', 4, 200.0, 'Deluxe', 'deluxe3.jpg', '2024-09-10', '2024-09-10', TRUE, 3),
+('Standard Room 3', 2, 100.0, 'Standard', 'standard3.jpg', '2024-09-10', '2024-09-10', TRUE, 3);
+
+-- Chèn 2 phòng cho Hotel 4
+INSERT INTO Room (name, capacity, price, type, image, create_at, update_at, availability, hotel_id)
+VALUES 
+('Deluxe Room 4', 3, 170.0, 'Deluxe', 'deluxe4.jpg', '2024-09-10', '2024-09-10', TRUE, 4),
+('Standard Room 4', 2, 90.0, 'Standard', 'standard4.jpg', '2024-09-10', '2024-09-10', TRUE, 4);
+
+-- Chèn 2 phòng cho Hotel 5
+INSERT INTO Room (name, capacity, price, type, image, create_at, update_at, availability, hotel_id)
+VALUES 
+('Deluxe Room 5', 2, 160.0, 'Deluxe', 'deluxe5.jpg', '2024-09-10', '2024-09-10', TRUE, 5),
+('Standard Room 5', 2, 80.0, 'Standard', 'standard5.jpg', '2024-09-10', '2024-09-10', TRUE, 5);
