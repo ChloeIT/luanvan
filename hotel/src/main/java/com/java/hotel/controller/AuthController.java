@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -115,6 +116,7 @@ public class AuthController {
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                 .body(
                 new UserInfoResponse(
+                        jwtCookie.getValue(),
                         userDetails.getId(),
                         userDetails.getFullName(),
                         userDetails.getEmail(),
@@ -125,5 +127,21 @@ public class AuthController {
                         userDetails.getGender(),
                         userDetails.getBirthDate(),
                         roles));
+    }
+
+    @PostMapping("/signout")
+    public ResponseEntity<?> logoutUser() throws ExecutionException, InterruptedException {
+        Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!principle.toString().equals("anonymousUser")) {
+            String username = ((UserDetailsImpl) principle).getUsername();
+            System.out.println("username: " + username);
+//            refreshTokenService.deleteByUsername(username);
+        }
+        ResponseCookie jwtCookie = jwtUtils.getCleanJwtCookie();
+//        ResponseCookie jwtRefreshCookie = jwtUtils.getCleanJwtRefreshCookie();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+//                .header(HttpHeaders.SET_COOKIE, jwtRefreshCookie.toString())
+                .body(new ResponseMessage("You've been signed out!"));
     }
 }

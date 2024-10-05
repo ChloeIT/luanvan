@@ -1,0 +1,98 @@
+#background{
+    background-image: url('../images/cantho.jpg');
+}
+
+.primarycolor{
+    color: #86B817 !important;
+}
+.pricecolor{
+    color:grey;
+}
+.btn-primary {
+    background-color: #86B817 !important; /* Sử dụng !important để ghi đè các quy tắc CSS khác */
+    border-color: #86B817 !important; /* Có thể cần thiết nếu bạn muốn điều chỉnh cả màu viền */
+    /* Các thuộc tính khác của nút */
+}
+#btn-logout{
+    margin-right: 20px;
+}
+
+/* Add these styles to your CSS file or inside a <style> tag in your HTML file */
+
+/* Success toast */
+.toast-success {
+    background-color: #28a745 !important; /* Green background */
+    color: #fff !important; /* White text */
+}
+
+/* Warning toast */
+.toast-warning {
+    background-color: #ffc107 !important; /* Yellow background */
+    color: #000 !important; /* Black text */
+}
+
+/* Error toast */
+.toast-error {
+    background-color: #dc3545 !important; /* Red background */
+    color: #fff !important; /* White text */
+}
+
+/* Info toast */
+.toast-info {
+    background-color: #17a2b8 !important; /* Blue background */
+    color: #fff !important; /* White text */
+}
+.compare-card {
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.compare-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.compare-card .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.compare-card .card-header .card-title {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+}
+
+.compare-card .card-header .remove-from-compare {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #dc3545;
+}
+
+.compare-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.compare-card .card-body {
+    padding: 15px;
+}
+
+.compare-card .card-text {
+    margin-bottom: 0;
+    font-size: 1rem;
+}
+.remove-from-compare:hover{
+    opacity: 0.7;
+    background-color:#86B817 ;
+    color: #FFF;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 100%;
+}
+.remove-from-compare{
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    border-radius: 100%;
+}

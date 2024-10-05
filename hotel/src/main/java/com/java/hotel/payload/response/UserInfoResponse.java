@@ -3,6 +3,7 @@ import java.util.Date;
 import java.util.List;
 
 public class UserInfoResponse {
+    private String accessToken;
     private Long id;
     private String fullName;
     private String email;
@@ -16,7 +17,8 @@ public class UserInfoResponse {
 
     public UserInfoResponse() {    }
 
-    public UserInfoResponse(Long id, String fullName, String email, String username,  int phone, String image, String address, String gender, Date birthDate, List<String> roles) {
+    public UserInfoResponse(String accessToken,Long id, String fullName, String email, String username,  int phone, String image, String address, String gender, Date birthDate, List<String> roles) {
+        this.accessToken = accessToken;
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -27,6 +29,14 @@ public class UserInfoResponse {
         this.gender = gender;
         this.birthDate = birthDate;
         this.roles = roles;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     public Long getId() {

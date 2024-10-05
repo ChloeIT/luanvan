@@ -6,3 +6,6 @@ export const store = configureStore({
     reducer: rootReducer,
     devTools: true
 })
+
+export * from './auth'
+export * from  './share'
