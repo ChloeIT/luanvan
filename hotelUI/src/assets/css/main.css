@@ -96,3 +96,11 @@
     padding-right: 10px !important;
     border-radius: 100%;
 }
+.img-small {
+  width: 800px;
+  height: 550px !important; /* Buộc chiều cao */
+  object-fit: cover;
+  display: block;
+}
+
+

@@ -9,3 +9,8 @@ export const store = configureStore({
 
 export * from './auth'
 export * from  './share'
+export * from './user'
+export * from './hotel'
+export * from './room'
+export * from './booking'
+export * from './favorite'
