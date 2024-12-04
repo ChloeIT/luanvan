@@ -11,7 +11,6 @@ export const SearchInput = () => {
 const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
 
   const { hotels } = useSelector((state) => state.hotel);
-  console.log(hotels);
 
   const { hotelFilter, debounceFetch } = useFilteredHotel({
     hotels: hotels,

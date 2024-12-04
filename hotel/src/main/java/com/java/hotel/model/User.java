@@ -29,7 +29,8 @@ public class User {
     @NotBlank
     @Size(min = 6, max = 120)
     private String password;
-    private int phone;
+
+    private Integer phone;
     private String image;
     private String address;
     private String gender; // Example: "Male", "Female", etc.
@@ -40,6 +41,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Booking> bookings;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private Favorite favorite;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -53,7 +58,7 @@ public class User {
         this.password = password;
     }
 
-    public User(Long id, String fullName, String email, String username, String password, int phone, String image, List<Booking> bookings) {
+    public User(Long id, String fullName, String email, String username, String password, Integer phone, String image, List<Booking> bookings) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -62,6 +67,14 @@ public class User {
         this.phone = phone;
         this.image = image;
         this.bookings = bookings;
+    }
+
+    public Favorite getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Favorite favorite) {
+        this.favorite = favorite;
     }
 
     public Long getId() {
@@ -104,7 +117,7 @@ public class User {
         this.password = password;
     }
 
-    public int getPhone() {
+    public Integer   getPhone() {
         return phone;
     }
 

@@ -2,17 +2,23 @@ package com.java.hotel.controller;
 
 import com.java.hotel.model.Hotel;
 import com.java.hotel.model.Room;
+import com.java.hotel.model.User;
 import com.java.hotel.repository.HotelRepository;
 import com.java.hotel.service.HotelService;
+import com.java.hotel.service.StoreService;
 import org.antlr.v4.runtime.misc.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/hotel")
 public class HotelController {
     @Autowired
@@ -20,45 +26,37 @@ public class HotelController {
     @Autowired
     private HotelRepository hotelRepository;
 
+    @Autowired
+    private StoreService storeService;
+
     @GetMapping("/all")
     public ResponseEntity<List<Hotel>> getAllRooms() {
         List<Hotel> hotels = hotelService.findAll();
+        System.out.println("hotel " +hotels);
         return ResponseEntity.ok(hotels);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel) {
+    public ResponseEntity<Hotel> createHotel(@RequestParam String name,
+            @RequestParam String address,
+                                             @RequestParam String phone ,
+                                             @RequestParam String rating ,
+                                             @RequestParam String amenities ,
+                                             @RequestParam("file") MultipartFile file) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String newFilename = originalFilename != null ? originalFilename.substring(0, originalFilename.lastIndexOf('.')) + ".jpg" : "default.jpg";
+
+        Hotel hotel = new Hotel();
+        hotel.setName(name);
+        hotel.setAddress(address);
+        hotel.setPhone(phone);
+        hotel.setRating(Float.parseFloat(rating));
+        hotel.setAmenities(amenities);
+        hotel.setImage(newFilename);
         Hotel savedHotel = hotelRepository.save(hotel);
+
+        storeService.saveFile(file, newFilename, "hotels");
         return ResponseEntity.status(HttpStatus.CREATED).body(savedHotel);
-    }
-
-    @PutMapping("/edit/{id}")
-    public ResponseEntity<Hotel> editHotel(@PathVariable("id") Long id, @RequestBody Hotel hotelUpdates) {
-        Hotel existingHotel = hotelRepository.findById(id).orElse(null);
-        if (existingHotel == null) {
-            return ResponseEntity.notFound().build();
-        }
-        if (hotelUpdates.getName() != null) {
-            existingHotel.setName(hotelUpdates.getName());
-        }
-        if (hotelUpdates.getAddress() != null) {
-            existingHotel.setAddress(hotelUpdates.getAddress());
-        }
-        if (hotelUpdates.getPhone() != null) {
-            existingHotel.setPhone(hotelUpdates.getPhone());
-        }
-        if (hotelUpdates.getRating() != 0) {
-            existingHotel.setRating(hotelUpdates.getRating());
-        }
-        if (hotelUpdates.getImage() != null) {
-            existingHotel.setImage(hotelUpdates.getImage());
-        }
-        if (hotelUpdates.getAmenities() != null) {
-            existingHotel.setAmenities(hotelUpdates.getAmenities());
-        }
-        Hotel updatedHotel = hotelRepository.save(existingHotel);
-
-        return ResponseEntity.ok(updatedHotel);
     }
 
     @DeleteMapping("/delete/{id}")
@@ -70,5 +68,20 @@ public class HotelController {
         hotelRepository.deleteById(id);
         // Trả về phản hồi với HTTP 204 (No Content)
         return ResponseEntity.ok().body("Hotel deleted");
+    }
+
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<?> updateHotel(@PathVariable Long id, @RequestBody Hotel updatedHotel) {
+        try {
+            Optional<Hotel> hotelOptional = hotelRepository.findById(id);
+            if (hotelOptional.isPresent()) {
+                Hotel hotel = hotelService.updateHotel(id, updatedHotel);
+                return ResponseEntity.ok(hotel);
+            } else {
+                return ResponseEntity.status(404).body("Hotel not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating hotel: " + e.getMessage());
+        }
     }
 }

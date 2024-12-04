@@ -76,7 +76,7 @@ export const Review = () => {
     <div className="container-xxl py-5 wow fadeInUp" data-wow-delay="0.1s">
       <div className="container">
         <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-          <h6 className="section-title text-2xl text-center text-primary px-3">
+          <h6 className=" text-2xl text-center text-primary px-3">
             Review
           </h6>
           <h1 className="mb-5">Our Customers Say!!!</h1>

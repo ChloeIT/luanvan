@@ -20,8 +20,6 @@ export const HotelDetail = () => {
     setHotel(data);
   }, [id, hotels]);
 
-  console.log(myFavorite)
-
   return (
     <>
       {hotel && (
@@ -43,7 +41,7 @@ export const HotelDetail = () => {
                 </div>
               </div>
               <div className="col-lg-6 wow fadeInUp" data-wow-delay="0.3s">
-                <h6 className="section-title text-2xl text-start text-primary pe-3">
+                <h6 className=" text-2xl text-start text-primary pe-3">
                   Hotel
                 </h6>
                 <h1 className="mb-4">
@@ -97,7 +95,7 @@ export const HotelDetail = () => {
       <div className="container-xxl py-5">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h6 className="section-title text-2xl text-center text-primary px-3">
+            <h6 className=" text-2xl text-center text-primary px-3">
               Room
             </h6>
             <h1 className="mb-5">Explore Our Room Collection</h1>

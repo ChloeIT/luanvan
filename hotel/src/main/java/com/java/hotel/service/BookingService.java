@@ -26,17 +26,11 @@ public class BookingService {
     @Autowired
     private StoreService storeService;
 
-    public Booking createBooking(LocalDateTime checkIn, LocalDateTime checkOut, float totalPrice, boolean payment) throws ExecutionException, InterruptedException {
+    public Booking createBooking(Booking booking) throws ExecutionException, InterruptedException {
         User user = storeService.getCurrentUser();
-        Booking booking = new Booking();
-        booking.setCheckIn(checkIn);
-        booking.setCheckOut(checkOut);
-        booking.setTotalPrice(totalPrice);
-        booking.setPayment(payment);
         booking.setUser(user);
-
-        bookingRepository.save(booking);
-        return booking;
+        booking.setRooms(booking.getRooms());
+        return bookingRepository.save(booking);
     }
 
     public List<Booking> getAllBookings() {
@@ -56,4 +50,20 @@ public class BookingService {
         return booking; // Trả về booking đã được cập nhật hoặc null nếu không tìm thấy
     }
 
+    public Booking updateBooking(Long id, Booking updatedBooking) throws Exception {
+        Optional<Booking> existingBookingOptional = bookingRepository.findById(id);
+        if (existingBookingOptional.isPresent()) {
+            Booking existingBooking = existingBookingOptional.get();
+
+            existingBooking.setCheckOut(updatedBooking.getCheckOut());
+            existingBooking.setCheckIn(updatedBooking.getCheckIn());
+            existingBooking.setTotalPrice(updatedBooking.getTotalPrice());
+            existingBooking.setPayment(updatedBooking.isPayment());
+            existingBooking.setRooms(updatedBooking.getRooms());
+            return  bookingRepository.save(existingBooking);
+
+        } else {
+            throw new Exception("Booking not found");
+        }
+    }
 }

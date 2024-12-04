@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.sql.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -27,7 +28,12 @@ public class Room {
     private Hotel hotel;
 
     @ManyToMany(mappedBy = "rooms")
+    @JsonIgnore
     private Set<Booking> bookings;
+
+    @ManyToMany(mappedBy = "rooms")
+    @JsonIgnore
+    private Set<Favorite> favorites = new HashSet<>();
 
     public Room() {}
 
@@ -43,6 +49,14 @@ public class Room {
         this.price = price;
         this.name = name;
         this.id = id;
+    }
+
+    public Set<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<Favorite> favorites) {
+        this.favorites = favorites;
     }
 
     public String getName() {

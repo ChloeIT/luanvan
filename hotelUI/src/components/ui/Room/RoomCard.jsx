@@ -6,10 +6,14 @@ import { IoMdPricetags } from "react-icons/io";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
 import { Link } from "react-router-dom";
+import { favoriteServices } from "../../../services/favorite";
+import { useDispatch, useSelector } from "react-redux";
+import { favoriteAction } from "../../../store";
 
 export const RoomCard = ({ room, isFavorite }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
-
+  const {myFavorite} = useSelector(state => state.favorite)
+  const dispatch = useDispatch();
   const [isCompare, setIsCompare] = useState(() => {
     const compareList = JSON.parse(localStorage.getItem("compareRooms")) || [];
     return compareList.some((r) => r.id === room.id);
@@ -21,8 +25,7 @@ export const RoomCard = ({ room, isFavorite }) => {
     if (!isCompare) {
       currentCompareList.push(room);
       localStorage.setItem("compareRooms", JSON.stringify(currentCompareList));
-      setIsCompare(true); // Cập nhật trạng thái
-      console.log(`Room ${room.name} added to compare list`);
+      setIsCompare(true); 
     }
   };
 
@@ -33,8 +36,25 @@ export const RoomCard = ({ room, isFavorite }) => {
       (r) => r.id !== room.id
     );
     localStorage.setItem("compareRooms", JSON.stringify(updatedCompareList));
-    setIsCompare(false); // Cập nhật trạng thái
-    console.log(`Room ${room.name} removed from compare list`);
+    setIsCompare(false);
+  };
+  const addToFavorites = async () => {
+    try {
+      const response = await favoriteServices.addRoom(room.id, myFavorite.id); // Add room to favorites
+      dispatch(favoriteAction.setMyFavorite(response.data))
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+    }
+  };
+
+  const removeFromFavorites = async () => {
+    try {
+      const response = await favoriteServices.removeRoom(room.id, myFavorite.id); // Remove room from favorites
+      dispatch(favoriteAction.setMyFavorite(response.data));
+
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+    }
   };
 
   return (
@@ -78,14 +98,14 @@ export const RoomCard = ({ room, isFavorite }) => {
           <div className="d-flex justify-content-center text-primary">
             {isFavorite ? (
               <FaHeart
-                onClick={() => console.log("Remove from favorites")}
+                onClick={removeFromFavorites}
                 title="Remove room from favorites"
                 className="me-2 cursor-pointer"
                 style={{ fontSize: "1.5rem" }}
               />
             ) : (
               <FaRegHeart
-                onClick={() => console.log("Add to favorites")}
+                onClick={addToFavorites}
                 title="Add room to favorites"
                 className="me-2 cursor-pointer"
                 style={{ fontSize: "1.5rem" }}

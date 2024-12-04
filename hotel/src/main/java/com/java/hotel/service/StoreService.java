@@ -8,7 +8,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -23,5 +28,14 @@ public class StoreService {
         Optional<User> user = userRepository.findByUsername(authentication.getName());
         return user.get();
     }
+
+    public String saveFile(MultipartFile file, String filename, String folderName ) throws IOException {
+        String resourcePath = System.getProperty("user.dir") + "/src/main/resources/static/images/" + folderName + "/";
+
+        Path path = Paths.get(resourcePath + filename);
+        Files.write(path, file.getBytes());
+        return filename;
+    }
+
 
 }

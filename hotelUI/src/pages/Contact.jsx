@@ -6,7 +6,7 @@ export const Contact = () => {
     <div className="container-fluid  py-5">
       <div className="container">
         <div className="text-center">
-          <h6 className="section-title text-2xl text-center text-primary px-3">
+          <h6 className="text-2xl text-center text-primary px-3">
             We are here to help you!
           </h6>
           <h1 className="mb-5">Contact us for support anytime, anywhere.</h1>

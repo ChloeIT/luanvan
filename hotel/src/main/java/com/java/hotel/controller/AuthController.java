@@ -94,6 +94,9 @@ public class AuthController {
             });
         }
         user.setRoles(roles);
+        user.setFullName(signUpRequest.getUsername());
+        user.setPhone(1234);
+        user.setAddress("123 Main St");
         userRepository.save(user);
 
         return ResponseEntity.ok(new ResponseMessage("User registered successfully!"));
@@ -110,7 +113,6 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
-        System.out.println(jwtCookie.getValue());
         List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
                 .collect(Collectors.toList());
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())

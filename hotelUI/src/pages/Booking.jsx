@@ -31,7 +31,7 @@ export const Booking = () => {
         
         <div className="text-center pb-4 wow fadeInUp" data-wow-delay="0.1s">
           <div className="flex items-center justify-center">
-            <h6 className="section-title text-2xl text-center text-primary px-3">
+            <h6 className=" text-2xl text-center text-primary px-3">
               Process
             </h6>
           </div>

@@ -63,7 +63,10 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/hotel/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/room/**").permitAll()
-                        .requestMatchers("/api/booking/**").permitAll()
+                                .requestMatchers("/api/booking/**").permitAll()
+                                .requestMatchers("/api/favorite/**").permitAll()
+                                .requestMatchers("/images/**", "/css/**", "/js/**").permitAll()
+
                         .anyRequest().authenticated());
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
