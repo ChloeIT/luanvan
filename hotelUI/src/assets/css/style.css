@@ -549,3 +549,7 @@
 .rating-clickable { cursor: pointer; }
 .rating-clickable:focus,
 .rating-clickable:focus-visible { outline: none; box-shadow: none; }
+
+
+.hotel-phone.copyable { cursor: pointer; user-select: none; }
+.hotel-phone.copyable .text { transition: opacity .2s ease; }

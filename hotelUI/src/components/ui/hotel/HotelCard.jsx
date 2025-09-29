@@ -1,5 +1,5 @@
 import { Image } from "antd";
-import React from "react";
+import React, { useState } from "react";
 import { CiLocationOn } from "react-icons/ci";
 import { FaPhoneAlt } from "react-icons/fa";
 import { FaStar } from "react-icons/fa6";
@@ -8,6 +8,31 @@ import { PiPhoneCallLight } from "react-icons/pi";
 import { TiStarOutline } from "react-icons/ti";
 import { Link } from "react-router-dom";
 const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
+
+
+// Copy với fallback (HTTPS dùng Clipboard API, còn lại dùng execCommand)
+const copyText = async (text) => {
+  if (!text) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 
 // Ưu tiên lat/lng; nếu không có thì dùng địa chỉ text
 const buildDirectionsUrl = (hotel) => {
@@ -91,8 +116,8 @@ export const HotelCard = ({ hotel }) => {
                     }}
                     role="button"
                     tabIndex={0}
-                    title="Xem đánh giá Google"
-                    aria-label={`Xem đánh giá Google của ${hotel?.name ?? "khách sạn"}`}
+                    title="See reviews"
+                    aria-label={`See reviews of ${hotel?.name ?? "hotel"}`}
                   >
                     <div className="d-flex justify-content-center mt-2">
                       <FaStar className="text-yellow-300 group-hover:text-white" />
@@ -139,10 +164,34 @@ export const HotelCard = ({ hotel }) => {
                 );
               })()}
 
-              <div className="hotel-phone">
-                <FaPhoneAlt size={16} className="me-2 flex-shrink-0" />
-                <a className="text" href={`tel:${hotel.phone}`}>{hotel.phone}</a>
-              </div>
+              {(() => {
+                const [copied, setCopied] = useState(false); // đặt ở đầu component nếu bạn tách riêng
+                const handleCopyPhone = async (e) => {
+                  e.preventDefault();            // chặn <Link> bao ngoài
+                  e.stopPropagation();
+                  const ok = await copyText(String(hotel.phone || "").trim());
+                  if (ok) {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 800);
+                  }
+                };
+                return (
+                  <div
+                    className="hotel-phone copyable"
+                    onClick={handleCopyPhone}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleCopyPhone(e);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="Nhấn để sao chép số điện thoại"
+                    aria-label={`Copy phone number of ${hotel?.name ?? "hotel"}`}
+                  >
+                    <FaPhoneAlt size={16} className="me-2 flex-shrink-0" />
+                    <span className="text">{copied ? "Copied" : hotel.phone}</span>
+                  </div>
+                );
+              })()}
 
             </div>
 
