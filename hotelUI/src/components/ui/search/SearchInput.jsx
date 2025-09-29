@@ -8,7 +8,7 @@ import { Avatar } from "antd";
 export const SearchInput = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
+  const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
 
   const { hotels } = useSelector((state) => state.hotel);
 
@@ -23,16 +23,16 @@ const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
   const handleBlur = () => {
     setTimeout(() => setIsFocused(false), 100);
   };
- useEffect(()=> {
+  useEffect(() => {
     console.log(hotelFilter);
- },[searchTerm])
+  }, [searchTerm])
   return (
     <div className="relative w-full min-w-96 max-w-md">
       <label className="flex items-center gap-2 bg-white shadow-md border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
         <IoSearch className="text-gray-500 text-xl cursor-pointer" />
         <input
           type="search"
-          className="flex-grow text-sm text-gray-700 focus:outline-none placeholder-gray-400"
+          className="flex-grow text-sm text-gray-700 bg-white focus:outline-none placeholder-gray-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -45,9 +45,8 @@ const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
       {isFocused && (
         <div className="absolute w-full max-h-80 overflow-y-auto left-0 top-full mt-2 bg-white shadow-lg rounded-lg z-10">
           <div
-            className={`${
-              hotelFilter.length > 0 ? "" : "hidden"
-            } bg-gray-100 px-4 py-2`}
+            className={`${hotelFilter.length > 0 ? "" : "hidden"
+              } bg-gray-100 px-4 py-2`}
           >
             <p className="text-sm font-medium text-gray-600">Results</p>
           </div>

@@ -80,70 +80,70 @@ export const Profile = () => {
         alt={`image ${image}`}
       />
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">User name</span>
           <input
             ref={fullnameInputRef}
             readOnly
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={username}
             onChange={(e) => setUserName(e.target.value)}
           />
         </label>
       </div>
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Full Name</span>
           <input
             ref={fullnameInputRef}
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
         </label>
       </div>
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Email</span>
           <input
             readOnly
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
       </div>
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Phone</span>
           <input
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
         </label>
       </div>
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Address</span>
           <input
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
           />
         </label>
       </div>
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Gender</span>
           <input
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={gender}
             onChange={(e) => setGender(e.target.value)}
           />
@@ -151,11 +151,11 @@ export const Profile = () => {
       </div>
 
       <div className="mb-2">
-        <label className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
+        <label className="input input-bordered bg-gray-200 flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto">
           <span className="min-w-[100px]">Birth Date</span>
           <input
             type="text"
-            className="grow"
+            className="grow bg-gray-200 text-gray-800"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
           />

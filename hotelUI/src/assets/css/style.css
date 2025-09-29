@@ -449,3 +449,88 @@
     padding-right: 0;
     border-right: none;
 }
+
+.hotel-card {
+  width: 100%;
+  height: 500px;                /* 👉 tất cả card cao đúng 500px */
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;             /* ảnh + nội dung không tràn ra ngoài */
+  box-shadow: 0 0 20px rgba(0,0,0,.05);
+  background: #ceff64;
+}
+
+/* Khung ảnh cố định */
+.image-box {
+  position: relative;
+  width: 100%;
+  height: 220px;                /* 👉 ảnh luôn cao đúng 220px */
+  overflow: hidden;
+  flex-shrink: 0;               /* không co lại */
+}
+
+.image-box .ant-image,
+.image-box .ant-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* ảnh full khung, crop dư */
+  object-position: center;      /* căn giữa */
+  display: block;
+  border-radius: 12px;             /* bỏ radius riêng, dùng radius của card */
+}
+
+/* Phần thân: 3 hàng cố định -> TÊN / ĐỊA CHỈ / SĐT */
+.hotel-card-body{
+  padding: 16px 14px 18px;
+  display: grid;
+  grid-template-rows: 56px 72px 28px; /* chỉnh cao mỗi phần tại đây */
+  
+  text-align: center;
+}
+
+/* Tên: cắt tối đa 2 dòng để không tràn */
+.hotel-name{
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 2 dòng */
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Địa chỉ: icon + text, cắt tối đa 2 dòng */
+.hotel-address{
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.35;
+  text-align: center; /* để text multi-line nhìn đẹp hơn */
+  margin-top: 12px;   /* 👉 khoảng cách riêng với TÊN */
+}
+.hotel-address .text{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 2 dòng */
+  overflow: hidden;
+}
+
+/* SĐT: 1 dòng, ellipsis nếu quá dài */
+.hotel-phone{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 5px;
+}
+.hotel-phone .text{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+  text-decoration: none;
+}
