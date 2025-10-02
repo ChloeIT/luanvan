@@ -23,11 +23,10 @@
 }
 
 .btn-compare {
-    position: fixed;
-    right: 45px;
-    bottom: 90px;
-    margin-bottom: 10px;
-    z-index: 99;
+  position: fixed;
+  right: 45px;
+  bottom: 90px;
+  z-index: 9999;   /* tăng cao hơn */
 }
 
 
@@ -458,7 +457,8 @@
   border-radius: 12px;
   overflow: hidden;             /* ảnh + nội dung không tràn ra ngoài */
   box-shadow: 0 0 20px rgba(0,0,0,.05);
-  background: #ceff64;
+  background: #fdff7c;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* Khung ảnh cố định */
@@ -496,7 +496,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2; /* 2 dòng */
   overflow: hidden;
-  margin: 0;
+  margin-top: 7px;;
 }
 
 /* Địa chỉ: icon + text, cắt tối đa 2 dòng */
@@ -553,3 +553,131 @@
 
 .hotel-phone.copyable { cursor: pointer; user-select: none; }
 .hotel-phone.copyable .text { transition: opacity .2s ease; }
+
+/* ===============================
+   Floating Compare Button (FAB)
+   =============================== */
+.compare-fab{
+  position: fixed;
+  right: 45px;
+  bottom: 90px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #86B817, #a2d93f);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+  border: 3px solid #fff;
+  cursor: pointer;
+  z-index: 2147483647;
+  transition: transform .2s ease, box-shadow .2s ease;
+  animation: pulse 2s infinite;
+}
+.compare-fab:hover{ transform: scale(1.08); box-shadow: 0 12px 28px rgba(0,0,0,.35); }
+.compare-fab__badge{
+  position: absolute; top:-6px; right:-6px;
+  min-width: 22px; height: 22px; border-radius: 50%;
+  background: var(--secondary, #FE8800); color:#fff; font-weight:700; font-size:12px; line-height:22px;
+  box-shadow: 0 3px 8px rgba(0,0,0,.25);
+}
+@keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(134,184,23,.6);} 70%{box-shadow:0 0 0 25px rgba(134,184,23,0);} 100%{box-shadow:0 0 0 0 rgba(134,184,23,0);} }
+
+/* ===============================
+   Grid trong Modal Compare
+   =============================== */
+.compare-grid{
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* ========================================
+   ROOM CARD — BASE (ngoài trang) + COMPACT
+   ======================================== */
+
+/* Card mặc định (như cũ) */
+.rooms-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+}   
+.room-card {
+  /* Biến điều khiển kích thước */
+   flex: 0 0 calc(25% - 24px);  
+  max-width: 300px; 
+  --card-h: 340px;      /* giảm chiều cao tổng thể */
+  --img-h: 150px;       /* ảnh nhỏ hơn */
+  --pill-py: 4px;       /* pill gọn hơn */
+  --pill-px: 12px;
+  --title-fs: 1rem;     /* giảm font title */
+  --info-fs: 0.85rem;   /* giảm font info */
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--card-h);
+  background: #fdff7c;
+  border-radius: 10px;
+  padding-top: 16px;                 /* chừa chỗ cho pill top */
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,.08);
+}
+
+/* Nếu JSX còn bọc .team-item (từ template), vô hiệu hoá style cũ */
+.room-card .team-item{ display: contents; }
+
+/* Ảnh bám theo biến --img-h */
+.room-card .image-box{
+  position: relative;
+  width: 100%;
+  height: var(--img-h);
+  line-height: 0;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+.room-card .ant-image,
+.room-card .ant-image-img{
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block; border-radius: inherit;
+}
+/* Giữ bo góc & không chặn click */
+.room-card .ant-image-mask{ border-radius: inherit !important; overflow: hidden; pointer-events: none; }
+
+/* Pill */
+.room-pill{
+  position: absolute; left:50%; transform: translateX(-50%);
+  background: var(--primary); color:#fff;
+  padding: var(--pill-py) var(--pill-px);
+  border-radius: 999px; font-weight:700; font-size:14px; min-width:140px; text-align:center;
+  box-shadow: 0 4px 10px rgba(0,0,0,.2); z-index:2;
+}
+.pill-top{ top:0; transform: translate(-50%, 20%); }
+/* BÁM RÌA ẢNH – không hard-code 200px */
+.pill-middle{ top: var(--img-h); transform: translate(-50%, -10%); }
+
+/* Body */
+.room-card-body{ flex:1; display:flex; flex-direction:column; padding:12px 14px 16px; }
+.room-title{ font-size: var(--title-fs); }
+.room-info{ display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+.room-info-line{ font-size: var(--info-fs); }
+.room-actions{
+  margin-top:auto; display:flex; align-items:center; justify-content:center; gap:10px;
+  position: relative; z-index:3;  /* luôn trên overlay ảnh */
+}
+
+/* Biến thể COMPACT cho modal compare */
+.room-card--compact{
+  --card-h: 340px;
+  --img-h: 140px;
+  --pill-py: 4px;
+  --pill-px: 12px;
+  --title-fs: 1.1rem;
+  --info-fs: 0.9rem;
+}
+.room-card--compact .room-actions{ gap: 8px; }
+.room-card--compact .ant-btn{ height:28px; padding:0 10px; font-size:12px; line-height:28px; }
