@@ -1,7 +1,6 @@
-// src/pages/RoomsPage.jsx
 import React, { useMemo } from "react";
 import { RoomCard } from "@/components/ui/Room/RoomCard";
-import { CompareButton } from "@/components/ui/compare";
+import { CompareButton } from "@/components/ui/compare/CompareButton";
 
 export default function RoomsPage({ rooms: roomsProp }) {
     const rooms = useMemo(() => roomsProp ?? [], [roomsProp]);
@@ -10,7 +9,6 @@ export default function RoomsPage({ rooms: roomsProp }) {
         <>
             <div className="container-xxl py-5">
                 <div className="container">
-                    {/* Lưới 4 cột, dùng CSS Grid để kiểm soát khoảng cách */}
                     <div className="rooms-grid">
                         {rooms.map((room, idx) => (
                             <div
@@ -24,7 +22,6 @@ export default function RoomsPage({ rooms: roomsProp }) {
                             </div>
                         ))}
                     </div>
-
                 </div>
             </div>
 

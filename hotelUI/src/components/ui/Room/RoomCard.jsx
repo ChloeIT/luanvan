@@ -1,4 +1,3 @@
-// src/components/ui/Room/RoomCard.jsx
 import React, { useEffect, useState } from "react";
 import { Button, Image } from "antd";
 import { BsCurrencyDollar } from "react-icons/bs";
@@ -8,8 +7,8 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { favoriteServices } from "../../../services/favorite";
-import { favoriteAction } from "../../../store";
+import { favoriteServices } from "@/services/favorite";
+import { favoriteAction } from "@/store";
 
 // ---- compare storage helpers
 const readCompare = () => {
@@ -35,17 +34,17 @@ export const RoomCard = ({
   // Biến thể: mặc định compact khi ở compare
   const cardVariant = variant ?? (inCompare ? "compact" : "default");
   const isCompact = cardVariant === "compact";
-  const ACTION_ICON = isCompact ? 26 : 32;
-  const HEART_FS = isCompact ? "1.35rem" : "1.5rem";
+  const ACTION_ICON = isCompact ? 24 : 28;
+  const HEART_FS = isCompact ? "1.25rem" : "1.45rem";
   const BTN_SIZE = isCompact ? "small" : "middle";
 
-  const [isCompare, setIsCompare] = useState(
+  const [isInCompare, setIsInCompare] = useState(
     () => readCompare().some((r) => r.id === room.id)
   );
 
   // đồng bộ compare
   useEffect(() => {
-    const sync = () => setIsCompare(readCompare().some((r) => r.id === room.id));
+    const sync = () => setIsInCompare(readCompare().some((r) => r.id === room.id));
     const onStorage = (e) => { if (e.key === "compareRooms") sync(); };
     window.addEventListener("storage", onStorage);
     window.addEventListener("compare:changed", sync);
@@ -62,13 +61,13 @@ export const RoomCard = ({
     const cur = readCompare();
     if (!cur.some((r) => r.id === room.id)) {
       writeCompare([...cur, room]);
-      setIsCompare(true);
+      setIsInCompare(true);
     }
   };
   const removeFromCompare = (e) => {
     e?.preventDefault?.(); e?.stopPropagation?.();
     writeCompare(readCompare().filter((r) => r.id !== room.id));
-    setIsCompare(false);
+    setIsInCompare(false);
   };
   const onToggleFavorite = async (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -152,7 +151,7 @@ export const RoomCard = ({
             {room.availability ? "Book now" : "Booked"}
           </Button>
 
-          {isCompare ? (
+          {isInCompare ? (
             <CiCircleMinus
               onClick={removeFromCompare}
               title="Remove from compare"

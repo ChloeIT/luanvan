@@ -1,30 +1,22 @@
-// src/components/ui/compare/CompareButton.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { Button, Modal } from "antd";
-import { CiCircleMinus } from "react-icons/ci";
 import { FaBalanceScale } from "react-icons/fa";
-import { RoomCard } from "@/components/ui/Room/RoomCard"; // ✅ alias src/
+import { RoomCard } from "@/components/ui/Room/RoomCard";
 
 const MAX_Z = 2147483000;
 
-// --- helpers ---
+// helpers
 const safeParse = (text, fallback) => {
-  try {
-    const v = JSON.parse(text);
-    return Array.isArray(v) ? v : fallback;
-  } catch {
-    return fallback;
-  }
+  try { const v = JSON.parse(text); return Array.isArray(v) ? v : fallback; }
+  catch { return fallback; }
 };
 const getCompareList = () =>
   typeof window === "undefined"
     ? []
     : safeParse(localStorage.getItem("compareRooms") || "[]", []);
-
 const setCompareList = (list) => {
   localStorage.setItem("compareRooms", JSON.stringify(list));
-  // phát event để đồng bộ các component khác
   window.dispatchEvent(new Event("compare:changed"));
 };
 
@@ -33,36 +25,22 @@ export const CompareButton = () => {
   const [compares, setCompares] = useState(getCompareList);
   const count = useMemo(() => compares.length, [compares]);
 
-  // Đồng bộ khi compareRooms thay đổi
   useEffect(() => {
     const sync = () => setCompares(getCompareList());
-    const onStorage = (e) => {
-      if (e.key === "compareRooms") sync();
-    };
-
-    sync(); // chạy ngay khi mount
+    const onStorage = (e) => { if (e.key === "compareRooms") sync(); };
+    sync();
     window.addEventListener("storage", onStorage);
     window.addEventListener("compare:changed", sync);
-
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("compare:changed", sync);
     };
   }, []);
 
-  const open = () => {
-    setCompares(getCompareList());
-    setIsOpen(true);
-  };
+  const open = () => { setCompares(getCompareList()); setIsOpen(true); };
   const close = () => setIsOpen(false);
 
-  const removeFromCompare = (roomId) => {
-    const updated = getCompareList().filter((r) => r.id !== roomId);
-    setCompareList(updated);
-    setCompares(updated);
-  };
-
-  // --- Nút nổi (Floating Button) ---
+  // Floating button
   const fab = !isOpen && (
     <button
       type="button"
@@ -112,17 +90,13 @@ export const CompareButton = () => {
 
   return (
     <>
-      {/* Portal để FAB không bị chồng z-index */}
-      {typeof document !== "undefined"
-        ? ReactDOM.createPortal(fab, document.body)
-        : fab}
+      {typeof document !== "undefined" ? ReactDOM.createPortal(fab, document.body) : fab}
 
-      {/* Modal Compare */}
       <Modal
         title="So sánh phòng"
         open={isOpen}
         onCancel={close}
-        width={1100}
+        width={1200}                 // rộng hơn để đủ 4 cột
         destroyOnClose
         centered
         maskClosable
@@ -134,38 +108,25 @@ export const CompareButton = () => {
           footer: { borderTop: "1px solid #f0f0f0" },
           content: { borderRadius: 12, overflow: "hidden" },
         }}
-        footer={[
-          <Button key="close" onClick={close}>
-            Đóng
-          </Button>,
-        ]}
+        footer={[<Button key="close" onClick={close}>Đóng</Button>]}
       >
         {compares.length === 0 ? (
           <div style={{ textAlign: "center", padding: 24 }}>
-            <div style={{ marginBottom: 8 }}>
-              <FaBalanceScale size={28} />
-            </div>
+            <div style={{ marginBottom: 8 }}><FaBalanceScale size={28} /></div>
             <div style={{ fontWeight: 600 }}>Chưa có phòng để so sánh.</div>
             <div style={{ opacity: 0.8 }}>
               Hãy nhấn nút <strong>“+ So sánh”</strong> trên card phòng để thêm.
             </div>
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 16,
-            }}
-          >
+          // 👉 4 cột cố định (co về 3/2/1 theo CSS)
+          <div className="compare-grid compare-grid--4">
             {compares.map((room) => (
-              // ✅ Dùng đúng 1 RoomCard; khi inCompare=true card sẽ hiện nút “–” ở hàng actions, giống ngoài trang
               <RoomCard key={room.id} room={room} isFavorite={room.isFavorite} inCompare />
             ))}
           </div>
         )}
       </Modal>
-
     </>
   );
 };
