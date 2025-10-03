@@ -31,7 +31,6 @@ export const RoomCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Biến thể: mặc định compact khi ở compare
   const cardVariant = variant ?? (inCompare ? "compact" : "default");
   const isCompact = cardVariant === "compact";
   const ACTION_ICON = isCompact ? 24 : 28;
@@ -55,9 +54,8 @@ export const RoomCard = ({
     };
   }, [room.id]);
 
-  // handlers
   const addToCompare = (e) => {
-    e?.preventDefault?.(); e?.stopPropagation?.();
+    e.preventDefault(); e.stopPropagation();
     const cur = readCompare();
     if (!cur.some((r) => r.id === room.id)) {
       writeCompare([...cur, room]);
@@ -65,7 +63,7 @@ export const RoomCard = ({
     }
   };
   const removeFromCompare = (e) => {
-    e?.preventDefault?.(); e?.stopPropagation?.();
+    e.preventDefault(); e.stopPropagation();
     writeCompare(readCompare().filter((r) => r.id !== room.id));
     setIsInCompare(false);
   };
@@ -88,10 +86,6 @@ export const RoomCard = ({
 
   return (
     <div className={`room-card ${isCompact ? "room-card--compact" : ""}`}>
-      {/* Pills */}
-      <div className="room-pill pill-top">{room.type}</div>
-      <div className="room-pill pill-middle">{room.name}</div>
-
       {/* Ảnh */}
       <div className="image-box">
         <Image
@@ -108,6 +102,10 @@ export const RoomCard = ({
           alt={room.name}
         />
       </div>
+
+      {/* Pills (đặt TRỰC TIẾP trong room-card, không nằm trong image-box) */}
+      <div className="room-pill pill-top">{room.type}</div>
+      <div className="room-pill pill-middle">{room.name}</div>
 
       {/* Body */}
       <div className="room-card-body">

@@ -451,45 +451,42 @@
 
   .hotel-card {
     width: 100%;
-    height: 500px;                /* 👉 tất cả card cao đúng 500px */
+    height: 500px;               
     display: flex;
     flex-direction: column;
     border-radius: 12px;
-    overflow: hidden;             /* ảnh + nội dung không tràn ra ngoài */
+    overflow: hidden;        
     box-shadow: 0 0 20px rgba(0,0,0,.05);
     background: #fdff7c;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
-  /* Khung ảnh cố định */
   .image-box {
     position: relative;
     width: 100%;
-    height: 220px;                /* 👉 ảnh luôn cao đúng 220px */
+    height: 220px;                
     overflow: hidden;
-    flex-shrink: 0;               /* không co lại */
+    flex-shrink: 0;              
   }
 
   .image-box .ant-image,
   .image-box .ant-image-img {
     width: 100%;
     height: 100%;
-    object-fit: cover;            /* ảnh full khung, crop dư */
-    object-position: center;      /* căn giữa */
+    object-fit: cover;            
+    object-position: center;     
     display: block;
-    border-radius: 12px;             /* bỏ radius riêng, dùng radius của card */
+    border-radius: 12px;           
   }
 
-  /* Phần thân: 3 hàng cố định -> TÊN / ĐỊA CHỈ / SĐT */
   .hotel-card-body{
     padding: 16px 14px 18px;
     display: grid;
-    grid-template-rows: 56px 72px 28px; /* chỉnh cao mỗi phần tại đây */
+    grid-template-rows: 56px 72px 28px; 
     
     text-align: center;
   }
 
-  /* Tên: cắt tối đa 2 dòng để không tràn */
   .hotel-name{
     line-height: 1.25;
     display: -webkit-box;
@@ -499,24 +496,22 @@
     margin-top: 7px;;
   }
 
-  /* Địa chỉ: icon + text, cắt tối đa 2 dòng */
   .hotel-address{
     display: flex;
     justify-content: center;
     align-items: flex-start;
     gap: 8px;
     line-height: 1.35;
-    text-align: center; /* để text multi-line nhìn đẹp hơn */
-    margin-top: 12px;   /* 👉 khoảng cách riêng với TÊN */
+    text-align: center;
+    margin-top: 12px;   
   }
   .hotel-address .text{
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2; /* 2 dòng */
+    -webkit-line-clamp: 2; 
     overflow: hidden;
   }
 
-  /* SĐT: 1 dòng, ellipsis nếu quá dài */
   .hotel-phone{
     display: flex;
     justify-content: center;
@@ -535,14 +530,11 @@
     text-decoration: none;
   }
 
-
-  /* Không khung khi dùng chuột */
   .hotel-address.clickable:focus{ outline: none; }
 
-  /* Chỉ khi focus bằng bàn phím mới hiện glow nhẹ */
   .hotel-address.clickable:focus-visible{
     outline: none;
-    box-shadow: 0 0 0 2px rgba(134,184,23,.25); /* rất nhẹ */
+    box-shadow: 0 0 0 2px rgba(134,184,23,.25); 
     border-radius: 6px;
   }
 
@@ -550,15 +542,9 @@
   .rating-clickable:focus,
   .rating-clickable:focus-visible { outline: none; box-shadow: none; }
 
-
   .hotel-phone.copyable { cursor: pointer; user-select: none; }
   .hotel-phone.copyable .text { transition: opacity .2s ease; }
 
-/* =========================================================
-   ROOM CARD + COMPARE (shared cho RoomPage & Compare Modal)
-   ========================================================= */
-
-/* Lưới 4 cột cố định trên desktop */
 .rooms-grid{
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -569,16 +555,13 @@
   min-width: 0;
   grid-column: auto / span 1 !important;
 }
-/* chặn mọi rule cũ ép card full hàng */
 .rooms-grid .room-card{
   flex: none !important;
   width: auto !important;
   max-width: unset !important;
 }
 
-/* --------- Card cơ bản (dùng chung) --------- */
 .room-card{
-  /* biến kiểm soát nhanh */
   --card-h: 360px;
   --img-h: 180px;
   --pill-py: 6px;
@@ -592,22 +575,19 @@
   height: var(--card-h);
   background: #fdff7c;
   border-radius: 12px;
-  overflow: hidden;
-  padding-top: 16px;              /* chừa chỗ cho pill-top */
+  overflow: visible;              
+  padding: 0;                      
   box-shadow: 0 4px 12px rgba(0,0,0,.1);
 }
-
-/* nếu còn bọc .team-item từ template -> vô hiệu */
 .room-card .team-item{ display: contents; }
-
-/* Ảnh cố định theo --img-h */
 .room-card .image-box{
   position: relative;
   width: 100%;
   height: var(--img-h);
-  line-height: 0;
+  line-height: 0;          
   overflow: hidden;
   border-radius: 12px 12px 0 0;
+  margin: 0;                    
 }
 .room-card .ant-image,
 .room-card .ant-image-img{
@@ -615,10 +595,9 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;
+  display: block;                
   border-radius: inherit;
 }
-/* fix mask AntD */
 .room-card .ant-image-mask{
   border-radius: inherit !important;
   overflow: hidden;
@@ -626,31 +605,43 @@
 }
 
 /* --------- Pills --------- */
-.room-pill{
+.room-pill {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
+  transform: translateX(-50%);  
   background: var(--primary);
   color: #fff;
   padding: var(--pill-py) var(--pill-px);
   border-radius: 999px;
   font-weight: 700;
   font-size: 14px;
-  min-width: 140px;
+  min-width: 140px;              
   text-align: center;
   box-shadow: 0 4px 10px rgba(0,0,0,.2);
+  z-index: 2;
+  white-space: nowrap;          
 }
-.pill-top{ top: 6px; transform: translate(-50%, 0); }
-/* bám sát ranh ảnh + nền (nửa trên ảnh, nửa dưới nền) */
-.pill-middle{ top: var(--img-h); transform: translate(-50%, -50%); }
 
-/* --------- Body & Info --------- */
+.pill-top {
+  position: absolute;
+  top: 0;                    
+  left: 50%;
+  transform: translate(-50%, -50%);  
+  z-index: 4;
+  pointer-events: auto;
+}
+.pill-middle {
+  top: var(--img-h);             
+  transform: translate(-50%, -50%); 
+  z-index: 3;
+}
+
 .room-card-body{
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 12px 14px 16px;
+  background: transparent;
 }
 .room-title{ font-size: var(--title-fs); margin-bottom: 6px; }
 .room-info{
@@ -661,7 +652,6 @@
 }
 .room-info-line{ font-size: var(--info-fs); }
 
-/* actions ở đáy */
 .room-actions{
   margin-top: auto;
   display: flex;
@@ -672,7 +662,7 @@
   z-index: 3;
 }
 
-/* --------- Biến thể COMPACT (trong Compare Modal) --------- */
+/*trong Compare Modal*/
 .room-card--compact{
   --card-h: 330px;
   --img-h: 160px;
@@ -684,14 +674,14 @@
   height: 28px; padding: 0 10px; font-size: 12px; line-height: 28px;
 }
 
-/* --------- Grid trong Compare Modal --------- */
+/* Grid trong Compare Modal */
 .compare-grid{
   display: grid;
   gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
-/* --------- Floating Compare Button (FAB) --------- */
+/* Floating Compare Button (FAB) */
 .compare-fab{
   position: fixed;
   right: 45px;
@@ -724,8 +714,6 @@
   .room-card{ --card-h: 340px; --img-h: 160px; }
 }
 
-/* --------- (Tuỳ chọn) Giữ nguyên HotelDetail .row nhưng vẫn ra 4 cột --------- */
-/* Nếu bạn KHÔNG đổi JSX trong HotelDetail, bật 4 cột cho .row chứa trực tiếp .room-card */
 .row.g-5:has(> .room-card){
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
