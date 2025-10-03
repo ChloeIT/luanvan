@@ -461,23 +461,24 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
-  .image-box {
-    position: relative;
-    width: 100%;
-    height: 220px;                
-    overflow: hidden;
-    flex-shrink: 0;              
-  }
+.image-box {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 12px; /* bo góc cho container */
+}
 
-  .image-box .ant-image,
-  .image-box .ant-image-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;            
-    object-position: center;     
-    display: block;
-    border-radius: 12px;           
-  }
+.image-box .ant-image,
+.image-box .ant-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: 12px; /* bo góc cho ảnh */
+}
+
 
   .hotel-card-body{
     padding: 16px 14px 18px;
@@ -545,6 +546,7 @@
   .hotel-phone.copyable { cursor: pointer; user-select: none; }
   .hotel-phone.copyable .text { transition: opacity .2s ease; }
 
+/* ========= GRID ========= */
 .rooms-grid{
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
@@ -561,6 +563,7 @@
   max-width: unset !important;
 }
 
+/* ========= CARD ========= */
 .room-card{
   --card-h: 360px;
   --img-h: 180px;
@@ -568,6 +571,7 @@
   --pill-px: 14px;
   --title-fs: 1.1rem;
   --info-fs: .95rem;
+  --title-gap: 16px;   /* khoảng cách pill giữa → room name */
 
   position: relative;
   display: flex;
@@ -575,19 +579,22 @@
   height: var(--card-h);
   background: #fdff7c;
   border-radius: 12px;
-  overflow: visible;              
-  padding: 0;                      
+  overflow: visible;
+  padding: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  isolation: isolate; /* cô lập z-index cho từng card */
 }
 .room-card .team-item{ display: contents; }
+
+/* image */
 .room-card .image-box{
   position: relative;
   width: 100%;
   height: var(--img-h);
-  line-height: 0;          
+  line-height: 0;
   overflow: hidden;
   border-radius: 12px 12px 0 0;
-  margin: 0;                    
+  margin: 0;
 }
 .room-card .ant-image,
 .room-card .ant-image-img{
@@ -595,7 +602,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  display: block;                
+  display: block;
   border-radius: inherit;
 }
 .room-card .ant-image-mask{
@@ -604,38 +611,37 @@
   pointer-events: none;
 }
 
-/* --------- Pills --------- */
-.room-pill {
+/* ========= PILLS ========= */
+.room-pill{
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);  
+  transform: translateX(-50%);
   background: var(--primary);
   color: #fff;
   padding: var(--pill-py) var(--pill-px);
   border-radius: 999px;
   font-weight: 700;
   font-size: 14px;
-  min-width: 140px;              
+  min-width: 140px;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0,0,0,.2);
   z-index: 2;
-  white-space: nowrap;          
+  white-space: nowrap;
 }
-
-.pill-top {
-  position: absolute;
-  top: 0;                    
-  left: 50%;
-  transform: translate(-50%, -50%);  
+.pill-top{
+  top: 0;
+  /* left: 50%;  thừa vì đã có ở .room-pill */
+  transform: translate(-50%, -50%);
   z-index: 4;
   pointer-events: auto;
 }
-.pill-middle {
-  top: var(--img-h);             
-  transform: translate(-50%, -50%); 
+.pill-middle{
+  top: var(--img-h);              /* đúng ranh giới ảnh + nền */
+  transform: translate(-50%, -60%);
   z-index: 3;
 }
 
+/* ========= BODY ========= */
 .room-card-body{
   flex: 1;
   display: flex;
@@ -643,15 +649,35 @@
   padding: 12px 14px 16px;
   background: transparent;
 }
-.room-title{ font-size: var(--title-fs); margin-bottom: 6px; }
+/* tên phòng: tách xa pill giữa bằng --title-gap */
+.room-title{
+  font-size: var(--title-fs);
+  margin: var(--title-gap) 0 6px;
+  color: #333;
+}
+
+/* INFO LINES – text + icon cùng màu #333 */
 .room-info{
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.room-info-line{ font-size: var(--info-fs); }
+.room-info-line{
+  font-size: var(--info-fs);
+  font-weight: 500;
+  color: #333;              /* chữ #333 */
+  display: flex;
+  align-items: center;
+  gap: 6px;                 /* icon cách chữ 1 chút */
+}
+.room-info-line svg{
+  color: #333;              /* icon cũng #333 */
+  font-size: 1rem;
+  flex-shrink: 0;
+}
 
+/* actions */
 .room-actions{
   margin-top: auto;
   display: flex;
@@ -662,26 +688,31 @@
   z-index: 3;
 }
 
-/*trong Compare Modal*/
+/* ========= COMPACT (Compare Modal) ========= */
 .room-card--compact{
   --card-h: 330px;
   --img-h: 160px;
   --title-fs: 1rem;
   --info-fs: .9rem;
+  --title-gap: 12px; /* nhỏ hơn cho card nhỏ */
 }
 .room-card--compact .room-actions{ gap: 8px; }
 .room-card--compact .ant-btn{
   height: 28px; padding: 0 10px; font-size: 12px; line-height: 28px;
 }
 
-/* Grid trong Compare Modal */
+/* ========= Compare Grid ========= */
 .compare-grid{
-  display: grid;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
+/* responsive cho compare-grid */
+@media (max-width: 1199.98px){ .compare-grid{ grid-template-columns: repeat(3, 1fr) !important; } }
+@media (max-width: 991.98px){  .compare-grid{ grid-template-columns: repeat(2, 1fr) !important; } }
+@media (max-width: 575.98px){  .compare-grid{ grid-template-columns: 1fr !important; } }
 
-/* Floating Compare Button (FAB) */
+/* ========= FAB ========= */
 .compare-fab{
   position: fixed;
   right: 45px;
@@ -701,19 +732,20 @@
 }
 .compare-fab:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
 
-/* --------- Responsive --------- */
+/* ========= Responsive (Rooms Grid) ========= */
 @media (max-width: 1199.98px){
-  .rooms-grid{ grid-template-columns: repeat(3, 1fr) !important; } /* desktop nhỏ: 3 cột */
+  .rooms-grid{ grid-template-columns: repeat(3, 1fr) !important; }
 }
 @media (max-width: 991.98px){
-  .rooms-grid{ grid-template-columns: repeat(2, 1fr) !important; } /* tablet: 2 cột */
+  .rooms-grid{ grid-template-columns: repeat(2, 1fr) !important; }
   .room-card{ --card-h: 350px; --img-h: 170px; }
 }
 @media (max-width: 575.98px){
-  .rooms-grid{ grid-template-columns: 1fr !important; }           /* mobile: 1 cột */
+  .rooms-grid{ grid-template-columns: 1fr !important; }
   .room-card{ --card-h: 340px; --img-h: 160px; }
 }
 
+/* ========= Bootstrap row fallback ========= */
 .row.g-5:has(> .room-card){
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;

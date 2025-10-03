@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/components/ui/Room/RoomCard.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Image } from "antd";
 import { BsCurrencyDollar } from "react-icons/bs";
 import { FaUserLarge } from "react-icons/fa6";
@@ -10,7 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { favoriteServices } from "@/services/favorite";
 import { favoriteAction } from "@/store";
 
-// ---- compare storage helpers
+/** ========== helpers ========== */
 const readCompare = () => {
   try { return JSON.parse(localStorage.getItem("compareRooms") || "[]"); }
   catch { return []; }
@@ -19,31 +20,77 @@ const writeCompare = (list) => {
   localStorage.setItem("compareRooms", JSON.stringify(list));
   window.dispatchEvent(new Event("compare:changed"));
 };
+const toNum = (v) =>
+  (v === 0 || v === "0") ? 0 : (v != null && v !== "") ? Number(v) : NaN;
+const getHotelIdFromRoom = (room) =>
+  toNum(room?.hotel_id ?? room?.hotelId ?? room?.hotel?.id);
 
+/** Lấy tên KS từ props → redux → room (fallback rỗng) */
+const resolveHotelName = (room, hotels, hotelNameProp) => {
+  if (hotelNameProp) return hotelNameProp;
+  if (room?.hotel?.name) return room.hotel.name;
+  if (room?.hotelName) return room.hotelName;
+  if (room?.hotel_name) return room.hotel_name;
+
+  const hid = getHotelIdFromRoom(room);
+  if (!Number.isNaN(hid) && Array.isArray(hotels) && hotels.length) {
+    const match = hotels.find((h) => toNum(h.id) === hid);
+    if (match?.name) return match.name;
+  }
+  return "";
+};
+
+/**
+ * RoomCard
+ * @param {Object} props
+ * @param {Object} props.room - dữ liệu phòng
+ * @param {string} [props.hotelName] - override tên KS (ưu tiên)
+ * @param {number|string} [props.hotelId] - override id KS
+ * @param {boolean} [props.isFavorite] - room đã có trong favorite
+ * @param {"default"|"compact"} [props.variant="default"] - kiểu hiển thị
+ * @param {boolean} [props.inCompare] - (deprecated) nếu true → compact
+ */
 export const RoomCard = ({
   room,
+  hotelName: hotelNameProp,
+  hotelId: hotelIdProp,
   isFavorite,
-  inCompare = false,
-  variant, // "default" | "compact"
+  variant = "default",
+  inCompare, // deprecated – để tương thích ngược
 }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
   const { myFavorite } = useSelector((s) => s.favorite);
+  const hotels = useSelector((s) => s.hotel?.hotels || []);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const cardVariant = variant ?? (inCompare ? "compact" : "default");
+  // Chuẩn hoá variant (ưu tiên prop variant, nếu inCompare === true thì ép thành compact)
+  const cardVariant = inCompare ? "compact" : variant;
   const isCompact = cardVariant === "compact";
+
+  // sizing theo variant
   const ACTION_ICON = isCompact ? 24 : 28;
   const HEART_FS = isCompact ? "1.25rem" : "1.45rem";
   const BTN_SIZE = isCompact ? "small" : "middle";
 
+  // resolve hotelId & hotelName
+  const resolvedHotelId = useMemo(
+    () => (hotelIdProp ?? getHotelIdFromRoom(room)),
+    [hotelIdProp, room]
+  );
+  const hotelName = useMemo(
+    () => resolveHotelName(room, hotels, hotelNameProp) || room?.name || "",
+    [room, hotels, hotelNameProp]
+  );
+
+  // compare state
   const [isInCompare, setIsInCompare] = useState(
     () => readCompare().some((r) => r.id === room.id)
   );
 
-  // đồng bộ compare
   useEffect(() => {
-    const sync = () => setIsInCompare(readCompare().some((r) => r.id === room.id));
+    const sync = () =>
+      setIsInCompare(readCompare().some((r) => r.id === room.id));
     const onStorage = (e) => { if (e.key === "compareRooms") sync(); };
     window.addEventListener("storage", onStorage);
     window.addEventListener("compare:changed", sync);
@@ -54,19 +101,31 @@ export const RoomCard = ({
     };
   }, [room.id]);
 
+  // actions
   const addToCompare = (e) => {
     e.preventDefault(); e.stopPropagation();
     const cur = readCompare();
-    if (!cur.some((r) => r.id === room.id)) {
-      writeCompare([...cur, room]);
-      setIsInCompare(true);
-    }
+    if (cur.some((r) => r.id === room.id)) return;
+    const payload = {
+      ...room,
+      hotel_id:
+        resolvedHotelId ??
+        room?.hotel_id ??
+        room?.hotelId ??
+        room?.hotel?.id ??
+        null,
+      hotelName, // gắn tên KS đã resolve
+    };
+    writeCompare([...cur, payload]);
+    setIsInCompare(true);
   };
+
   const removeFromCompare = (e) => {
     e.preventDefault(); e.stopPropagation();
     writeCompare(readCompare().filter((r) => r.id !== room.id));
     setIsInCompare(false);
   };
+
   const onToggleFavorite = async (e) => {
     e.preventDefault(); e.stopPropagation();
     try {
@@ -79,6 +138,7 @@ export const RoomCard = ({
       console.error("Favorite toggle error:", err);
     }
   };
+
   const onBook = (e) => {
     e.preventDefault(); e.stopPropagation();
     if (room.availability) navigate(`/booking/${room.id}`);
@@ -90,29 +150,29 @@ export const RoomCard = ({
       <div className="image-box">
         <Image
           preview={false}
+          className="room-image"
           style={{ width: "100%", height: "100%" }}
-          imgStyle={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-            borderRadius: "12px 12px 0 0",
-          }}
           src={`${IMAGE_URL}/rooms/${room.image}`}
           alt={room.name}
         />
       </div>
 
-      {/* Pills (đặt TRỰC TIẾP trong room-card, không nằm trong image-box) */}
-      <div className="room-pill pill-top">{room.type}</div>
-      <div className="room-pill pill-middle">{room.name}</div>
+      {/* Pills */}
+      {/* Pill trên: tên khách sạn */}
+      <div className="room-pill pill-top">{hotelName}</div>
+      {/* Pill giữa (ranh giới ảnh + nền): type room */}
+      <div className="room-pill pill-middle">{room.type}</div>
 
       {/* Body */}
       <div className="room-card-body">
+        {/* Tiêu đề: room name */}
         <div className="text-center" style={{ padding: "8px 12px 4px" }}>
-          <h5 className="primarycolor mb-1 room-title">{room.name}</h5>
+          <h5 className="primarycolor mb-1 room-title">
+            {room.name || "\u00A0"}
+          </h5>
         </div>
 
+        {/* Info lines: đồng bộ màu qua .room-info-line */}
         <div className="room-info d-flex flex-column align-items-center">
           <div className="d-flex justify-content-center">
             <p className="mb-1 d-flex align-items-center room-info-line">
@@ -128,6 +188,7 @@ export const RoomCard = ({
           </div>
         </div>
 
+        {/* Actions */}
         <div className="room-actions d-flex justify-content-center align-items-center text-primary">
           <span
             role="button"
