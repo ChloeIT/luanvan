@@ -9,9 +9,9 @@ export const MainHotel = () => {
   const { hotels } = useSelector((state) => state.hotel);
   const [data, setData] = useState([]);
 
-  useEffect(()=> {
+  useEffect(() => {
     setData(hotels)
-  },[hotels])
+  }, [hotels])
   return (
     <>
       <Discount />
@@ -19,11 +19,14 @@ export const MainHotel = () => {
       <div className="container-xxl py-5">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h6 className=" text-2xl text-center text-primary px-3">
-              List Hotel
-            </h6>
-            <h1 className="mb-5">For every need, every budget!</h1>
+            <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+              <span className="divider" />
+              <h6 className="heading-text text-2xl text-primary text-uppercase">List Hotel</h6>
+              <span className="divider" />
+            </div>
+            <h1 className="mb-5">Your hotel, your way!</h1>
           </div>
+
           <div className="row g-4">
             {data &&
               data.map((hotel, index) => {

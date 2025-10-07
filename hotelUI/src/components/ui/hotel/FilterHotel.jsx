@@ -17,11 +17,14 @@ export const FilterHotel = ({ hotels, setHotels }) => {
     <div className="container-xxl py-5 destination">
       <div className="container">
         <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-          <h6 className=" text-2xl text-center text-primary px-3">
-            Filter
-          </h6>
+          <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+            <span className="divider" />
+            <h6 className="heading-text text-2xl text-primary">Filter</h6>
+            <span className="divider" />
+          </div>
           <h1 className="mb-5">Your hotel, your way!</h1>
         </div>
+
         <form onSubmit={(e) => e.preventDefault()}>
           <div className="row g-3">
             <div className="">

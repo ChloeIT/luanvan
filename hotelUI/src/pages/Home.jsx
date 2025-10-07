@@ -9,7 +9,7 @@ export const Home = () => {
   const { hotels } = useSelector((state) => state.hotel);
   const [popularHotels, setPopularHotels] = useState([]);
   const { user } = useSelector((state) => state.auth);
-  
+
   useEffect(() => {
     const data = hotels.filter((hotel) => hotel.rating >= 4);
     setPopularHotels(data);
@@ -29,9 +29,12 @@ export const Home = () => {
               </div>
             </div>
             <div className="col-lg-6 wow fadeInUp" data-wow-delay="0.3s">
-              <h6 className=" text-2xl text-start text-primary pe-3">
-                About Us
-              </h6>
+              <div className="heading-line" style={{ "--heading-gap": "12px" }}>
+                <span className="divider" style={{ "--w": "48px", "--h": "2px", "--alpha": ".45" }} />
+                <h6 className="heading-text text-2xl text-primary text-uppercase">About Us</h6>
+                <span className="divider" style={{ "--w": "48px", "--h": "2px", "--alpha": ".45" }} />
+              </div>
+
               <h1 className="mb-4">
                 Welcome to <span className="text-primary">SB Hotel</span>
               </h1>
@@ -89,7 +92,7 @@ export const Home = () => {
                 Read More
               </a> */}
             </div>
-            
+
           </div>
         </div>
       </div>
@@ -97,9 +100,12 @@ export const Home = () => {
       <div className="container-xxl py-5 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h6 className=" text-2xl text-center text-primary px-3">
-              Discount
-            </h6>
+            <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+              <span className="divider" />
+              <h6 className="heading-text text-2xl text-primary text-uppercase">Discount</h6>
+              <span className="divider" />
+            </div>
+
             <h1 className="mb-5">Save big today!</h1>
           </div>
           <div className="row g-3">
@@ -185,9 +191,12 @@ export const Home = () => {
       <div className="container-xxl py-5 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <h6 className=" text-2xl text-center text-primary px-3">
-              Hotel
-            </h6>
+            <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+              <span className="divider" />
+              <h6 className="heading-text text-2xl text-primary text-uppercase">Hotel</h6>
+              <span className="divider" />
+            </div>
+
             <h1 className="mb-5">Popular Hotel!</h1>
           </div>
           <div className="row g-4">
