@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Image } from "antd";
 import { about, hotel1, hotel2, hotel3, hotel4 } from "../assets";
-import { FaArrowRight, FaMapMarkerAlt, FaMapPin } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { HotelCard } from "../components/ui/hotel/HotelCard";
 import { Link } from "react-router-dom";
+
 export const Home = () => {
   const { hotels } = useSelector((state) => state.hotel);
   const [popularHotels, setPopularHotels] = useState([]);
@@ -17,111 +18,122 @@ export const Home = () => {
 
   return (
     <>
+      {/* ===== ABOUT ===== */}
       <div className="container-xxl py-5">
         <div className="container">
           <div className="row g-5">
-            <div
-              className="col-lg-6 wow fadeInUp min-h-96"
-              data-wow-delay="0.1s"
-            >
+            <div className="col-lg-6 wow fadeInUp min-h-96" data-wow-delay="0.1s">
               <div className="position-relative">
                 <Image src={about} alt="About Image" className="img-small" />
               </div>
             </div>
+
             <div className="col-lg-6 wow fadeInUp" data-wow-delay="0.3s">
               <div className="heading-line" style={{ "--heading-gap": "12px" }}>
-                <span className="divider" style={{ "--w": "48px", "--h": "2px", "--alpha": ".45" }} />
-                <h6 className="heading-text text-2xl text-primary text-uppercase">About Us</h6>
-                <span className="divider" style={{ "--w": "48px", "--h": "2px", "--alpha": ".45" }} />
+                <h6 className="heading-text text-2xl text-primary text-uppercase">
+                  About Us
+                </h6>
+
+                {/* 2 gạch bên phải – gạch dài hơn */}
+                <span
+                  style={{
+                    display: "grid",
+                    justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
+                    gap: "6px",
+                    marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                  }}
+                >
+                  <span className="divider" style={{ "--w": "150px" }} />
+                  <span className="divider" style={{ "--w": "100px", "--alpha": .60 }} />
+                </span>
               </div>
+
 
               <h1 className="mb-4">
                 Welcome to <span className="text-primary">SB Hotel</span>
               </h1>
+
               {user ? (
                 <p>Hello {user?.fullName}</p>
               ) : (
                 <Link to="/login">Please log in to see your information.</Link>
               )}
+
               <p className="mb-4">
                 Welcome to our hotel search and booking page!
               </p>
               <p className="mb-4">
-                Searching and booking hotels has never been easier. With a
-                convenient booking system and extensive hotel database, we will
-                help you find the ideal destination for all your trips. Explore
-                and experience with us today!
+                Searching and booking hotels has never been easier. With a convenient booking system and extensive hotel database, we’ll help you find the ideal destination for all your trips.
               </p>
-              <div className="row gy-2 gx-4 mb-4">
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" />
-                    24/7 Service
-                  </p>
-                </div>
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" />
-                    Handpicked Hotels
-                  </p>
-                </div>
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" /> 5 Star Accommodations
-                  </p>
-                </div>
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" /> Provide enough information
-                  </p>
-                </div>
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" />
-                    Promotions and offers
-                  </p>
-                </div>
-                <div className="col-sm-6">
-                  <p className="mb-0 flex">
-                    <FaArrowRight className="mx-2" />
-                    Upgrade membership
-                  </p>
-                </div>
-              </div>
-              {/* <a className="btn btn-primary py-3 px-5 mt-2" href="">
-                Read More
-              </a> */}
-            </div>
 
+              <div className="row gy-2 gx-4 mb-4">
+                {[
+                  "24/7 Service",
+                  "Handpicked Hotels",
+                  "5 Star Accommodations",
+                  "Provide enough information",
+                  "Promotions and offers",
+                  "Upgrade membership",
+                ].map((item, i) => (
+                  <div className="col-sm-6" key={i}>
+                    <p className="mb-0 flex">
+                      <FaArrowRight className="mx-2" />
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* ===== DISCOUNT ===== */}
       <div className="container-xxl py-5 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
             <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-              <span className="divider" />
-              <h6 className="heading-text text-2xl text-primary text-uppercase">Discount</h6>
-              <span className="divider" />
+              {/* 2 gạch bên trái – căn lề phải */}
+              <span
+                style={{
+                  display: "grid",
+                  justifyItems: "end", // 👈 gạch thẳng hàng mép phải chữ
+                  gap: "6px",
+                  marginRight: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                }}
+              >
+                <span className="divider" style={{ "--w": "120px" }} />
+                <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              </span>
+
+              <h6 className="heading-text text-3xl text-primary text-uppercase">
+                Discount
+              </h6>
+
+              {/* 2 gạch bên phải */}
+              <span
+                style={{
+                  display: "grid",
+                  justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
+                  gap: "6px",
+                  marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                }}
+              >
+                <span className="divider" style={{ "--w": "120px" }} />
+                <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              </span>
             </div>
 
             <h1 className="mb-5">Save big today!</h1>
           </div>
+
           <div className="row g-3">
             <div className="col-lg-7 col-md-6">
               <div className="row g-3">
-                <div
-                  className="col-lg-12 col-md-12 wow zoomIn"
-                  data-wow-delay="0.1s"
-                >
+                {/* Big Discount */}
+                <div className="col-lg-12 col-md-12 wow zoomIn" data-wow-delay="0.1s">
                   <div className="position-relative d-block overflow-hidden">
-                    <Image
-                      src={hotel1}
-                      alt="des-1 Image"
-                      width="860"
-                      height="200"
-                    />
+                    <Image src={hotel1} alt="des-1 Image" width="860" height="200" />
                     <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
                       30% OFF
                     </div>
@@ -130,17 +142,11 @@ export const Home = () => {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="col-lg-6 col-md-12 wow zoomIn"
-                  data-wow-delay="0.3s"
-                >
+
+                {/* Two Smaller */}
+                <div className="col-lg-6 col-md-12 wow zoomIn" data-wow-delay="0.3s">
                   <div className="position-relative d-block overflow-hidden">
-                    <Image
-                      src={hotel2}
-                      alt="des-1 mekong"
-                      width="380"
-                      height="200"
-                    />
+                    <Image src={hotel2} alt="MeKong" width="380" height="200" />
                     <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
                       25% OFF
                     </div>
@@ -149,17 +155,10 @@ export const Home = () => {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="col-lg-6 col-md-12 wow zoomIn"
-                  data-wow-delay="0.5s"
-                >
+
+                <div className="col-lg-6 col-md-12 wow zoomIn" data-wow-delay="0.5s">
                   <div className="position-relative d-block overflow-hidden">
-                    <Image
-                      src={hotel3}
-                      alt="thinh vuong"
-                      width="380"
-                      height="200"
-                    />
+                    <Image src={hotel3} alt="Thịnh Vượng" width="380" height="200" />
                     <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
                       35% OFF
                     </div>
@@ -170,12 +169,11 @@ export const Home = () => {
                 </div>
               </div>
             </div>
-            <div
-              className="col-lg-5 col-md-6 wow zoomIn min-h-80"
-              data-wow-delay="0.7s"
-            >
+
+            {/* Right Large */}
+            <div className="col-lg-5 col-md-6 wow zoomIn min-h-80" data-wow-delay="0.7s">
               <div className="position-relative d-block h-100 overflow-hidden">
-                <Image src={hotel4} alt="tay do" width="500" height="415" />
+                <Image src={hotel4} alt="Tây Đô" width="500" height="415" />
                 <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
                   20% OFF
                 </div>
@@ -188,21 +186,49 @@ export const Home = () => {
         </div>
       </div>
 
+      {/* ===== HOTEL ===== */}
       <div className="container-xxl py-5 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
             <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-              <span className="divider" />
-              <h6 className="heading-text text-2xl text-primary text-uppercase">Hotel</h6>
-              <span className="divider" />
+              {/* 2 gạch bên trái – căn lề phải */}
+              <span
+                style={{
+                  display: "grid",
+                  justifyItems: "end", // 👈 gạch thẳng hàng mép phải chữ
+                  gap: "6px",
+                  marginRight: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                }}
+              >
+                <span className="divider" style={{ "--w": "120px" }} />
+                <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              </span>
+
+              <h6 className="heading-text text-3xl text-primary text-uppercase">
+                Hotel
+              </h6>
+
+              {/* 2 gạch bên phải */}
+              <span
+                style={{
+                  display: "grid",
+                  justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
+                  gap: "6px",
+                  marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                }}
+              >
+                <span className="divider" style={{ "--w": "120px" }} />
+                <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              </span>
             </div>
 
             <h1 className="mb-5">Popular Hotel!</h1>
           </div>
+
           <div className="row g-4">
-            {popularHotels.map((hotel, index) => {
-              return <HotelCard hotel={hotel} key={index} />;
-            })}
+            {popularHotels.map((hotel, index) => (
+              <HotelCard hotel={hotel} key={index} />
+            ))}
           </div>
         </div>
       </div>

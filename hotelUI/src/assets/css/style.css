@@ -768,23 +768,21 @@
 }
 
 /* .hr-thick { border: 0; height: 3px; opacity: 1; border-radius: 2px;} */
-/* === Green Divider (final) === */
+/* === Green Divider (final) =============================================== */
 .divider{
-  --w: 60px;               /* length */
-  --h: 2px;                /* thickness */
-  --c: var(--primary);     /* color */
-  --r: 2px;                /* radius */
-  --alpha: .95;            /* opacity */
+  --w: 60px;          /* length */
+  --h: 2px;           /* thickness */
+  --c: var(--primary);
+  --r: 2px;           /* radius */
+  --alpha: .95;
 
-  display: inline-block;   /* hoặc block cũng được */
+  display: block;
   width: var(--w);
   height: var(--h);
   background: var(--c);
   border-radius: var(--r);
   opacity: var(--alpha);
-
-  /* QUAN TRỌNG: reset mọi margin cũ */
-  margin: 0;
+  margin: 0;          /* reset mọi margin mặc định */
 }
 
 /* nếu element là <hr> */
@@ -799,38 +797,35 @@ hr.divider{ border: 0; }
 /* nhạt màu */
 .divider--muted{ --alpha: .45; }
 
-/* 2 gạch xếp dọc – cho phép chỉnh gap & margin bằng biến */
+/* ========== Pair (2 gạch xếp dọc) ====================================== */
 .divider-pair{
   display: grid;
   justify-items: center;
-  gap: var(--pair-gap, 6px);          /* khoảng cách GIỮA 2 gạch */
-  margin-top: var(--pair-mt, 8px);    /* khoảng cách với CHỮ TRÊN (title) */
-  margin-bottom: var(--pair-mb, 12px);/* khoảng cách với CHỮ DƯỚI (đoạn mô tả) */
+  row-gap: var(--pair-gap, 4px);      /* khoảng cách GIỮA 2 gạch (mặc định gần nhau) */
+  margin-top: var(--pair-mt, 12px);   /* khoảng cách với CHỮ TRÊN */
+  margin-bottom: var(--pair-mb, 12px);/* khoảng cách với CHỮ DƯỚI */
 }
-
+.divider-pair .divider{
+  margin: 0 !important;               /* đảm bảo row-gap là nguồn duy nhất */
+}
 
 /* presets cho khoảng cách */
 .divider-pair--tight{    --pair-gap: 2px; }
 .divider-pair--tightest{ --pair-gap: 0px; }
 
-
-/* Gói chữ + 2 gạch cho heading */
+/* ========== Heading (chữ + 2 cụm gạch 2 bên) =========================== */
 .heading-line{
   display: inline-flex;
-  align-items: center;          /* can giữa theo chiều dọc */
+  align-items: center;
   gap: var(--heading-gap, 12px);
 }
-
-/* đảm bảo chữ không “đội” line-height */
 .heading-line .heading-text{
   margin: 0;
   line-height: 1;
 }
-
-/* gạch dùng riêng cho heading (có thể đổi nhanh độ dài/đậm) */
 .heading-line .divider{
-  --w: 64px;       /* độ dài gạch 2 bên */
-  --h: 2px;        /* độ dày */
-  --alpha: .45;    /* nhạt màu */
+  --w: 64px;
+  --h: 2px;
+  --alpha: .45;
   align-self: center;
 }

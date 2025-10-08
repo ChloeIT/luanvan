@@ -22,26 +22,48 @@ export const Booking = () => {
 
   // Style dùng lại cho cặp gạch: đổi số ở đây cho nhanh
   const pairStyle = {
-    "--pair-gap": "12px",   // khoảng cách giữa 2 gạch
-    rowGap: "12px",         // fallback nếu chưa có biến --pair-gap
-    marginTop: "22px",       // cách tiêu đề phía trên
-    marginBottom: "22px",   // cách đoạn mô tả phía dưới
+    "--pair-gap": "4px",   // khoảng cách giữa 2 gạch (gần nhau)
+    "--pair-mt": "14px",   // cách tiêu đề phía trên
+    "--pair-mb": "14px",   // cách đoạn mô tả phía dưới
   };
-
   return (
     <div className="container-xxl py-5">
       <div className="container">
 
-        {/* Title + 2 gạch hai bên */}
+        {/* Title + 4 gạch hai bên */}
         <div className="text-center pb-4 wow fadeInUp" data-wow-delay="0.1s">
           <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-            <span className="divider" />
-            <h6 className="heading-text text-2xl text-primary">Process</h6>
-            <span className="divider" />
-          </div>
+            {/* 2 gạch bên trái – căn lề phải */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "end", // 👈 gạch thẳng hàng mép phải chữ
+                gap: "6px",
+                marginRight: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+            </span>
 
+            <h6 className="heading-text text-3xl text-primary">Process</h6>
+
+            {/* 2 gạch bên phải */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
+                gap: "6px",
+                marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+            </span>
+          </div>
           <h1 className="mb-5">3 Easy Steps</h1>
         </div>
+
 
         {/* 3 ô – equal-height */}
         <div className="row gy-5 gx-4 justify-content-center align-items-stretch">
