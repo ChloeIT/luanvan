@@ -5,13 +5,13 @@ import { formatDateTime } from "./../../../utils/dateService";
 import { useNavigate } from "react-router-dom";
 
 export const BookingItem = ({ item }) => {
-  const today = new Date(); 
-  const todayFormatted = formatDateTime(today); 
-  const todayDate = today.toISOString().split("T")[0]; 
+  const today = new Date();
+  const todayFormatted = formatDateTime(today);
+  const todayDate = today.toISOString().split("T")[0];
 
   const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1); 
-  const tomorrowDate = tomorrow.toISOString().split("T")[0]; 
+  tomorrow.setDate(today.getDate() + 1);
+  const tomorrowDate = tomorrow.toISOString().split("T")[0];
 
   const [checkIn, setCheckIn] = useState(todayDate);
   const [checkOut, setCheckOut] = useState(tomorrowDate);
@@ -58,9 +58,47 @@ export const BookingItem = ({ item }) => {
 
   return (
     <div className="my-3">
-      <p className="text-4xl text-center text-primary items-center justify-center font-extrabold mt-6 ">
-        ROOM INFORMATION
-      </p>
+      {/* ===== Heading ===== */}
+      <div className="text-center mt-6 mb-4">
+        <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+          {/* 2 gạch bên trái */}
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "end",
+              gap: "6px",
+              marginRight: "2px",
+            }}
+          >
+            <span className="divider" style={{ "--w": "120px" }} />
+            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
+          </span>
+
+          <h6 className="heading-text text-3xl text-primary">
+            Booking
+          </h6>
+
+          {/* 2 gạch bên phải */}
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "start",
+              gap: "6px",
+              marginLeft: "2px",
+            }}
+          >
+            <span className="divider" style={{ "--w": "120px" }} />
+            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
+          </span>
+        </div>
+
+        {/* Subheading */}
+        <h1 className="mb-5" >
+          Room Information
+        </h1>
+      </div>
+
+
       <div className="flex space-x-3 justify-center items-center">
         <div>
           <Image width={200} src={`${IMAGE_URL}/rooms/${item.image}`} />

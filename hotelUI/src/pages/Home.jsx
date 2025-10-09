@@ -21,72 +21,92 @@ export const Home = () => {
       {/* ===== ABOUT ===== */}
       <div className="container-xxl py-5">
         <div className="container">
-          <div className="row g-5">
-            <div className="col-lg-6 wow fadeInUp min-h-96" data-wow-delay="0.1s">
-              <div className="position-relative">
-                <Image src={about} alt="About Image" className="img-small" />
+          {/* 👇 kéo hai cột cao bằng nhau */}
+          <div className="row g-5 align-items-stretch">
+            {/* LEFT: Image */}
+            <div className="col-lg-6 wow fadeInUp d-flex" data-wow-delay="0.1s">
+              <div className="position-relative w-100" style={{ maxHeight: 520, marginRight: "-32px" }}>
+                <Image
+                  src={about}
+                  alt="About Image"
+                  preview={false}
+                  style={{ width: "110%", height: 480, display: "block" }}
+                  imgStyle={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "6px",
+                  }}
+                />
               </div>
             </div>
 
-            <div className="col-lg-6 wow fadeInUp" data-wow-delay="0.3s">
-              <div className="heading-line" style={{ "--heading-gap": "12px" }}>
-                <h6 className="heading-text text-2xl text-primary text-uppercase">
-                  About Us
-                </h6>
+            {/* RIGHT: Content */}
+            <div className="col-lg-6 wow fadeInUp d-flex" data-wow-delay="0.3s">
+              {/* box này fill full chiều cao cột và căn giữa nội dung theo trục dọc */}
+              <div className="w-100 h-100 d-flex flex-column justify-content-center" style={{ minHeight: 380 }}>
+                <div className="heading-line" style={{ "--heading-gap": "12px" }}>
+                  <h6 className="heading-text text-2xl text-primary text-uppercase">
+                    About Us
+                  </h6>
+                  <span
+                    style={{
+                      display: "grid",
+                      justifyItems: "start",
+                      gap: "6px",
+                      marginLeft: "2px",
+                    }}
+                  >
+                    <span className="divider" style={{ "--w": "150px" }} />
+                    <span className="divider" style={{ "--w": "100px", "--alpha": 0.6 }} />
+                  </span>
+                </div>
 
-                {/* 2 gạch bên phải – gạch dài hơn */}
-                <span
-                  style={{
-                    display: "grid",
-                    justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
-                    gap: "6px",
-                    marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
-                  }}
-                >
-                  <span className="divider" style={{ "--w": "150px" }} />
-                  <span className="divider" style={{ "--w": "100px", "--alpha": .60 }} />
-                </span>
-              </div>
+                <h1 className="mb-4">
+                  Welcome to <span className="text-primary">SB Hotel</span>
+                </h1>
 
+                {user ? (
+                  <p>
+                    Hello,{" "}
+                    <span style={{ fontWeight: 900, color: "var(--primary)" }}>
+                      {user?.username}
+                    </span>
+                  </p>
+                ) : (
+                  <Link to="/login">Please log in to see your information.</Link>
+                )}
 
-              <h1 className="mb-4">
-                Welcome to <span className="text-primary">SB Hotel</span>
-              </h1>
+                <p className="mb-4">Welcome to our hotel search and booking page!</p>
+                <p className="mb-4">
+                  Searching and booking hotels has never been easier. With a convenient booking
+                  system and extensive hotel database, we’ll help you find the ideal destination
+                  for all your trips.
+                </p>
 
-              {user ? (
-                <p>Hello {user?.fullName}</p>
-              ) : (
-                <Link to="/login">Please log in to see your information.</Link>
-              )}
-
-              <p className="mb-4">
-                Welcome to our hotel search and booking page!
-              </p>
-              <p className="mb-4">
-                Searching and booking hotels has never been easier. With a convenient booking system and extensive hotel database, we’ll help you find the ideal destination for all your trips.
-              </p>
-
-              <div className="row gy-2 gx-4 mb-4">
-                {[
-                  "24/7 Service",
-                  "Handpicked Hotels",
-                  "5 Star Accommodations",
-                  "Provide enough information",
-                  "Promotions and offers",
-                  "Upgrade membership",
-                ].map((item, i) => (
-                  <div className="col-sm-6" key={i}>
-                    <p className="mb-0 flex">
-                      <FaArrowRight className="mx-2" />
-                      {item}
-                    </p>
-                  </div>
-                ))}
+                <div className="row gy-2 gx-4 mb-0">
+                  {[
+                    "24/7 Service",
+                    "Handpicked Hotels",
+                    "5 Star Accommodations",
+                    "Provide enough information",
+                    "Promotions and offers",
+                    "Upgrade membership",
+                  ].map((item, i) => (
+                    <div className="col-sm-6" key={i}>
+                      <p className="mb-0 d-flex align-items-start fw-bold">
+                        <FaArrowRight className="mx-2" style={{ color: "var(--primary)" }} />
+                        {item}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* ===== DISCOUNT ===== */}
       <div className="container-xxl py-5 destination">

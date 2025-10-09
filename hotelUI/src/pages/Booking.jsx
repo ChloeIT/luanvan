@@ -135,7 +135,11 @@ export const Booking = () => {
           </div>
         </div>
 
-        {roomBooking && <BookingItem item={roomBooking} />}
+        {roomBooking && (
+          <div style={{ marginTop: "72px" }}>  {/* tăng/giảm 56–96px tùy mắt */}
+            <BookingItem item={roomBooking} />
+          </div>
+        )}
       </div>
     </div>
   );
