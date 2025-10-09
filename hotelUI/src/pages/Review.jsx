@@ -89,7 +89,7 @@ export const Review = () => {
               <span className="divider" style={{ "--w": "120px" }} />
               <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
             </span>
-            <h6 className="heading-text text-3xl text-primary">Review</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">Review</h6>
 
             {/* 2 gạch bên phải */}
             <span

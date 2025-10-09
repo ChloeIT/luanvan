@@ -31,7 +31,7 @@ export const FilterHotel = ({ hotels, setHotels }) => {
               <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary">Filter</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">Filter</h6>
 
             {/* 2 gạch bên phải */}
             <span

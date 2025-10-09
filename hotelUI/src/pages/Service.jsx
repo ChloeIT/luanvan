@@ -82,7 +82,7 @@ export const Service = () => {
               <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary">Services</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">Services</h6>
 
             {/* 2 gạch bên phải */}
             <span

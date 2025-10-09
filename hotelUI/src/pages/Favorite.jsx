@@ -25,7 +25,7 @@ export const Favorite = () => {
               <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary">My Favorite</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">My Favorite</h6>
 
             {/* 2 gạch bên phải */}
             <span

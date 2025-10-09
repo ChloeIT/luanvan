@@ -4,6 +4,7 @@
       --secondary: #FE8800;
       --light: #F5F5F5;
       --dark: #14141F;
+      --card-yellow: #FDFF7C; 
   }
 
   .fw-medium {
@@ -457,7 +458,7 @@
     border-radius: 12px;
     overflow: hidden;        
     box-shadow: 0 0 20px rgba(0,0,0,.05);
-    background: #fdff7c;
+    background: var(--card-yellow);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
@@ -484,7 +485,7 @@
     padding: 16px 14px 18px;
     display: grid;
     grid-template-rows: 56px 72px 28px; 
-    
+    background: var(--card-yellow);
     text-align: center;
   }
 
@@ -577,7 +578,7 @@
   display: flex;
   flex-direction: column;
   height: var(--card-h);
-  background: #fdff7c;
+  background: var(--card-yellow);
   border-radius: 12px;
   overflow: visible;
   padding: 0;

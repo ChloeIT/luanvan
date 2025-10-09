@@ -21,7 +21,7 @@ export const Contact = () => {
               <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary">
+            <h6 className="heading-text text-3xl text-primary text-uppercase">
               We are here to help you!
             </h6>
 

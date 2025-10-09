@@ -46,7 +46,7 @@ export const Booking = () => {
               <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary">Process</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">Process</h6>
 
             {/* 2 gạch bên phải */}
             <span
