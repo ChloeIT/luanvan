@@ -1,4 +1,3 @@
-// src/pages/HotelDetail.jsx
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
@@ -8,7 +7,7 @@ import { FaStar } from "react-icons/fa6";
 import { IoLocation } from "react-icons/io5";
 import { FaConciergeBell, FaHeadset, FaInfoCircle } from "react-icons/fa";
 
-export default function HotelDetail({
+export function HotelDetail({
   rooms: roomsProp,
   hotel: hotelProp,
   showHeader = true,
