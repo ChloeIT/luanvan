@@ -1,36 +1,32 @@
 import React from "react";
 
 export const PaypalInforOrder = ({ order }) => {
+  const price = Number(order?.totalPrice || 0);
+  const vat = Math.round(price * 0.1);
+  const total = price + vat;
+
+  const row = "py-2 grid grid-cols-[1fr,auto] items-center";
+  const label = "text-sm text-gray-700";
+  const amount = "text-sm text-gray-900 font-semibold";
+  const totalLabel = "text-sm md:text-base font-bold text-gray-900 uppercase";
+  const totalAmount = "text-lg md:text-xl font-extrabold text-gray-900";
 
   return (
-    <>
-      <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800 mb-4">
-        Payment
-      </h3>
-      <div className="flex justify-between border-b border-gray-200 pb-2 pt-4">
-        <p className="text-base dark:text-white leading-4 text-gray-800">
-          Reservation upgrade fee
-        </p>
-        <p className="text-base dark:text-gray-300 leading-4 text-gray-600">
-          {order.totalPrice}$
-        </p>
+    <div className="divide-y">
+      <div className={row}>
+        <span className={label}>Reservation upgrade fee</span>
+        <span className={amount}>{price}$</span>
       </div>
-      <div className="flex justify-between border-b border-gray-200 pb-2 pt-4">
-        <p className="text-base dark:text-white leading-4 text-gray-800">
-          VAT(10%)
-        </p>
-        <p className="text-base dark:text-gray-300 leading-4 text-gray-600">
-          {(order.totalPrice * 10) / 100}$
-        </p>
+
+      <div className={row}>
+        <span className={label}>VAT (10%)</span>
+        <span className={amount}>{vat}$</span>
       </div>
-      <div className="flex justify-between border-b border-gray-200 pb-2 pt-4">
-        <p className="text-base dark:text-white font-semibold leading-4 text-gray-800">
-          Total price
-        </p>
-        <p className="text-base dark:text-gray-300 font-semibold leading-4 text-gray-600">
-          {order.totalPrice + (order.totalPrice * 10) / 100}$
-        </p>
+
+      <div className="py-2 grid grid-cols-[1fr,auto] items-center">
+        <span className={totalLabel}>Total price</span>
+        <span className={totalAmount}>{total}$</span>
       </div>
-    </>
+    </div>
   );
 };
