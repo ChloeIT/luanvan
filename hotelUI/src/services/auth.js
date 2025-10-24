@@ -15,16 +15,22 @@ export const authServices = {
       password,
     });
   },
-  authHeader: () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = user.accessToken || user.stsTokenManager.accessToken;
-    if (user && user.accessToken) {
-      return {
-        Authorization: `Bearer ${token}`,
-      };
-    } else {
-      return {};
+    authHeader: () => {
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem("user"));
+    } catch (_) {
+      user = null;
     }
+    const token =
+      user?.accessToken ??
+      user?.stsTokenManager?.accessToken ??
+      null;
+
+    // chỉ trả header nếu có token
+    return token && String(token).trim()
+      ? { Authorization: `Bearer ${token}` }
+      : {};
   },
   logout: () => {
     localStorage.removeItem("user");

@@ -1,11 +1,147 @@
-  /********** Template CSS **********/
-  :root {
-      --primary: #86B817;
-      --secondary: #FE8800;
-      --light: #F5F5F5;
-      --dark: #14141F;
-      --card-yellow: #FDFF7C; 
-  }
+/********** THEME VARIABLES **********/
+:root {
+  --primary: #86B817;
+  --secondary: #FE8800;
+  --light: #F5F5F5;
+  --dark: #14141F;
+  --card-yellow: #FDFF7C;
+
+  /* Light – Global */
+  --bg: #F7FAD9;
+  --surface: #ffffff;
+  --surface-2: #f3f5e8;
+  --text: #1b1b1b;
+  --muted: #5c6b57;
+
+  /* Light – Table */
+  --tbl-card-bg: #fff;
+  --tbl-header-bg: rgba(253,255,124,.92);
+  --tbl-row-bg: #fff;
+  --tbl-row-hover: rgba(253,255,124,.35);
+  --tbl-text: #333;
+  --tbl-row-border: rgba(0,0,0,.06);
+  --tbl-header-border: rgba(0,0,0,.08);
+
+  /* Light – Selected */
+  --tbl-row-selected: rgba(253,255,124,.55);
+  --tbl-row-selected-hover: rgba(253,255,124,.75);
+}
+
+/********** DARK MODE OVERRIDE **********/
+[data-theme="dark"] {
+  --bg: #0f160d;
+  --surface: #111a12;
+  --surface-2: #1a2216;
+  --text: #ecffe6;
+  --muted: #a6c39a;
+  --card-yellow: #273118;
+
+  /* Dark – Table */
+  --tbl-card-bg: #111a12;
+  --tbl-header-bg: rgba(134,184,23,.55);
+  --tbl-row-bg: #0c130c;
+  --tbl-row-hover: #3a472f;
+  --tbl-text: #ecffe6;
+  --tbl-row-border: rgba(255,255,255,.10);
+  --tbl-header-border: rgba(255,255,255,.18);
+
+  /* Dark – Selected */
+  --tbl-row-selected: #18220f;
+  --tbl-row-selected-hover: #1f2b12;
+}
+
+/********** GLOBAL APPLY **********/
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background .25s ease, color .25s ease;
+}
+
+.themed-card      { background: var(--card-yellow) !important; color: var(--text) !important; }
+.themed-surface   { background: var(--surface)    !important; color: var(--text) !important; }
+.themed-surface-2 { background: var(--surface-2)  !important; color: var(--text) !important; }
+
+/********** DARK/LIGHT SWITCH **********/
+.theme-switch {
+  position: relative;
+  width: 50px; height: 28px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: background .2s ease;
+}
+.theme-switch .knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: #fff;
+  transform: translateX(0);
+  transition: transform .2s ease;
+}
+.theme-switch[data-ison="true"] .knob { transform: translateX(22px); }
+
+/********** THEMED TABLE (Dùng chung) **********/
+.themed-table {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  background: var(--tbl-card-bg) !important;
+  color: var(--tbl-text) !important;
+}
+
+.themed-table .ant-table-thead > tr > th {
+  background: var(--tbl-header-bg) !important;
+  color: var(--tbl-text) !important;
+  font-weight: 700;
+  border-bottom: 1px solid var(--tbl-header-border) !important;
+}
+
+.themed-table .ant-table-tbody > tr > td {
+  background: var(--tbl-row-bg) !important;
+  color: var(--tbl-text) !important;
+  border-bottom: 1px solid var(--tbl-row-border) !important;
+}
+
+.themed-table .ant-table-tbody > tr:hover > td {
+  background: var(--tbl-row-hover) !important;
+}
+
+/* Row selected */
+.themed-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--tbl-row-selected) !important;
+}
+.themed-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: var(--tbl-row-selected-hover) !important;
+}
+.themed-table .ant-table-tbody > tr.ant-table-row-selected > td:first-child {
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+/* Pagination text */
+.themed-table .ant-pagination,
+.themed-table .ant-pagination-item,
+.themed-table .ant-pagination-item a {
+  color: var(--tbl-text) !important;
+}
+
+/* Center helper */
+.themed-table.themed-table--center .ant-table-thead > tr > th,
+.themed-table.themed-table--center .ant-table-tbody > tr > td {
+  text-align: center;
+}
+
+/* Dark tweaks cho link & tag */
+[data-theme="dark"] .themed-table td a {
+  color: #b5ff9f !important;
+}
+[data-theme="dark"] .themed-table .ant-tag {
+  color: #eaffde !important;
+  border-color: rgba(134,184,23,.6) !important;
+  background: rgba(134,184,23,.18) !important;
+}
+
+
+
+
 
   .fw-medium {
       font-weight: 600 !important;
@@ -830,3 +966,5 @@ hr.divider{ border: 0; }
   --alpha: .45;
   align-self: center;
 }
+
+
