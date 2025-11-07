@@ -10,7 +10,7 @@ export const Home = () => {
   const { hotels } = useSelector((state) => state.hotel);
   const [popularHotels, setPopularHotels] = useState([]);
   const { user } = useSelector((state) => state.auth);
-
+  console.log(user)
   useEffect(() => {
     const data = hotels.filter((hotel) => hotel.rating >= 4);
     setPopularHotels(data);
@@ -70,7 +70,7 @@ export const Home = () => {
                   <p>
                     Hello,{" "}
                     <span style={{ fontWeight: 900, color: "var(--primary)" }}>
-                      {user?.username}
+                      {user?.fullName}
                     </span>
                   </p>
                 ) : (

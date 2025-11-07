@@ -62,8 +62,10 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
       formData.append("gender", newUser.gender);
       formData.append("address", newUser.address);
       formData.append("file", file);
-      roles.forEach((role) => formData.append("roles", role));
-
+      // console.log(roles)
+      // roles.forEach((role) => formData.append("roles", role));
+      formData.append("roles", JSON.stringify(roles));
+      console.log(formData.get("roles"))
       const response = await userServices.create(formData); // Gửi formData với file
       setIsModalAddVisible(false);
       // setFullname();

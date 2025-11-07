@@ -18,6 +18,8 @@ export const hotelServices = {
     });
   },
   create: (formData) => {
+    const data = Object.fromEntries(formData.entries());
+    console.log(data);
     return axios.post(API_URL + "/api/hotel/create", formData, {
       headers: {
         "Content-Type": "multipart/form-data",

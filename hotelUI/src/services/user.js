@@ -28,21 +28,25 @@ export const userServices = {
 
   // DÙNG FormData, để Axios tự set Content-Type + boundary
   create: (data) => {
+    const final_data = Object.fromEntries(data.entries());
     const fd = new FormData();
-    fd.append("fullName", data.fullName ?? "");
-    fd.append("phone", String(data.phone ?? ""));     // backend parseInt → gửi chuỗi số
-    fd.append("email", data.email ?? "");
-    fd.append("username", data.username ?? "");
-    fd.append("password", data.password ?? "");
-    fd.append("gender", data.gender ?? "");
-    fd.append("address", data.address ?? "");
-    (data.roles ?? []).forEach((r) => fd.append("roles", String(r).toLowerCase()));
+    fd.append("fullName", final_data.fullName ?? "");
+    fd.append("phone", String(final_data.phone ?? ""));     // backend parseInt → gửi chuỗi số
+    fd.append("email", final_data.email ?? "");
+    fd.append("username", final_data.username ?? "");
+    fd.append("password", final_data.password ?? "");
+    fd.append("gender", final_data.gender ?? "");
+    fd.append("address", final_data.address ?? "");
+    console.log(final_data.roles)
+    const roles = JSON.parse(final_data.roles || "[]");
 
+    roles.forEach((r) => fd.append("roles", r));
+    const debug_data = Object.fromEntries(data.entries());
     // file là bắt buộc theo backend bạn gửi
-    if (data.file instanceof File) {
-      fd.append("file", data.file);   // KEY PHẢI LÀ "file"
+    if (final_data.file instanceof File) {
+      fd.append("file", final_data.file);   // KEY PHẢI LÀ "file"
     }
-
+    console.log(auth())
     return axios.post(`${API_URL}/api/user/create`, fd, {
       headers: { ...auth() },         // KHÔNG set Content-Type ở đây
     });
