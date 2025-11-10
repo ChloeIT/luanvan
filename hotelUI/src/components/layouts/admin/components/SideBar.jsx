@@ -1,62 +1,70 @@
 // src/components/layouts/admin/Sidebar.jsx
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { HiOutlineMenu } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
+import { IoArrowBack } from "react-icons/io5";
 import { routeAdmin } from "../../../../contant/linkadmin";
 import DarkModeToggle from "@/components/common/DarkModeToggle";
 
-const BrandTitle = () => (
-    <div
-        role="heading"
-        aria-level={2}
-        style={{
-            fontFamily: "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
-            fontWeight: 900,               // đậm nhất
-            fontSize: "34px",              // to rõ rệt
-            lineHeight: 1.05,
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-            textAlign: "center",
-            color: "#fff",
-            textShadow: "0 0 6px rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.35)",
-            marginBottom: "0.75rem",
-        }}
+const BackHome = ({ className = "" }) => (
+    <Link
+        to="/"
+        className={[
+            "flex items-center justify-center p-2 rounded-md",
+            "text-white/90 hover:text-white hover:bg-white/15 transition-colors",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+            className,
+        ].join(" ")}
+        aria-label="Back to Home"
     >
-        SB HOTEL
-    </div>
+        <IoArrowBack className="w-5 h-5" />
+    </Link>
 );
 
-const NavLinks = ({ handleClick }) => {
-    return (
-        <nav className="mt-6" aria-label="Admin navigation">
-            {routeAdmin.map((item) => (
-                <NavLink
-                    key={item.name}
-                    to={item.path}
-                    end
-                    onClick={() => handleClick && handleClick()}
-                    className={({ isActive }) =>
-                        [
-                            "flex items-center gap-2 px-3 py-2 my-2 rounded-md text-sm font-medium transition-colors",
-                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-                            isActive
-                                ? "bg-white/15 text-white"
-                                : "text-white/85 hover:text-white hover:bg-white/10",
-                        ].join(" ")
-                    }
-                >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    <span className="truncate">{item.name}</span>
-                </NavLink>
-            ))}
-        </nav>
-    );
-};
+const NavLinks = ({ handleClick }) => (
+    <nav className="mt-4" aria-label="Admin navigation">
+        {routeAdmin.map((item) => (
+            <NavLink
+                key={item.name}
+                to={item.path}
+                end
+                onClick={() => handleClick && handleClick()}
+                className={({ isActive }) =>
+                    [
+                        "flex items-center gap-2 px-3 py-2 my-2 rounded-md text-sm font-medium transition-colors",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+                        isActive
+                            ? "bg-white/15 text-white"
+                            : "text-white/85 hover:text-white hover:bg-white/10",
+                    ].join(" ")
+                }
+            >
+                <item.icon className="w-5 h-5 shrink-0" />
+                <span className="truncate">{item.name}</span>
+            </NavLink>
+        ))}
+    </nav>
+);
 
 export const Sidebar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobile = () => setMobileMenuOpen(false);
+
+    // Style chữ to + vàng + 1 dòng
+    const brandStyle = {
+        fontFamily:
+            "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+        fontWeight: 900,
+        fontSize: "34px",
+        lineHeight: 1.05,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        whiteSpace: "nowrap", // luôn 1 dòng
+        color: "#FFFFFF", // vàng
+        textShadow:
+            "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
+    };
 
     return (
         <>
@@ -67,8 +75,11 @@ export const Sidebar = () => {
                 role="complementary"
                 aria-label="Sidebar"
             >
-                {/* ĐÃ SỬA: tiêu đề desktop */}
-                <BrandTitle />
+                {/* Hàng đầu: mũi tên + SB HOTEL trên 1 dòng */}
+                <div className="flex items-center gap-2 mb-3">
+                    <BackHome className="!my-0" />
+                    <div style={brandStyle}>SB HOTEL</div>
+                </div>
 
                 <NavLinks />
 
@@ -113,8 +124,11 @@ export const Sidebar = () => {
                 aria-modal="true"
                 aria-label="Mobile menu"
             >
-                {/* ĐÃ SỬA: tiêu đề mobile */}
-                <BrandTitle />
+                {/* Hàng đầu mobile: mũi tên + SB HOTEL */}
+                <div className="flex items-center gap-2 mb-3">
+                    <BackHome className="!my-0" />
+                    <div style={brandStyle}>SB HOTEL</div>
+                </div>
 
                 <NavLinks handleClick={closeMobile} />
 

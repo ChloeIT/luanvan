@@ -28,16 +28,34 @@ export const Header = () => {
     authServices.logout();
   };
 
+  // ...inside Header component
+  const isAdmin =
+    Array.isArray(user?.roles) &&
+    user.roles.some((r) => r === "ROLE_ADMIN" || r === "ROLE_MODERATOR");
+
   const items = [
     {
-      key: "1",
+      key: "profile",
       label: <Link to="/profile">Profile</Link>,
     },
+    ...(isAdmin
+      ? [
+        {
+          key: "admin",
+          label: <Link to="/admin">Admin</Link>,
+        },
+      ]
+      : []),
     {
-      key: "2",
-      label: <Link onClick={handleLogOut}>Logout</Link>,
+      key: "logout",
+      label: (
+        <span onClick={handleLogOut} role="button">
+          Logout
+        </span>
+      ),
     },
   ];
+
 
   const clickMenu = () => {
     setOpenToggle((prev) => !prev); // Correctly toggle state
