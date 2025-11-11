@@ -28,15 +28,15 @@ export const Profile = () => {
   const [previewImage, setPreviewImage] = useState("");
 
   const fullnameInputRef = useRef(null);
-  const AVATAR_SIZE = 132; // kích thước avatar
+  const AVATAR_SIZE = 132; // px
 
-  // Helpers
+  // helpers
   const getBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result);
-      reader.onerror = (err) => reject(err);
+      reader.onerror = (e) => reject(e);
     });
 
   const toIsoDate = (raw) => {
@@ -49,7 +49,7 @@ export const Profile = () => {
     }
   };
 
-  // Đồng bộ user -> form
+  // sync user -> form
   useEffect(() => {
     if (!user) return;
     setFullName(user?.fullName || "");
@@ -60,7 +60,7 @@ export const Profile = () => {
     setGender(user?.gender || "");
     setBirthDate(toIsoDate(user?.birthDate));
 
-    const ts = Date.now(); // cache-buster
+    const ts = Date.now();
     setFileList(
       user?.image
         ? [
@@ -75,7 +75,6 @@ export const Profile = () => {
     );
   }, [user, IMAGES_URL]);
 
-  // Actions
   const handleChangeInfo = () => {
     setChangeInfo(true);
     setTimeout(() => fullnameInputRef.current?.focus(), 0);
@@ -107,13 +106,24 @@ export const Profile = () => {
     setChangeInfo(false);
   };
 
-  const onUploadChange = ({ fileList: newList }) => {
-    setFileList(newList.slice(-1)); // chỉ giữ 1 ảnh
+  const onUploadChange = async ({ fileList: newList }) => {
+    const last = newList.slice(-1);
+    setFileList(last);
+    const file = last[0]?.originFileObj;
+    if (file) {
+      const b64 = await getBase64(file);
+      setPreviewImage(b64);
+    }
   };
 
-  const onPreview = async (file) => {
-    setPreviewImage(file.url || (await getBase64(file.originFileObj)));
-    setPreviewOpen(true);
+  const onPreview = async () => {
+    const url =
+      fileList[0]?.url ||
+      (fileList[0]?.originFileObj && (await getBase64(fileList[0].originFileObj)));
+    if (url) {
+      setPreviewImage(url);
+      setPreviewOpen(true);
+    }
   };
 
   const handleSaveInfo = async () => {
@@ -151,29 +161,55 @@ export const Profile = () => {
 
       message.success("Profile updated");
       setChangeInfo(false);
-    } catch (err) {
-      console.error("Failed to update profile:", err);
+    } catch (e) {
+      console.error(e);
       message.error("Update failed");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const isEditing = changeInfo;
+
+  // --------- inline styles để không cần CSS thêm ----------
+  const ringStyle = {
+    width: AVATAR_SIZE + 8,
+    height: AVATAR_SIZE + 8,
+    padding: 4,
+    borderRadius: "50%",
+    background: "#fff",
+    boxShadow: "0 0 0 2px rgba(0,0,0,.06)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  const circleStyle = {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: "50%",
+    overflow: "hidden",
+    position: "relative",
+    cursor: "pointer",
+  };
+  const imgStyle = {
+    width: "100%",
+    height: "100%",
+    display: "block",
+    objectFit: "cover",
+    objectPosition: "center",
+  };
+  const overlayStyle = {
+    position: "absolute",
+    inset: 0,
+    display: isEditing ? "flex" : "none",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(0,0,0,.25)",
+    pointerEvents: "none",
+  };
+
   return (
     <div className="text-center">
-      <style>
-        {`
-          .ant-upload-list-picture-circle .ant-upload-list-item,
-          .ant-upload-list-picture-circle .ant-upload-list-item-container,
-          .ant-upload-list-picture-circle .ant-upload-list-item-thumbnail,
-          .ant-upload-list-picture-circle .ant-upload-list-item-thumbnail img,
-          .ant-upload-wrapper .ant-upload-select {
-            width: ${AVATAR_SIZE}px !important;
-            height: ${AVATAR_SIZE}px !important;
-          }
-        `}
-      </style>
-
       {/* ===== Heading ===== */}
       <div className="text-center">
         <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
@@ -190,21 +226,54 @@ export const Profile = () => {
         <h1 className="mb-5">Personalize it in your own way!</h1>
       </div>
 
-      {/* ===== Upload avatar ===== */}
+      {/* ===== Upload avatar (không dùng picture-circle) ===== */}
       <div className="mb-4 flex justify-center">
         <Upload
-          listType="picture-circle"
-          fileList={fileList}
-          onChange={onUploadChange}
-          onPreview={onPreview}
-          maxCount={1}
+          showUploadList={false}
           beforeUpload={() => false}
+          onChange={isEditing ? onUploadChange : undefined}
+          openFileDialogOnClick={isEditing}
         >
-          {fileList.length >= 1 ? null : (
-            <button type="button" style={{ border: 0, background: "none" }}>
-              <div style={{ marginTop: 8 }}>Upload</div>
-            </button>
-          )}
+          <div
+            style={ringStyle}
+            onClick={(e) => {
+              if (!isEditing) {
+                e.preventDefault();
+                onPreview();
+              }
+            }}
+            aria-label={isEditing ? "Change avatar" : "Preview avatar"}
+          >
+            <div style={circleStyle}>
+              {fileList[0]?.url || fileList[0]?.originFileObj ? (
+                <img
+                  alt="avatar"
+                  src={
+                    fileList[0]?.url ||
+                    (fileList[0]?.originFileObj && URL.createObjectURL(fileList[0].originFileObj))
+                  }
+                  style={imgStyle}
+                />
+              ) : (
+                <div
+                  style={{
+                    ...imgStyle,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    color: "#666",
+                    background: "rgba(0,0,0,.04)",
+                  }}
+                >
+                  Upload
+                </div>
+              )}
+              <div style={overlayStyle}>
+                {/* overlay chỉ hiện khi đang Edit; không cần icon mắt của AntD */}
+              </div>
+            </div>
+          </div>
         </Upload>
       </div>
 
@@ -217,7 +286,7 @@ export const Profile = () => {
         ["Address", address, setAddress],
         ["Gender", gender, setGender],
         ["Birth Date", birthDate, setBirthDate, false, "date"],
-      ].map(([label, value, setter, readOnly, type], i) => (
+      ].map(([label, value, setter, forceReadOnly, type], i) => (
         <div className="mb-2" key={i}>
           <label
             className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto"
@@ -225,9 +294,10 @@ export const Profile = () => {
           >
             <span className="min-w-[100px] font-semibold">{label}</span>
             <input
+              ref={i === 1 ? fullnameInputRef : undefined}
               type={type || "text"}
               className="grow bg-transparent text-gray-800"
-              readOnly={readOnly}
+              readOnly={forceReadOnly || !changeInfo}
               value={value}
               onChange={(e) => setter(e.target.value)}
             />
@@ -238,10 +308,7 @@ export const Profile = () => {
       {/* ===== Actions ===== */}
       <div className="mt-4">
         {!changeInfo ? (
-          <button
-            className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2"
-            onClick={handleChangeInfo}
-          >
+          <button className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2" onClick={handleChangeInfo}>
             Edit Profile
           </button>
         ) : (
