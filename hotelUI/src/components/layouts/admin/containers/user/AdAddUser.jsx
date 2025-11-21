@@ -1,6 +1,6 @@
-import { Avatar, Input, Modal, Select, Upload } from "antd";
+import { Avatar, Input, Modal, Select, Upload, DatePicker } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { userServices } from "../../../../../services";
 import { userAction } from "../../../../../store/user/slice";
 import { BiPlusCircle } from "react-icons/bi";
@@ -16,24 +16,11 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
   const [address, setAddress] = useState("");
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState(null);        // 🔹 NEW
   const [fileList, setFileList] = useState([]);
 
   const { users } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-
-  // useEffect(() => {
-  //   if (itemACtion) {
-  //     setFullname();
-  //     setBirthDate(itemACtion.birthDate);
-  //     setEmail(itemACtion.email);
-  //     setUsername(itemACtion.username);
-  //     setAddress(itemACtion.address);
-  //     setGender(itemACtion.gender);
-  //     setImage(itemACtion.image);
-  //     setPhone(itemACtion.phone);
-  //     setRoles(itemACtion.roles);
-  //   }
-  // }, [itemACtion]);
 
   const handleModalOk = async () => {
     const newUser = {
@@ -45,8 +32,10 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
       gender,
       address,
       roles,
+      birthDate,
     };
-    const file = fileList[0]?.originFileObj; // Kiểm tra file có tồn tại không
+
+    const file = fileList[0]?.originFileObj;
     if (!file) {
       console.error("No file uploaded.");
       return;
@@ -62,24 +51,17 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
       formData.append("gender", newUser.gender);
       formData.append("address", newUser.address);
       formData.append("file", file);
-      // console.log(roles)
-      // roles.forEach((role) => formData.append("roles", role));
+      formData.append(
+        "birthDate",
+        newUser.birthDate ? newUser.birthDate.format("YYYY-MM-DD") : ""
+      ); // 🔹 chỉ ngày-tháng-năm
       formData.append("roles", JSON.stringify(roles));
-      console.log(formData.get("roles"))
-      const response = await userServices.create(formData); // Gửi formData với file
-      setIsModalAddVisible(false);
-      // setFullname();
-      // setEmail();
-      // setUsername();
-      // setAddress();
-      // setGender();
-      // setImage();
-      // setPhone();
-      // setRoles();
 
+      const response = await userServices.create(formData);
+      setIsModalAddVisible(false);
       dispatch(userAction.setUsers([...users, response.data]));
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Error creating user:", error);
     }
   };
 
@@ -108,7 +90,7 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
 
   return (
     <Modal
-      title="Edit User"
+      title="Add User"
       open={isModalAddVisible}
       onCancel={() => setIsModalAddVisible(false)}
       onOk={handleModalOk}
@@ -123,18 +105,22 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
           {fileList.length >= 8 ? null : uploadButton}
         </Upload>
       </div>
+
       <div className="flex items-center">
         <p className=" min-w-20">Full name </p>
         <Input value={fullname} onChange={(e) => setFullname(e.target.value)} />
       </div>
+
       <div className="flex items-center">
         <p className=" min-w-20">Username </p>
         <Input value={username} onChange={(e) => setUsername(e.target.value)} />
       </div>
+
       <div className="flex items-center">
         <p className=" min-w-20">Password </p>
         <Input value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
+
       <div className="flex items-center">
         <p className=" min-w-20">Email </p>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -144,14 +130,37 @@ export const AdAddUser = ({ isModalAddVisible, setIsModalAddVisible }) => {
         <p className=" min-w-20">Phone</p>
         <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
+
       <div className="flex items-center">
         <p className=" min-w-20">Address </p>
         <Input value={address} onChange={(e) => setAddress(e.target.value)} />
       </div>
+
+      {/* Birth Date giống EditUser */}
       <div className="flex items-center">
-        <p className=" min-w-20">Gender </p>
-        <Input value={gender} onChange={(e) => setGender(e.target.value)} />
+        <p className="min-w-20">Birth date</p>
+        <DatePicker
+          format="YYYY-MM-DD"
+          value={birthDate}
+          onChange={setBirthDate}
+          className="w-full"
+        />
       </div>
+
+      <div className="flex items-center">
+        <p className="min-w-20">Gender</p>
+        <Select
+          placeholder="Select gender"
+          value={gender}
+          onChange={(value) => setGender(value)}
+          style={{ width: "100%" }}
+        >
+          <Select.Option value="Male">Male</Select.Option>
+          <Select.Option value="Female">Female</Select.Option>
+        </Select>
+      </div>
+
+
       <div>
         <Select
           placeholder="select role"

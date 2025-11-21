@@ -116,11 +116,16 @@ export const AdUser = () => {
           align="center"
           render={(image) => (
             <Avatar
-              src={`${import.meta.env.VITE_IMAGE_URL}/users/${image}`}
-              alt={`image ${image}`}
+              src={
+                image
+                  ? `${import.meta.env.VITE_IMAGE_URL}/users/${image}`
+                  : undefined
+              }
+              alt={image ? `image ${image}` : "avatar"}
             />
           )}
         />
+
         <Column title="Username" dataIndex="username" key="username" align="center" />
         <Column title="Full Name" dataIndex="fullName" key="fullName" align="center" />
         <Column title="Gender" dataIndex="gender" key="gender" align="center" />
