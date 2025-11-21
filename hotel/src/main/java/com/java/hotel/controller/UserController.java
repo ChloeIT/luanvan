@@ -9,6 +9,7 @@ import com.java.hotel.service.StoreService;
 import com.java.hotel.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -56,6 +57,12 @@ public class UserController {
             @RequestParam String password,
             @RequestParam String gender,
             @RequestParam String address,
+
+            // nhận birthDate dạng "yyyy-MM-dd" từ FE, map sang java.util.Date
+            @RequestParam(required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd")
+            Date birthDate,
+
             @RequestParam List<String> roles,
             @RequestParam("file") MultipartFile file
     ) throws IOException {
@@ -69,7 +76,6 @@ public class UserController {
         Set<Role> roleSet = new HashSet<>();
 
         if (roles == null || roles.isEmpty()) {
-            // default ROLE_USER
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
             roleSet.add(userRole);
@@ -106,7 +112,11 @@ public class UserController {
         user.setAddress(address);
         user.setImage(newFilename);
 
-        // Save DB trước
+        // lưu birthDate nếu có
+        if (birthDate != null) {
+            user.setBirthDate(birthDate);
+        }
+
         User savedUser = userRepository.save(user);
 
         // Lưu file vào static/images/users
@@ -128,7 +138,6 @@ public class UserController {
             }
 
             User user = userOptional.get();
-            // chỉ cập nhật các field cho phép
             user.setFullName(updatedUser.getFullName());
             user.setPhone(updatedUser.getPhone());
             user.setAddress(updatedUser.getAddress());
@@ -159,19 +168,15 @@ public class UserController {
 
             User user = userOptional.get();
 
-            // lấy đuôi file
             String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
             if (ext == null || ext.isBlank()) {
                 ext = "jpg";
             }
 
-            // tạo tên file mới: avt_{id}_{timestamp}.ext
             String newFilename = "avt_" + user.getId() + "_" + System.currentTimeMillis() + "." + ext;
 
-            // lưu file vào thư mục "users" (StoreService bạn đã dùng ở /create)
             storeService.saveFile(file, newFilename, "users");
 
-            // cập nhật tên ảnh trong DB
             user.setImage(newFilename);
             User saved = userRepository.save(user);
 

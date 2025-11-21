@@ -3,24 +3,18 @@ package com.java.hotel.configure;
 import com.java.hotel.security.jwt.AuthEntryPointJwt;
 import com.java.hotel.security.jwt.AuthTokenFilter;
 import com.java.hotel.security.services.UserDetailsServiceImpl;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -29,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig {
 
     @Autowired
-    UserDetailsServiceImpl userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
@@ -60,26 +54,31 @@ public class WebSecurityConfig {
     }
 
     /**
-     * Bỏ qua kiểm tra security cho static resources (images, css, js)
-     * để tránh bị 401 Unauthorized khi FE load ảnh avatar, ảnh khách sạn,…
+     * Bỏ qua hoàn toàn security cho một số static resources cơ bản.
+     * (Phần chính vẫn là securityMatcher("/api/**") ở dưới)
      */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
-                "/images/**",
+        return web -> web.ignoring().requestMatchers(
                 "/css/**",
-                "/js/**"
+                "/js/**",
+                "/favicon.ico"
         );
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http.csrf(csrf -> csrf.disable())
+        http
+                .csrf(csrf -> csrf.disable())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 🔥 Chỉ áp dụng security cho các URL bắt đầu bằng /api/**
+                .securityMatcher("/api/**")
+
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC APIS
+                        // PUBLIC APIs
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/user/**").permitAll()
                         .requestMatchers("/api/hotel/**").permitAll()
@@ -88,14 +87,10 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/booking/**").permitAll()
                         .requestMatchers("/api/favorite/**").permitAll()
 
-                        // STATIC RESOURCES (cũng đã được ignore ở WebSecurityCustomizer)
-                        .requestMatchers("/images/**", "/css/**", "/js/**").permitAll()
-
-                        // TẤT CẢ request khác phải có token
+                        // Các API còn lại trong /api/** cần token
                         .anyRequest().authenticated()
                 );
 
-        // Add Authentication Provider + JWT Filter
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
