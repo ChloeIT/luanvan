@@ -30,6 +30,9 @@ export const Profile = () => {
   const fullnameInputRef = useRef(null);
   const AVATAR_SIZE = 132; // px
 
+  // để chỉ sync dữ liệu từ user lần đầu (tránh overwrite preview sau khi Save)
+  const [initialized, setInitialized] = useState(false);
+
   // helpers
   const getBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -49,9 +52,10 @@ export const Profile = () => {
     }
   };
 
-  // sync user -> form
+  // ===== Lần ĐẦU load user => đổ form + avatar từ server =====
   useEffect(() => {
-    if (!user) return;
+    if (!user || initialized) return;
+
     setFullName(user?.fullName || "");
     setUserName(user?.username || "");
     setAddress(user?.address || "");
@@ -73,7 +77,9 @@ export const Profile = () => {
         ]
         : []
     );
-  }, [user, IMAGES_URL]);
+
+    setInitialized(true);
+  }, [user, initialized, IMAGES_URL]);
 
   const handleChangeInfo = () => {
     setChangeInfo(true);
@@ -82,6 +88,8 @@ export const Profile = () => {
 
   const handleCancel = () => {
     if (!user) return;
+
+    // reset lại form + avatar từ user hiện tại
     setFullName(user?.fullName || "");
     setUserName(user?.username || "");
     setAddress(user?.address || "");
@@ -103,12 +111,14 @@ export const Profile = () => {
         ]
         : []
     );
+
     setChangeInfo(false);
   };
 
   const onUploadChange = async ({ fileList: newList }) => {
     const last = newList.slice(-1);
     setFileList(last);
+
     const file = last[0]?.originFileObj;
     if (file) {
       const b64 = await getBase64(file);
@@ -119,7 +129,8 @@ export const Profile = () => {
   const onPreview = async () => {
     const url =
       fileList[0]?.url ||
-      (fileList[0]?.originFileObj && (await getBase64(fileList[0].originFileObj)));
+      (fileList[0]?.originFileObj &&
+        (await getBase64(fileList[0].originFileObj)));
     if (url) {
       setPreviewImage(url);
       setPreviewOpen(true);
@@ -133,9 +144,11 @@ export const Profile = () => {
       const body = { fullName, phone, address, birthDate, gender };
       let finalUser = user;
 
+      // 1. update thông tin text
       const resJson = await userServices.edit(user.id, body);
       if (resJson?.data) finalUser = resJson.data;
 
+      // 2. update avatar nếu có chọn file
       const file = fileList[0]?.originFileObj;
       if (file) {
         const fd = new FormData();
@@ -144,20 +157,13 @@ export const Profile = () => {
         if (resAvatar?.data) finalUser = resAvatar.data;
       }
 
+      // lưu lại user mới (DB + localStorage)
       dispatch(authAction.setUser(finalUser));
 
-      if (finalUser?.image) {
-        setFileList([
-          {
-            uid: "-1",
-            name: finalUser.image,
-            status: "done",
-            url: `${IMAGES_URL}/users/${finalUser.image}?t=${Date.now()}`,
-          },
-        ]);
-      } else {
-        setFileList([]);
-      }
+      // *** QUAN TRỌNG ***
+      // KHÔNG đổi fileList sang URL server ngay,
+      // để giữ preview local -> không bị lỗi 401 / ORB
+      // Lần F5 sau, useEffect (initialized=false) sẽ lấy ảnh từ server.
 
       message.success("Profile updated");
       setChangeInfo(false);
@@ -171,7 +177,7 @@ export const Profile = () => {
 
   const isEditing = changeInfo;
 
-  // --------- inline styles để không cần CSS thêm ----------
+  // --------- styles ----------
   const ringStyle = {
     width: AVATAR_SIZE + 8,
     height: AVATAR_SIZE + 8,
@@ -213,12 +219,28 @@ export const Profile = () => {
       {/* ===== Heading ===== */}
       <div className="text-center">
         <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-          <span style={{ display: "grid", justifyItems: "end", gap: "6px", marginRight: "2px" }}>
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "end",
+              gap: "6px",
+              marginRight: "2px",
+            }}
+          >
             <span className="divider" style={{ "--w": "120px" }} />
             <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
           </span>
-          <h6 className="heading-text text-3xl text-primary text-uppercase">Profile</h6>
-          <span style={{ display: "grid", justifyItems: "start", gap: "6px", marginLeft: "2px" }}>
+          <h6 className="heading-text text-3xl text-primary text-uppercase">
+            Profile
+          </h6>
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "start",
+              gap: "6px",
+              marginLeft: "2px",
+            }}
+          >
             <span className="divider" style={{ "--w": "120px" }} />
             <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
           </span>
@@ -226,7 +248,7 @@ export const Profile = () => {
         <h1 className="mb-5">Personalize it in your own way!</h1>
       </div>
 
-      {/* ===== Upload avatar (không dùng picture-circle) ===== */}
+      {/* ===== Upload avatar ===== */}
       <div className="mb-4 flex justify-center">
         <Upload
           showUploadList={false}
@@ -250,7 +272,8 @@ export const Profile = () => {
                   alt="avatar"
                   src={
                     fileList[0]?.url ||
-                    (fileList[0]?.originFileObj && URL.createObjectURL(fileList[0].originFileObj))
+                    (fileList[0]?.originFileObj &&
+                      URL.createObjectURL(fileList[0].originFileObj))
                   }
                   style={imgStyle}
                 />
@@ -269,9 +292,7 @@ export const Profile = () => {
                   Upload
                 </div>
               )}
-              <div style={overlayStyle}>
-                {/* overlay chỉ hiện khi đang Edit; không cần icon mắt của AntD */}
-              </div>
+              <div style={overlayStyle} />
             </div>
           </div>
         </Upload>
@@ -308,7 +329,10 @@ export const Profile = () => {
       {/* ===== Actions ===== */}
       <div className="mt-4">
         {!changeInfo ? (
-          <button className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2" onClick={handleChangeInfo}>
+          <button
+            className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2"
+            onClick={handleChangeInfo}
+          >
             Edit Profile
           </button>
         ) : (
