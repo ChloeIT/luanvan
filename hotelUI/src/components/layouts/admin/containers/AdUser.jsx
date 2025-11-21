@@ -2,6 +2,7 @@ import { Avatar, Button, Table } from "antd";
 import Column from "antd/es/table/Column";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import dayjs from "dayjs";
 import { AdAddUser, AdDeleteUser, AdEditUser } from "./user";
 
 export const AdUser = () => {
@@ -41,7 +42,7 @@ export const AdUser = () => {
     minWidth: 28,
     padding: "0 10px",
     lineHeight: "26px",
-    borderRadius: 999, // pill tròn
+    borderRadius: 999,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -54,7 +55,6 @@ export const AdUser = () => {
   };
 
   const itemRender = (pageNum, type, original) => {
-    // Giữ event/logic gốc, chỉ override style + children
     if (type === "page") {
       const isActive = pageNum === page;
       return React.cloneElement(original, {
@@ -100,7 +100,6 @@ export const AdUser = () => {
         dataSource={users}
         rowKey="id"
         className="themed-table themed-table--center"
-        // 👉 Pagination JSX-only style
         pagination={{
           current: page,
           onChange: setPage,
@@ -126,11 +125,41 @@ export const AdUser = () => {
           )}
         />
 
-        <Column title="Username" dataIndex="username" key="username" align="center" />
-        <Column title="Full Name" dataIndex="fullName" key="fullName" align="center" />
-        <Column title="Gender" dataIndex="gender" key="gender" align="center" />
-        <Column title="Phone" dataIndex="phone" key="phone" align="center" />
-        <Column title="Birth Date" dataIndex="birthDate" key="birthDate" align="center" />
+        <Column
+          title="Username"
+          dataIndex="username"
+          key="username"
+          align="center"
+        />
+        <Column
+          title="Full Name"
+          dataIndex="fullName"
+          key="fullName"
+          align="center"
+        />
+        <Column
+          title="Gender"
+          dataIndex="gender"
+          key="gender"
+          align="center"
+        />
+        <Column
+          title="Phone"
+          dataIndex="phone"
+          key="phone"
+          align="center"
+        />
+
+        {/* Birth Date hiển thị dạng YYYY-MM-DD */}
+        <Column
+          title="Birth Date"
+          dataIndex="birthDate"
+          key="birthDate"
+          align="center"
+          render={(value) =>
+            value ? dayjs(value).format("YYYY-MM-DD") : ""
+          }
+        />
 
         <Column
           title="Roles"
@@ -182,7 +211,10 @@ export const AdUser = () => {
                 }}
               >
                 {roles?.map((role, i) => (
-                  <span key={i} style={{ ...basePill, ...pillStyleByRole(role.name) }}>
+                  <span
+                    key={i}
+                    style={{ ...basePill, ...pillStyleByRole(role.name) }}
+                  >
                     {role.name}
                   </span>
                 ))}
@@ -191,7 +223,12 @@ export const AdUser = () => {
           }}
         />
 
-        <Column title="Address" dataIndex="address" key="address" align="center" />
+        <Column
+          title="Address"
+          dataIndex="address"
+          key="address"
+          align="center"
+        />
 
         <Column
           title="Action"
