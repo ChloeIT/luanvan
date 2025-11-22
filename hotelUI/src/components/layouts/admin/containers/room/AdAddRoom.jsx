@@ -1,80 +1,94 @@
+// src/components/layouts/admin/containers/room/AdAddRoom.jsx
 import React, { useEffect, useState } from "react";
 import { roomServices } from "../../../../../services";
-import { Avatar, Input, Modal, Upload } from "antd";
+import { Input, Modal, Upload, Select, InputNumber } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { roomAction } from "../../../../../store/room/slice";
 import { BiPlusCircle } from "react-icons/bi";
+import { useLocation } from "react-router-dom";
+
+const roomTypeOptions = [
+  { label: "Standard", value: "Standard" },
+  { label: "Deluxe", value: "Deluxe" },
+  { label: "Suite", value: "Suite" },
+  { label: "Superior", value: "Superior" },
+  { label: "Luxury", value: "Luxury" },
+  { label: "Family", value: "Family" },
+  { label: "VIP", value: "VIP" },
+  { label: "Budget", value: "Budget" },
+  { label: "Economy", value: "Economy" },
+  { label: "Compact", value: "Compact" },
+  { label: "Duplex", value: "Duplex" },
+  { label: "Apartment", value: "Apartment" },
+  { label: "Villa", value: "Villa" },
+  { label: "Premium", value: "Premium" },
+];
 
 export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
-  const [image, setImage] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [type, setType] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [availability, setAvailability] = useState("");
-  const [create_at, setCreate_at] = useState("");
-  const [update_at, setUpdate_at] = useState("");
+  const [capacity, setCapacity] = useState(1);
+  const [availability, setAvailability] = useState(true); // true = available
+  const [hotelId, setHotelId] = useState(null);
   const [fileList, setFileList] = useState([]);
 
   const { rooms } = useSelector((state) => state.room);
+  const { hotels } = useSelector((state) => state.hotel);
   const dispatch = useDispatch();
 
-  const handleModalOk = async () => {
-    const newRoom = {
-      name,
-      price,
-      capacity,
-      image,
-      type,
-      availability,
-      create_at,
-      update_at,
-    };
+  const { search } = useLocation();
 
-    const file = fileList[0]?.originFileObj; // Kiểm tra file có tồn tại không
+  // Nếu đang ở trang /admin/rooms?hotelId=..., tự set hotelId đó luôn
+  useEffect(() => {
+    const idFromQuery = new URLSearchParams(search).get("hotelId");
+    if (idFromQuery) {
+      setHotelId(Number(idFromQuery));
+    }
+  }, [search]);
+
+  const handleModalOk = async () => {
+    const file = fileList[0]?.originFileObj;
     if (!file) {
       console.error("No file uploaded.");
+      return;
+    }
+    if (!hotelId) {
+      console.error("No hotel selected.");
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append("name", newRoom.name);
-      formData.append("price", newRoom.price);
-      formData.append("type", newRoom.type);
-      formData.append("image", newRoom.image);
-      formData.append("availability", newRoom.availability);
-      formData.append("capacity", newRoom.capacity);
-
+      formData.append("name", name);
+      formData.append("price", price);
+      formData.append("type", type);
+      formData.append("capacity", String(capacity));          // int
+      formData.append("availability", String(availability));  // "true"/"false"
+      formData.append("hotel_id", String(hotelId));           // ⬅ gửi hotel_id
       formData.append("file", file);
 
       const response = await roomServices.create(formData);
+
+      // cập nhật redux
+      dispatch(roomAction.setRooms([...rooms, response.data]));
+
+      // reset form
       setIsModalAddVisible(false);
       setName("");
       setPrice("");
       setType("");
-      setImage("");
-      setAvailability("");
-      setCapacity("");
-
-      console.log(response.data);
-
-      dispatch(roomAction.setRooms([...rooms, response.data]));
+      setCapacity(1);
+      setAvailability(true);
+      setHotelId(null);
+      setFileList([]);
     } catch (error) {
       console.error("Error adding room:", error);
     }
   };
 
-  const getBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-
   useEffect(() => {
-    console.log(fileList[0]);
+    console.log("Current fileList[0]: ", fileList[0]);
   }, [fileList]);
 
   const handleChange = ({ fileList: newFileList }) => {
@@ -107,56 +121,93 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
       onCancel={() => setIsModalAddVisible(false)}
       onOk={handleModalOk}
     >
-      <div className="flex items-center">
+      {/* Image */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Image</p>
         <Upload
           listType="picture-circle"
           fileList={fileList}
           onChange={handleChange}
+          beforeUpload={() => false} // không auto upload
+          maxCount={1}
         >
-          {fileList.length >= 8 ? null : uploadButton}
+          {fileList.length >= 1 ? null : uploadButton}
         </Upload>
-        {/* <Avatar
-          src={`/image/${image}`}
-          onChange={(e) => setImage(e.target.value)}
-        /> */}
       </div>
-      <div className="flex items-center">
+
+      {/* Hotel */}
+      <div className="flex items-center mb-2">
+        <p className="min-w-20">Hotel</p>
+        <Select
+          value={hotelId ?? undefined}
+          onChange={setHotelId}
+          placeholder="Select hotel"
+          style={{ width: "100%" }}
+        >
+          {(hotels || []).map((h) => (
+            <Select.Option key={h.id} value={h.id}>
+              {h.name}
+            </Select.Option>
+          ))}
+        </Select>
+      </div>
+
+      {/* Name */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Name</p>
         <Input value={name} onChange={(e) => setName(e.target.value)} />
       </div>
-      <div className="flex items-center">
+
+      {/* Price */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Price</p>
-        <Input value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          type="number"
+          min={0}
+        />
       </div>
-      <div className="flex items-center">
+
+      {/* Capacity */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Capacity</p>
-        <Input value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+        <InputNumber
+          min={1}
+          max={10}
+          value={capacity}
+          onChange={(value) => setCapacity(value || 1)}
+        />
       </div>
-      <div className="flex items-center">
+
+      {/* Type */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Type</p>
-        <Input value={type} onChange={(e) => setType(e.target.value)} />
+        <Select
+          value={type || undefined}
+          onChange={setType}
+          placeholder="Select room type"
+          style={{ width: "100%" }}
+        >
+          {roomTypeOptions.map((opt) => (
+            <Select.Option key={opt.value} value={opt.value}>
+              {opt.label}
+            </Select.Option>
+          ))}
+        </Select>
       </div>
-      <div className="flex items-center">
+
+      {/* Availability */}
+      <div className="flex items-center mb-2">
         <p className=" min-w-20">Availability</p>
-        <Input
+        <Select
           value={availability}
-          onChange={(e) => setAvailability(e.target.value)}
-        />
-      </div>
-      <div className="flex items-center">
-        <p className=" min-w-20">Create At</p>
-        <Input
-          value={create_at}
-          onChange={(e) => setCreate_at(e.target.value)}
-        />
-      </div>
-      <div className="flex items-center">
-        <p className=" min-w-20">Update At</p>
-        <Input
-          value={update_at}
-          onChange={(e) => setUpdate_at(e.target.value)}
-        />
+          onChange={setAvailability}
+          style={{ width: "100%" }}
+        >
+          <Select.Option value={true}>Available</Select.Option>
+          <Select.Option value={false}>Not available</Select.Option>
+        </Select>
       </div>
     </Modal>
   );

@@ -25,7 +25,9 @@ export const AdRoom = () => {
   // Lấy rooms theo hotelId từ state.hotel (state.room không chứa hotelId)
   const { dataSource, hotelName, hotelAddress } = useMemo(() => {
     if (hotelId) {
-      const hotel = (hotels || []).find((h) => String(h.id) === String(hotelId));
+      const hotel = (hotels || []).find(
+        (h) => String(h.id) === String(hotelId)
+      );
       return {
         dataSource: hotel?.rooms || [],
         hotelName: hotel?.name || `Hotel #${hotelId}`,
@@ -51,7 +53,11 @@ export const AdRoom = () => {
     justifyContent: "center",
     boxShadow: "0 1px 0 rgba(0,0,0,.06)",
   };
-  const pagerActive = { backgroundColor: "#155bd6", borderColor: "#155bd6", color: "#fff" };
+  const pagerActive = {
+    backgroundColor: "#155bd6",
+    borderColor: "#155bd6",
+    color: "#fff",
+  };
   const itemRender = (pageNum, type, original) => {
     if (type === "page") {
       const isActive = pageNum === page;
@@ -60,7 +66,9 @@ export const AdRoom = () => {
         children: pageNum,
       });
     }
-    if (type === "prev" || type === "next") return React.cloneElement(original, { style: pagerBase });
+    if (type === "prev" || type === "next") {
+      return React.cloneElement(original, { style: pagerBase });
+    }
     return original;
   };
 
@@ -76,25 +84,64 @@ export const AdRoom = () => {
     whiteSpace: "nowrap",
   };
 
-  // Availability (giữ nguyên xanh lá & đỏ)
-  const availabilityGreen = { backgroundColor: "#D9F7BE", color: "#237804", border: "1px solid #95DE64" };
-  const availabilityRed = { backgroundColor: "#FFCCC7", color: "#A8071A", border: "1px solid #FF7875" };
-  const availabilityPill = (av) => (av ? { ...basePill, ...availabilityGreen } : { ...basePill, ...availabilityRed });
+  // Availability
+  const availabilityGreen = {
+    backgroundColor: "#D9F7BE",
+    color: "#237804",
+    border: "1px solid #95DE64",
+  };
+  const availabilityRed = {
+    backgroundColor: "#FFCCC7",
+    color: "#A8071A",
+    border: "1px solid #FF7875",
+  };
+  const availabilityPill = (av) =>
+    av ? { ...basePill, ...availabilityGreen } : { ...basePill, ...availabilityRed };
 
-  // Type palette (không dùng đỏ/xanh lá để tránh trùng Availability)
-  const pillBlue = { backgroundColor: "#BAE0FF", color: "#0958D9", border: "1px solid #69B1FF" }; // Standard/Basic/Single/Twin/Double
-  const pillOrange = { backgroundColor: "#FFE7BA", color: "#AD4E00", border: "1px solid #FFC069" }; // Deluxe/Family/Executive
-  const pillIndigo = { backgroundColor: "#D6E4FF", color: "#1D39C4", border: "1px solid #ADC6FF" }; // Superior/Premium/Executive
-  const pillPurple = { backgroundColor: "#EFDBFF", color: "#722ED1", border: "1px solid #D3ADF7" }; // Suite/Exec Suite/Business Suite
-  const pillDeepPurple = { backgroundColor: "#F9F0FF", color: "#531DAB", border: "1px solid #D3ADF7" }; // VIP/Luxury
-  const pillBrown = { backgroundColor: "#FFF2CC", color: "#AD6800", border: "1px solid #FFD666" }; // Duplex/Apartment/Villa
-  const pillGray = { backgroundColor: "#F5F5F5", color: "#595959", border: "1px solid #D9D9D9" }; // Budget/Economy/Compact & fallback
+  // Type palette
+  const pillBlue = {
+    backgroundColor: "#BAE0FF",
+    color: "#0958D9",
+    border: "1px solid #69B1FF",
+  }; // Standard/Basic/Single/Twin/Double
+  const pillOrange = {
+    backgroundColor: "#FFE7BA",
+    color: "#AD4E00",
+    border: "1px solid #FFC069",
+  }; // Deluxe/Family/Executive
+  const pillIndigo = {
+    backgroundColor: "#D6E4FF",
+    color: "#1D39C4",
+    border: "1px solid #ADC6FF",
+  }; // Superior/Premium/Executive
+  const pillPurple = {
+    backgroundColor: "#EFDBFF",
+    color: "#722ED1",
+    border: "1px solid #D3ADF7",
+  }; // Suite/Exec Suite/Business Suite
+  const pillDeepPurple = {
+    backgroundColor: "#F9F0FF",
+    color: "#531DAB",
+    border: "1px solid #D3ADF7",
+  }; // VIP/Luxury
+  const pillBrown = {
+    backgroundColor: "#FFF2CC",
+    color: "#AD6800",
+    border: "1px solid #FFD666",
+  }; // Duplex/Apartment/Villa
+  const pillGray = {
+    backgroundColor: "#F5F5F5",
+    color: "#595959",
+    border: "1px solid #D9D9D9",
+  }; // Budget/Economy/Compact & fallback
 
   // Chuẩn hoá & mapping theo type trong DB
   const typePillStyle = (raw) => {
     const key = String(raw || "")
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // bỏ dấu
-      .toLowerCase().trim();
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+      .toLowerCase()
+      .trim();
 
     if (/(vip|luxury)/.test(key)) return pillDeepPurple;
     if (/(suite|executive\s*suite|business\s*suite)/.test(key)) return pillPurple;
@@ -104,14 +151,23 @@ export const AdRoom = () => {
     if (/(budget|economy|compact)/.test(key)) return pillGray;
     if (/(duplex|apartment|villa)/.test(key)) return pillBrown;
 
-    return pillGray; // fallback cho các giá trị lạ
+    return pillGray; // fallback
   };
 
   const fmtPrice = (v) => v; // tuỳ bạn thêm formatter VND
 
-  const handleEditRoom = (room) => { setIsModalEditVisible(true); setItemACtion(room); };
-  const handleDeleteRoom = (room) => { setIsModalDeleteVisible(true); setItemACtion(room); };
-  const handleAddRoom = () => { setIsModalAddVisible(true); setItemACtion(); };
+  const handleEditRoom = (room) => {
+    setIsModalEditVisible(true);
+    setItemACtion(room);
+  };
+  const handleDeleteRoom = (room) => {
+    setIsModalDeleteVisible(true);
+    setItemACtion(room);
+  };
+  const handleAddRoom = () => {
+    setIsModalAddVisible(true);
+    setItemACtion();
+  };
 
   useEffect(() => { }, [itemACtion]);
 
@@ -134,7 +190,7 @@ export const AdRoom = () => {
               }}
               title={hotelName || undefined}
             >
-              {hotelName}
+              {hotelName || "All Hotels"}
             </span>
           </h2>
 
@@ -151,7 +207,10 @@ export const AdRoom = () => {
         <div className="flex items-center gap-2">
           {hotelId && (
             <>
-              <Button onClick={() => navigate("/admin/hotels")} icon={<HomeOutlined />}>
+              <Button
+                onClick={() => navigate("/admin/hotels")}
+                icon={<HomeOutlined />}
+              >
                 Back to Hotels
               </Button>
               <Button onClick={() => navigate("/admin/rooms")} ghost>
@@ -206,7 +265,70 @@ export const AdRoom = () => {
             />
           )}
         />
+
         <Column title="Name" dataIndex="name" key="name" align="center" />
+
+        {/* Cột Hotel – click để mở trang chi tiết hotel */}
+        <Column
+          title="Hotel"
+          key="hotel"
+          align="center"
+          render={(_, room) => {
+            let resolvedHotelId = null;
+            let resolvedHotelName = "";
+
+            // 1) Nếu đang filter theo hotelId trên URL
+            if (hotelId && hotelName) {
+              resolvedHotelId = hotelId;
+              resolvedHotelName = hotelName;
+            } else {
+              // 2) Nếu BE trả về room.hotel
+              const hotelFromRoom = room.hotel;
+              if (hotelFromRoom?.id) {
+                resolvedHotelId = hotelFromRoom.id;
+                resolvedHotelName = hotelFromRoom.name;
+              } else {
+                // 3) Nếu có các field id trên room
+                const possibleId = room.hotelId ?? room.hotel_id;
+                if (possibleId != null) {
+                  const byId = (hotels || []).find(
+                    (ht) => String(ht.id) === String(possibleId)
+                  );
+                  if (byId) {
+                    resolvedHotelId = byId.id;
+                    resolvedHotelName = byId.name;
+                  }
+                }
+
+                // 4) Fallback: dò theo room.id trong hotels[].rooms
+                if (!resolvedHotelId) {
+                  const byRoomInHotel = (hotels || []).find((ht) =>
+                    (ht.rooms || []).some(
+                      (r) => String(r.id) === String(room.id)
+                    )
+                  );
+                  if (byRoomInHotel) {
+                    resolvedHotelId = byRoomInHotel.id;
+                    resolvedHotelName = byRoomInHotel.name;
+                  }
+                }
+              }
+            }
+
+            if (!resolvedHotelId) return "—";
+
+            return (
+              <Button
+                type="link"
+                style={{ padding: 0 }}
+                onClick={() => navigate(`/hotel/${resolvedHotelId}`)}
+              >
+                {resolvedHotelName || `Hotel #${resolvedHotelId}`}
+              </Button>
+            );
+          }}
+        />
+
         <Column
           title="Price"
           dataIndex="price"
@@ -214,7 +336,12 @@ export const AdRoom = () => {
           align="center"
           render={(v) => <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>}
         />
-        <Column title="Capacity" dataIndex="capacity" key="capacity" align="center" />
+        <Column
+          title="Capacity"
+          dataIndex="capacity"
+          key="capacity"
+          align="center"
+        />
         <Column
           title="Type"
           dataIndex="type"
@@ -250,8 +377,18 @@ export const AdRoom = () => {
             </span>
           )}
         />
-        <Column title="Created At" dataIndex="create_at" key="create_at" align="center" />
-        <Column title="Updated At" dataIndex="update_at" key="update_at" align="center" />
+        <Column
+          title="Created At"
+          dataIndex="create_at"
+          key="create_at"
+          align="center"
+        />
+        <Column
+          title="Updated At"
+          dataIndex="update_at"
+          key="update_at"
+          align="center"
+        />
         <Column
           title="Action"
           key="action"
