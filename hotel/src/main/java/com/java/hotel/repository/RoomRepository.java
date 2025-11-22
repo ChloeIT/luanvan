@@ -4,9 +4,12 @@ import com.java.hotel.model.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
-public interface RoomRepository  extends JpaRepository<Room, Long> {
+public interface RoomRepository extends JpaRepository<Room, Long> {
 
+    // Lấy danh sách Room theo list id (dùng cho BookingService)
+    List<Room> findByIdIn(Collection<Long> ids);
 }
