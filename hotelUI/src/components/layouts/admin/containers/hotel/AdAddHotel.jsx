@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Avatar, Input, Modal, Upload } from "antd";
+import { Input, Modal, Upload } from "antd";
 import { hotelServices } from "../../../../../services/hotel";
 import { useDispatch, useSelector } from "react-redux";
 import { hotelAction } from "../../../../../store/hotel/slice";
@@ -10,7 +10,6 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [rating, setRating] = useState("");
-  const [image, setImage] = useState();
   const [amenities, setAmenities] = useState("");
   const [fileList, setFileList] = useState([]);
 
@@ -18,16 +17,7 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
   const dispatch = useDispatch();
 
   const handleModalOk = async () => {
-    const newHotel = {
-      name,
-      address,
-      phone,
-      rating,
-      image,
-      amenities,
-    };
-
-    const file = fileList[0]?.originFileObj; // Kiểm tra file có tồn tại không
+    const file = fileList[0]?.originFileObj;
     if (!file) {
       console.error("No file uploaded.");
       return;
@@ -35,31 +25,34 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
 
     try {
       const formData = new FormData();
-      formData.append("name", newHotel.name); // Sử dụng JSON.stringify
-      formData.append("phone", newHotel.phone); // Sử dụng JSON.stringify
-      formData.append("address", newHotel.address); // Sử dụng JSON.stringify
-      formData.append("rating", newHotel.rating); // Sử dụng JSON.stringify
-      formData.append("amenities", newHotel.amenities); // Sử dụng JSON.stringify
-
+      formData.append("name", name);
+      formData.append("address", address);
+      formData.append("phone", phone);
+      formData.append("rating", rating);
+      formData.append("amenities", amenities);
+      // key "file" phải trùng với @RequestParam("file") ở BE
       formData.append("file", file);
 
-      const response = await hotelServices.create(formData); // Gửi formData với file
+      const response = await hotelServices.create(formData);
+
+      // cập nhật lại danh sách hotel trên redux
+      dispatch(hotelAction.setHotels([...hotels, response.data]));
+
+      // reset form
       setIsModalAddVisible(false);
       setName("");
       setAddress("");
       setPhone("");
       setRating("");
-      setImage("");
       setAmenities("");
-
-      dispatch(hotelAction.setHotels([...hotels, response.data]));
+      setFileList([]);
     } catch (error) {
       console.error("Error adding hotel:", error);
     }
   };
 
   useEffect(() => {
-    console.log(fileList[0]);
+    console.log("Current fileList[0]: ", fileList[0]);
   }, [fileList]);
 
   const handleChange = ({ fileList: newFileList }) => {
@@ -84,6 +77,7 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
       </div>
     </button>
   );
+
   return (
     <Modal
       title="Add Hotel"
@@ -91,37 +85,40 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
       onCancel={() => setIsModalAddVisible(false)}
       onOk={handleModalOk}
     >
-      <div className="flex items-center">
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Image</p>
         <Upload
           listType="picture-circle"
           fileList={fileList}
           onChange={handleChange}
+          beforeUpload={() => false} // không auto upload, chỉ chọn file
+          maxCount={1}
         >
-          {fileList.length >= 8 ? null : uploadButton}
+          {fileList.length >= 1 ? null : uploadButton}
         </Upload>
-        {/* <Avatar 
-          src={`/image/${image}`}
-          onChange={(e) => setImage(e.target.value)}
-        /> */}
       </div>
-      <div className="flex items-center">
+
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Name</p>
         <Input value={name} onChange={(e) => setName(e.target.value)} />
       </div>
-      <div className="flex items-center">
+
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Address</p>
         <Input value={address} onChange={(e) => setAddress(e.target.value)} />
       </div>
-      <div className="flex items-center">
+
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Phone</p>
         <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
       </div>
-      <div className="flex items-center">
+
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Rating</p>
         <Input value={rating} onChange={(e) => setRating(e.target.value)} />
       </div>
-      <div className="flex items-center">
+
+      <div className="flex items-center mb-2">
         <p className="min-w-20">Amenities</p>
         <Input
           value={amenities}
