@@ -1,103 +1,84 @@
-// import React, { useEffect, useState } from "react";
-// import { bookingServices } from "../../../../../services";
-// import { Input, Modal } from "antd";
-
-// export const AdAddBooking = ({ isModalAddVisible, setIsModalAddVisible }) => {
-//   const [checkIn, setCheckIn] = useState("");
-//   const [checkOut, setCheckOut] = useState("");
-//   const [totalPrice, setTotalPrice] = useState(0);
-//   const [payment, setPayment] = useState("");
-
-//   const handleModalOk = async () => {
-//     const newBooking = {
-//       checkIn,
-//       checkOut,
-//       totalPrice: parseFloat(totalPrice),
-//       payment,
-//     };
-
-//     try {
-//       console.log(newBooking);
-//       await bookingServices.create(newBooking); // Thay đổi từ "edit" thành "add"
-//       setIsModalAddVisible(false);
-//     } catch (error) {
-//       console.error("Error adding booking:", error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     console.log(totalPrice);
-//   }, [totalPrice]);
-//   return (
-//     <Modal
-//       title="Add Booking"
-//       open={isModalAddVisible}
-//       onCancel={() => setIsModalAddVisible(false)}
-//       onOk={handleModalOk}
-//     >
-//       <div className="flex items-center">
-//         <p className="min-w-20">Check In</p>
-//         <Input value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
-//       </div>
-
-//       <div className="flex items-center">
-//         <p className="min-w-20">Check Out</p>
-//         <Input value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
-//       </div>
-
-//       <div className="flex items-center">
-//         <p className="min-w-20">Total Price</p>
-//         <Input
-//           value={totalPrice}
-//           type="number"
-//           onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)}
-//         />
-//       </div>
-
-//       <div className="flex items-center">
-//         <p className="min-w-20">Payment</p>
-//         <Input value={payment} onChange={(e) => setPayment(e.target.value)} />
-//       </div>
-//     </Modal>
-//   );
-// };
-
-import React, { useState } from "react";
-import { bookingServices } from "../../../../../services";
-import { Modal, DatePicker, Input, Select } from "antd";
+// src/components/layouts/admin/containers/booking/AdAddBooking.jsx
+import React, { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { Modal, DatePicker, Input, Select, message } from "antd";
 import dayjs from "dayjs";
+import { bookingServices } from "../../../../../services";
 
 const { Option } = Select;
 
-export const AdAddBooking = ({ isModalAddVisible, setIsModalAddVisible }) => {
+export const AdAddBooking = ({
+  isModalAddVisible,
+  setIsModalAddVisible,
+  onCreated, // optional: AdBooking truyền vào để update Redux ngay
+}) => {
+  const { hotels } = useSelector((state) => state.hotel);
+
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [payment, setPayment] = useState(null); 
-  const handleModalOk = async () => {
-    if (!checkIn || !checkOut || !payment) {
-      alert("Please fill in all required fields.");
+  const [payment, setPayment] = useState(null);
+  const [hotelId, setHotelId] = useState(null);
+  const [roomIds, setRoomIds] = useState([]);
+
+  // === Rooms theo hotel đã chọn (lấy từ hotels[...].rooms) ===
+  const roomsForSelectedHotel = useMemo(() => {
+    if (!hotelId || !hotels?.length) return [];
+    const hotel = hotels.find((h) => String(h.id) === String(hotelId));
+    return hotel?.rooms || [];
+  }, [hotels, hotelId]);
+
+  const resetForm = () => {
+    setCheckIn(null);
+    setCheckOut(null);
+    setTotalPrice(0);
+    setPayment(null);
+    setHotelId(null);
+    setRoomIds([]);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    setIsModalAddVisible(false);
+  };
+
+  const handleOk = async () => {
+    if (!hotelId) {
+      message.warning("Please choose a hotel.");
+      return;
+    }
+    if (!roomIds.length) {
+      message.warning("Please choose at least one room.");
+      return;
+    }
+    if (!checkIn || !checkOut) {
+      message.warning("Please choose check-in and check-out time.");
+      return;
+    }
+    if (!payment) {
+      message.warning("Please choose payment status.");
       return;
     }
 
-    const newBooking = {
+    const payload = {
       checkIn: checkIn.format("YYYY-MM-DDTHH:mm:ss"),
       checkOut: checkOut.format("YYYY-MM-DDTHH:mm:ss"),
-      totalPrice: Number(totalPrice),
-      payment: payment === "paid" ? "true" : "false",
+      totalPrice: Number(totalPrice) || 0,
+      payment: payment === "paid", // boolean
+      roomIds, // list id room -> BookingRequest.roomIds
     };
 
     try {
-      await bookingServices.create(newBooking);
+      const res = await bookingServices.create(payload);
+      message.success("Booking created successfully");
+      if (onCreated && res?.data) {
+        onCreated(res.data); // cho AdBooking cập nhật Redux ngay
+      }
+      resetForm();
       setIsModalAddVisible(false);
-
-      // Reset form
-      setCheckIn(null);
-      setCheckOut(null);
-      setTotalPrice(0);
-      setPayment(null);
-    } catch (error) {
-      console.error("Lỗi khi tạo booking:", error);
+    } catch (err) {
+      console.error("Error creating booking:", err);
+      message.error("Error creating booking");
     }
   };
 
@@ -105,11 +86,11 @@ export const AdAddBooking = ({ isModalAddVisible, setIsModalAddVisible }) => {
     <Modal
       title="Add Booking"
       open={isModalAddVisible}
-      onCancel={() => setIsModalAddVisible(false)}
-      onOk={handleModalOk}
+      onCancel={handleCancel}
+      onOk={handleOk}
       okText="OK"
       cancelText="Cancel"
-      width={520}
+      width={540}
     >
       {/* Check In */}
       <div className="mb-4">
@@ -146,33 +127,81 @@ export const AdAddBooking = ({ isModalAddVisible, setIsModalAddVisible }) => {
           type="number"
           placeholder="0"
           value={totalPrice || ""}
-          onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)}
+          onChange={(e) =>
+            setTotalPrice(e.target.value === "" ? 0 : Number(e.target.value))
+          }
           min={0}
-          className="w-full"
         />
       </div>
 
-      {/* Payment */}
+      {/* Hotel */}
       <div className="mb-4">
+        <label className="block font-medium mb-1">Hotel</label>
+        <Select
+          placeholder="Choose hotel"
+          value={hotelId}
+          onChange={(val) => {
+            setHotelId(val);
+            setRoomIds([]); // đổi hotel -> reset room đã chọn
+          }}
+          className="w-full"
+          showSearch
+          optionFilterProp="children"
+        >
+          {(hotels || []).map((h) => (
+            <Option key={h.id} value={h.id}>
+              {h.name} {`(#${h.id})`}
+            </Option>
+          ))}
+        </Select>
+      </div>
+
+      {/* Rooms */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">Room(s)</label>
+        <Select
+          mode="multiple"
+          placeholder={
+            hotelId ? "Select rooms for this booking" : "Choose hotel first"
+          }
+          value={roomIds}
+          onChange={setRoomIds}
+          className="w-full"
+          disabled={!hotelId}
+        >
+          {hotelId && roomsForSelectedHotel.length === 0 && (
+            <Option disabled value="__no_room">
+              No room for this hotel
+            </Option>
+          )}
+
+          {roomsForSelectedHotel.map((r) => (
+            <Option key={r.id} value={r.id}>
+              {r.name} {`(#${r.id})`}
+            </Option>
+          ))}
+        </Select>
+        <p className="text-xs text-gray-500 mt-1">
+          You can select one or multiple rooms. Each selected room will be
+          linked via <code>booking_room</code> table.
+        </p>
+      </div>
+
+      {/* Payment */}
+      <div className="mb-2">
         <label className="block font-medium mb-1">Payment</label>
         <Select
           placeholder="Choose payment status"
           value={payment}
-          onChange={(value) => setPayment(value)}
+          onChange={setPayment}
           className="w-full"
         >
-          <Option value="paid">Paid</Option>
-          <Option value="notpaid">Not pay yet</Option>
+          <Option value="paid">paid</Option>
+          <Option value="notpaid">not yet paid</Option>
         </Select>
       </div>
-
-      {/* Debug (bạn có thể xóa sau khi test xong)
-      <div className="text-xs bg-gray-100 p-3 rounded mt-4 font-mono">
-        <p>Check In: {checkIn ? checkIn.format("YYYY-MM-DDTHH:mm:ss") : "-"}</p>
-        <p>Check Out: {checkOut ? checkOut.format("YYYY-MM-DDTHH:mm:ss") : "-"}</p>
-        <p>Total Price: {totalPrice}</p>
-        <p>Payment: {payment === "paid" ? "true" : "false"}</p>
-      </div> */}
     </Modal>
   );
 };
+
+export default AdAddBooking;

@@ -1,12 +1,19 @@
 import Column from "antd/es/table/Column";
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { AdEditBooking } from "./booking/AdEditBooking";
+import React, { useEffect, useState, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Table } from "antd";
+import dayjs from "dayjs";
+
+import { AdEditBooking } from "./booking/AdEditBooking";
 import { AdDeleteBooking } from "./booking/AdDeleteBooking";
 import { AdAddBooking } from "./booking/AdAddBooking";
 
+// ⚠️ Tuỳ cách bạn export services / store, chỉnh lại path nếu cần
+import { bookingServices } from "../../../../services";
+import { bookingAction } from "../../../../store";
+
 export const AdBooking = () => {
+  const dispatch = useDispatch();
   const { bookings } = useSelector((state) => state.booking);
 
   const [isModalEditVisible, setIsModalEditVisible] = useState(false);
@@ -49,6 +56,32 @@ export const AdBooking = () => {
     return original;
   };
 
+  /* =========================
+   *  FORMAT NGÀY THÁNG NĂM
+   * ========================= */
+  const formatDate = (value) => {
+    if (!value) return "-";
+    // value có thể là string ISO hoặc LocalDateTime -> dayjs đều đọc được
+    return dayjs(value).format("DD/MM/YYYY");
+  };
+
+  /* =========================
+   *  FETCH BOOKINGS TỪ API
+   * ========================= */
+  const fetchBookings = useCallback(async () => {
+    try {
+      const res = await bookingServices.getAll(); // hoặc bookingServices.getAllBooking()
+      const data = res?.data ?? res;
+      dispatch(bookingAction.setBookings(data));
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
   const handleEditBooking = (booking) => {
     setIsModalEditVisible(true);
     setItemACtion(booking);
@@ -61,15 +94,10 @@ export const AdBooking = () => {
 
   const handleAddBooking = () => {
     setIsModalAddVisible(true);
-    setItemACtion();
+    setItemACtion(undefined);
   };
 
-  useEffect(() => {
-    // console.log(itemACtion);
-  }, [itemACtion]);
-
   // 👉 Payment pill style (đồng bộ tone với Roles)
-  // paid -> xanh lá (ROLE_USER), not yet paid -> cam (ROLE_MODERATOR)
   const pillPaid = {
     backgroundColor: "#E9F9D8",
     color: "#237804",
@@ -91,9 +119,6 @@ export const AdBooking = () => {
     whiteSpace: "nowrap",
   };
 
-  // (tuỳ chọn) helper định dạng ngày ngắn gọn, nếu bạn muốn
-  const fmt = (v) => v; // giữ nguyên; thay bằng formatDateTime nếu bạn có
-
   return (
     <div className="p-4">
       {/* Modals */}
@@ -101,16 +126,19 @@ export const AdBooking = () => {
         isModalEditVisible={isModalEditVisible}
         setIsModalEditVisible={setIsModalEditVisible}
         itemACtion={itemACtion}
+        onUpdated={fetchBookings} // reload list sau khi edit
       />
       <AdDeleteBooking
         isModalDeleteVisible={isModalDeleteVisible}
         setIsModalDeleteVisible={setIsModalDeleteVisible}
         itemACtion={itemACtion}
+        onDeleted={fetchBookings} // reload list sau khi delete
       />
       <AdAddBooking
         isModalAddVisible={isModalAddVisible}
         setIsModalAddVisible={setIsModalAddVisible}
         itemACtion={itemACtion}
+        onCreated={fetchBookings} // reload list sau khi add
       />
 
       {/* Actions */}
@@ -133,13 +161,27 @@ export const AdBooking = () => {
           itemRender,
         }}
       >
-        {/* BỎ ColumnGroup để không có tiêu đề "Bookings" */}
-        <Column title="Check In" dataIndex="checkIn" key="checkIn" align="center"
-          render={(v) => fmt(v)} />
-        <Column title="Check Out" dataIndex="checkOut" key="checkOut" align="center"
-          render={(v) => fmt(v)} />
-        <Column title="Total Price" dataIndex="totalPrice" key="totalPrice" align="center"
-          render={(v) => <span style={{ fontWeight: 700 }}>{v}</span>} />
+        <Column
+          title="Check In"
+          dataIndex="checkIn"
+          key="checkIn"
+          align="center"
+          render={(v) => formatDate(v)}
+        />
+        <Column
+          title="Check Out"
+          dataIndex="checkOut"
+          key="checkOut"
+          align="center"
+          render={(v) => formatDate(v)}
+        />
+        <Column
+          title="Total Price"
+          dataIndex="totalPrice"
+          key="totalPrice"
+          align="center"
+          render={(v) => <span style={{ fontWeight: 700 }}>{v}</span>}
+        />
         <Column
           title="Payment"
           dataIndex="payment"
@@ -151,7 +193,6 @@ export const AdBooking = () => {
             </span>
           )}
         />
-
         <Column
           title="Action"
           key="action"
