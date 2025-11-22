@@ -1,6 +1,9 @@
+// src/main/java/com/java/hotel/controller/RoomController.java
 package com.java.hotel.controller;
 
+import com.java.hotel.model.Hotel;
 import com.java.hotel.model.Room;
+import com.java.hotel.repository.HotelRepository;
 import com.java.hotel.repository.RoomRepository;
 import com.java.hotel.service.RoomService;
 import com.java.hotel.service.StoreService;
@@ -19,10 +22,16 @@ import java.util.List;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/api/room")
 public class RoomController {
+
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private HotelRepository hotelRepository;
+
     @Autowired
     private RoomService roomService;
+
     @Autowired
     private StoreService storeService;
 
@@ -35,34 +44,44 @@ public class RoomController {
     @PostMapping("/create")
     public ResponseEntity<Room> createRoom(@RequestParam String capacity,
                                            @RequestParam String availability,
-                                           @RequestParam String image,
                                            @RequestParam String type,
                                            @RequestParam String price,
                                            @RequestParam String name,
+                                           @RequestParam Long hotel_id,
                                            @RequestParam("file") MultipartFile file) throws IOException {
 
         String originalFilename = file.getOriginalFilename();
-        String newFilename = originalFilename != null ? originalFilename.substring(0, originalFilename.lastIndexOf('.')) + ".jpg" : "default.jpg";
+        String newFilename = (originalFilename != null && originalFilename.contains("."))
+                ? originalFilename.substring(0, originalFilename.lastIndexOf('.')) + ".jpg"
+                : "default.jpg";
 
+        // tìm hotel
+        Hotel hotel = hotelRepository.findById(hotel_id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + hotel_id));
 
         Room room = new Room();
         room.setCapacity(Integer.parseInt(capacity));
         room.setName(name);
-        room.setAvailability(Boolean.valueOf(availability));
+        room.setAvailability(Boolean.parseBoolean(availability));
         room.setUpdate_at(Date.valueOf(LocalDate.now()));
         room.setCreate_at(Date.valueOf(LocalDate.now()));
-        room.setImage(image);
+        room.setImage(newFilename);
         room.setType(type);
-        room.setPrice(Integer.parseInt(price));
+        room.setPrice(Float.parseFloat(price));
+        room.setHotel(hotel); // gắn quan hệ hotel_id
 
         Room savedRoom = roomRepository.save(room);
-        storeService.saveFile(file, newFilename,  "rooms");
+
+        // lưu file ảnh vào thư mục "rooms"
+        storeService.saveFile(file, newFilename, "rooms");
+
         return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
     }
 
     @PutMapping("/edit/{id}")
-    public ResponseEntity<Room> editRoom(@PathVariable("id") Long id, @RequestBody Room roomUpdates) throws Exception {
-        Room updateRoom =roomService.updateRoom(id, roomUpdates);
+    public ResponseEntity<Room> editRoom(@PathVariable("id") Long id,
+                                         @RequestBody Room roomUpdates) throws Exception {
+        Room updateRoom = roomService.updateRoom(id, roomUpdates);
         return ResponseEntity.ok(updateRoom);
     }
 
