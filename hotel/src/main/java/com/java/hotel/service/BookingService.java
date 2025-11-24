@@ -55,19 +55,25 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    /**
+     * Lấy toàn bộ booking, kèm luôn rooms + hotel (fetch join)
+     */
     public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+        return bookingRepository.findAllWithRoomsAndHotel();
     }
 
+    /**
+     * Lấy 1 booking theo id, kèm rooms + hotel (fetch join)
+     */
     public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id).orElse(null);
+        return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
     }
 
     /**
      * Chỉ sửa trạng thái payment (dùng cho nút toggle thanh toán)
      */
     public Booking editBookingPayment(Long id, boolean payment) {
-        Booking booking = getBookingById(id);
+        Booking booking = bookingRepository.findById(id).orElse(null);
         if (booking != null) {
             booking.setPayment(payment);
             bookingRepository.save(booking);

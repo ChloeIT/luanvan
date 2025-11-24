@@ -31,7 +31,7 @@ public class BookingController {
     }
 
     /* =========================
-       GET ALL BOOKING
+       GET ALL BOOKING (CÓ ROOMS + HOTEL)
        ========================= */
     @GetMapping("/all")
     public ResponseEntity<List<Booking>> getAllBookings() {
@@ -39,13 +39,13 @@ public class BookingController {
     }
 
     /* =========================
-       GET BOOKING BY ID
+       GET BOOKING BY ID (CÓ ROOMS + HOTEL)
        ========================= */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
-        return booking != null ? ResponseEntity.ok(booking) :
-                ResponseEntity.notFound().build();
+        return booking != null ? ResponseEntity.ok(booking)
+                : ResponseEntity.notFound().build();
     }
 
     /* =========================
@@ -54,10 +54,9 @@ public class BookingController {
     @PutMapping("/{id}/payment")
     public ResponseEntity<?> editPayment(@PathVariable Long id,
                                          @RequestParam boolean payment) {
-
         Booking updated = bookingService.editBookingPayment(id, payment);
-        return updated != null ? ResponseEntity.ok(updated) :
-                ResponseEntity.notFound().build();
+        return updated != null ? ResponseEntity.ok(updated)
+                : ResponseEntity.notFound().build();
     }
 
     /* =========================
@@ -83,7 +82,7 @@ public class BookingController {
             bookingService.deleteBooking(id);
             return ResponseEntity.ok("Booking deleted successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error deleting booking");
+            return ResponseEntity.badRequest().body("Error deleting booking: " + e.getMessage());
         }
     }
 }

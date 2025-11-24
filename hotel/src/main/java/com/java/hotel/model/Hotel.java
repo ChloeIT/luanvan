@@ -1,27 +1,40 @@
 package com.java.hotel.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
 
 @Entity
 public class Hotel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private String address;
     private String phone;
     private float rating;
     private String image;
-    private String amenities ;
+    private String amenities;
 
+    // Chặn vòng lặp JSON: Hotel -> rooms -> hotel -> ...
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Room> rooms;
 
-    public Hotel() {}
+    public Hotel() {
+    }
 
-    public Hotel(Long id, String name, String phone, String address, float rating, String image, String amenities, List<Room> rooms) {
+    public Hotel(Long id,
+                 String name,
+                 String phone,
+                 String address,
+                 float rating,
+                 String image,
+                 String amenities,
+                 List<Room> rooms) {
         this.id = id;
         this.name = name;
         this.phone = phone;
@@ -32,20 +45,20 @@ public class Hotel {
         this.rooms = rooms;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAddress() {
@@ -96,4 +109,3 @@ public class Hotel {
         this.rooms = rooms;
     }
 }
-

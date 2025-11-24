@@ -1,6 +1,5 @@
 package com.java.hotel.model;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
@@ -10,9 +9,11 @@ import java.util.Set;
 
 @Entity
 public class Room {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
     private int capacity;
     private float price;
@@ -22,11 +23,12 @@ public class Room {
     private Date update_at;
     private Boolean availability;
 
+    // Giữ lại hotel để FE đọc được tên khách sạn
     @ManyToOne
     @JoinColumn(name = "hotel_id")
-    @JsonIgnore
     private Hotel hotel;
 
+    // Chặn vòng lặp: Booking -> rooms -> bookings -> ...
     @ManyToMany(mappedBy = "rooms")
     @JsonIgnore
     private Set<Booking> bookings;
@@ -35,9 +37,20 @@ public class Room {
     @JsonIgnore
     private Set<Favorite> favorites = new HashSet<>();
 
-    public Room() {}
+    public Room() {
+    }
 
-    public Room(int capacity, Set<Booking> bookings, Hotel hotel, Boolean availability, Date   update_at, Date create_at, String image, String type, float price, String name, Long id) {
+    public Room(int capacity,
+                Set<Booking> bookings,
+                Hotel hotel,
+                Boolean availability,
+                Date update_at,
+                Date create_at,
+                String image,
+                String type,
+                float price,
+                String name,
+                Long id) {
         this.capacity = capacity;
         this.bookings = bookings;
         this.hotel = hotel;
@@ -51,12 +64,12 @@ public class Room {
         this.id = id;
     }
 
-    public Set<Favorite> getFavorites() {
-        return favorites;
+    public Long getId() {
+        return id;
     }
 
-    public void setFavorites(Set<Favorite> favorites) {
-        this.favorites = favorites;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -65,14 +78,6 @@ public class Room {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public int getCapacity() {
@@ -145,5 +150,13 @@ public class Room {
 
     public void setBookings(Set<Booking> bookings) {
         this.bookings = bookings;
+    }
+
+    public Set<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<Favorite> favorites) {
+        this.favorites = favorites;
     }
 }
