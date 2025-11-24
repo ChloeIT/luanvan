@@ -1,5 +1,5 @@
 // src/components/layouts/admin/containers/booking/AdAddBooking.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Modal, DatePicker, Input, Select, message } from "antd";
 import dayjs from "dayjs";
@@ -10,31 +10,59 @@ const { Option } = Select;
 export const AdAddBooking = ({
   isModalAddVisible,
   setIsModalAddVisible,
-  onCreated, // optional: AdBooking truyền vào để update Redux ngay
+  onCreated, // AdBooking có thể truyền fetchBookings vào
 }) => {
   const { hotels } = useSelector((state) => state.hotel);
+  const { rooms } = useSelector((state) => state.room);
 
+  const [hotelId, setHotelId] = useState(null);
+  const [roomId, setRoomId] = useState(null); // ✅ chỉ 1 room
   const [checkIn, setCheckIn] = useState(null);
   const [checkOut, setCheckOut] = useState(null);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [payment, setPayment] = useState(null);
-  const [hotelId, setHotelId] = useState(null);
-  const [roomIds, setRoomIds] = useState([]);
+  const [payment, setPayment] = useState(null); // "paid" | "notpaid"
 
-  // === Rooms theo hotel đã chọn (lấy từ hotels[...].rooms) ===
+  // Rooms thuộc hotel đã chọn (filter từ slice room trong Redux)
   const roomsForSelectedHotel = useMemo(() => {
-    if (!hotelId || !hotels?.length) return [];
-    const hotel = hotels.find((h) => String(h.id) === String(hotelId));
-    return hotel?.rooms || [];
-  }, [hotels, hotelId]);
+    if (!hotelId || !rooms?.length) return [];
+    return rooms.filter((r) => String(r.hotel?.id) === String(hotelId));
+  }, [rooms, hotelId]);
+
+  // Room đang được chọn
+  const selectedRoom = useMemo(
+    () => roomsForSelectedHotel.find((r) => r.id === roomId),
+    [roomsForSelectedHotel, roomId]
+  );
+
+  // 🧮 Auto tính totalPrice mỗi khi đổi ngày hoặc room
+  useEffect(() => {
+    if (!checkIn || !checkOut || !selectedRoom) {
+      setTotalPrice(0);
+      return;
+    }
+
+    // tính số đêm (bỏ phần giờ)
+    const nights = dayjs(checkOut).startOf("day").diff(
+      dayjs(checkIn).startOf("day"),
+      "day"
+    );
+
+    if (nights <= 0) {
+      setTotalPrice(0);
+      return;
+    }
+
+    const pricePerNight = selectedRoom.price || 0;
+    setTotalPrice(pricePerNight * nights);
+  }, [checkIn, checkOut, selectedRoom]);
 
   const resetForm = () => {
+    setHotelId(null);
+    setRoomId(null);
     setCheckIn(null);
     setCheckOut(null);
     setTotalPrice(0);
     setPayment(null);
-    setHotelId(null);
-    setRoomIds([]);
   };
 
   const handleCancel = () => {
@@ -47,38 +75,85 @@ export const AdAddBooking = ({
       message.warning("Please choose a hotel.");
       return;
     }
-    if (!roomIds.length) {
-      message.warning("Please choose at least one room.");
+    if (!roomId) {
+      message.warning("Please choose a room.");
       return;
     }
     if (!checkIn || !checkOut) {
-      message.warning("Please choose check-in and check-out time.");
+      message.warning("Please choose check-in and check-out date.");
       return;
     }
+
+    // ✅ Check-out > Check-in (ít nhất 1 ngày)
+    if (
+      !dayjs(checkOut).startOf("day").isAfter(
+        dayjs(checkIn).startOf("day"),
+        "day"
+      )
+    ) {
+      message.warning("Check-out must be after check-in (at least 1 day).");
+      return;
+    }
+
     if (!payment) {
       message.warning("Please choose payment status.");
       return;
     }
 
     const payload = {
-      checkIn: checkIn.format("YYYY-MM-DDTHH:mm:ss"),
-      checkOut: checkOut.format("YYYY-MM-DDTHH:mm:ss"),
+      checkIn: checkIn.startOf("day").format("YYYY-MM-DDTHH:mm:ss"),
+      checkOut: checkOut.startOf("day").format("YYYY-MM-DDTHH:mm:ss"),
       totalPrice: Number(totalPrice) || 0,
       payment: payment === "paid", // boolean
-      roomIds, // list id room -> BookingRequest.roomIds
+      roomIds: [roomId], // ✅ BE vẫn nhận mảng, nhưng chỉ có 1 room
     };
 
     try {
       const res = await bookingServices.create(payload);
       message.success("Booking created successfully");
+
       if (onCreated && res?.data) {
-        onCreated(res.data); // cho AdBooking cập nhật Redux ngay
+        onCreated(res.data); // thường là fetchBookings()
       }
+
       resetForm();
       setIsModalAddVisible(false);
     } catch (err) {
       console.error("Error creating booking:", err);
       message.error("Error creating booking");
+    }
+  };
+
+  // Không cho chọn check-in trước hôm nay
+  const disabledCheckInDate = (current) => {
+    return current && current.startOf("day").isBefore(dayjs().startOf("day"));
+  };
+
+  // Check-out phải > check-in và ≥ hôm nay
+  const disabledCheckOutDate = (current) => {
+    if (!current) return false;
+    const isBeforeToday = current.startOf("day").isBefore(dayjs().startOf("day"));
+
+    if (!checkIn) {
+      return isBeforeToday;
+    }
+
+    const isNotAfterCheckIn = !current
+      .startOf("day")
+      .isAfter(checkIn.startOf("day"), "day");
+
+    return isBeforeToday || isNotAfterCheckIn;
+  };
+
+  // Khi đổi Check In, nếu Check Out đang <= Check In thì reset Check Out
+  const handleChangeCheckIn = (value) => {
+    setCheckIn(value);
+    if (
+      value &&
+      checkOut &&
+      !checkOut.startOf("day").isAfter(value.startOf("day"), "day")
+    ) {
+      setCheckOut(null);
     }
   };
 
@@ -92,48 +167,6 @@ export const AdAddBooking = ({
       cancelText="Cancel"
       width={540}
     >
-      {/* Check In */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">Check In</label>
-        <DatePicker
-          showTime
-          format="YYYY-MM-DD HH:mm"
-          placeholder="Choose check-in date and time"
-          value={checkIn}
-          onChange={setCheckIn}
-          className="w-full"
-          allowClear
-        />
-      </div>
-
-      {/* Check Out */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">Check Out</label>
-        <DatePicker
-          showTime
-          format="YYYY-MM-DD HH:mm"
-          placeholder="Choose check-out date and time"
-          value={checkOut}
-          onChange={setCheckOut}
-          className="w-full"
-          allowClear
-        />
-      </div>
-
-      {/* Total Price */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">Total Price</label>
-        <Input
-          type="number"
-          placeholder="0"
-          value={totalPrice || ""}
-          onChange={(e) =>
-            setTotalPrice(e.target.value === "" ? 0 : Number(e.target.value))
-          }
-          min={0}
-        />
-      </div>
-
       {/* Hotel */}
       <div className="mb-4">
         <label className="block font-medium mb-1">Hotel</label>
@@ -142,7 +175,7 @@ export const AdAddBooking = ({
           value={hotelId}
           onChange={(val) => {
             setHotelId(val);
-            setRoomIds([]); // đổi hotel -> reset room đã chọn
+            setRoomId(null); // đổi hotel -> reset room
           }}
           className="w-full"
           showSearch
@@ -156,16 +189,15 @@ export const AdAddBooking = ({
         </Select>
       </div>
 
-      {/* Rooms */}
-      <div className="mb-4">
-        <label className="block font-medium mb-1">Room(s)</label>
+      {/* Room (chỉ 1) */}
+      <div className="mb-2">
+        <label className="block font-medium mb-1">Room</label>
         <Select
-          mode="multiple"
           placeholder={
-            hotelId ? "Select rooms for this booking" : "Choose hotel first"
+            hotelId ? "Select room for this booking" : "Choose hotel first"
           }
-          value={roomIds}
-          onChange={setRoomIds}
+          value={roomId}
+          onChange={setRoomId}
           className="w-full"
           disabled={!hotelId}
         >
@@ -177,14 +209,57 @@ export const AdAddBooking = ({
 
           {roomsForSelectedHotel.map((r) => (
             <Option key={r.id} value={r.id}>
-              {r.name} {`(#${r.id})`}
+              {r.name} {`(#${r.id})`} – {r.price}$
             </Option>
           ))}
         </Select>
-        <p className="text-xs text-gray-500 mt-1">
-          You can select one or multiple rooms. Each selected room will be
-          linked via <code>booking_room</code> table.
-        </p>
+
+        {/* 👀 Hiển thị giá room */}
+        {selectedRoom && (
+          <p className="text-xs text-gray-600 mt-1">
+            Price per night:{" "}
+            <span className="font-semibold">{selectedRoom.price}$</span>
+          </p>
+        )}
+      </div>
+
+      {/* Check In */}
+      <div className="mb-4 mt-3">
+        <label className="block font-medium mb-1">Check In</label>
+        <DatePicker
+          format="YYYY-MM-DD"
+          placeholder="Choose check-in date"
+          value={checkIn}
+          onChange={handleChangeCheckIn}
+          className="w-full"
+          allowClear
+          disabledDate={disabledCheckInDate}
+        />
+      </div>
+
+      {/* Check Out */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">Check Out</label>
+        <DatePicker
+          format="YYYY-MM-DD"
+          placeholder="Choose check-out date"
+          value={checkOut}
+          onChange={setCheckOut}
+          className="w-full"
+          allowClear
+          disabledDate={disabledCheckOutDate}
+        />
+      </div>
+
+      {/* Total Price (auto, readonly) */}
+      <div className="mb-4">
+        <label className="block font-medium mb-1">Total Price</label>
+        <Input
+          type="number"
+          value={totalPrice}
+          readOnly
+          className="w-full bg-gray-50 cursor-not-allowed"
+        />
       </div>
 
       {/* Payment */}

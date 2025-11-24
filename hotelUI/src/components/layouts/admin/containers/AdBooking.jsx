@@ -175,6 +175,86 @@ export const AdBooking = () => {
           align="center"
           render={(v) => formatDate(v)}
         />
+
+        {/* ✅ Room column */}
+        {/* ROOM — màu xanh lam đậm, khác hẳn not-yet-paid */}
+        <Column
+          title="Room"
+          dataIndex="rooms"
+          key="rooms"
+          align="center"
+          render={(rooms = []) =>
+            rooms && rooms.length ? (
+              <div className="flex flex-col gap-1">
+                {rooms.map((room) => (
+                  <span
+                    key={room.id}
+                    className="px-3 py-1 rounded-full text-xs font-semibold"
+                    style={{
+                      backgroundColor: "#E0F0FF",     // xanh nhạt
+                      border: "1px solid #4096FF",     // xanh đậm nổi bật
+                      color: "#0958D9",                // chữ xanh đậm
+                      boxShadow: "0 1px 0 rgba(0,0,0,.06)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {room.name || `Room #${room.id}`}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              "-"
+            )
+          }
+        />
+
+
+
+        {/* ✅ Hotel column (từ rooms[].hotel.name, unique) */}
+        <Column
+          title="Hotel"
+          key="hotel"
+          align="center"
+          render={(_, booking) => {
+            const rooms = booking?.rooms || [];
+
+            const hotelNames = [
+              ...new Set(
+                rooms
+                  .map((r) => r?.hotel && r.hotel.name)
+                  .filter(Boolean)
+              ),
+            ];
+
+            if (!hotelNames.length) return "-";
+
+            const hotelPillStyle = {
+              display: "inline-block",
+              padding: "4px 12px",
+              borderRadius: 9999,
+              fontWeight: 700,
+              fontSize: 12,
+              lineHeight: "20px",
+              whiteSpace: "nowrap",
+              boxShadow: "0 1px 0 rgba(0,0,0,.06)",
+              backgroundColor: "#F3E8FF",   // 💜 tím pastel
+              border: "1px solid #B37FEB",  // 💜 viền tím đậm
+              color: "#531DAB",             // 💜 chữ tím rất đậm
+            };
+
+            return (
+              <div className="flex flex-col gap-1">
+                {hotelNames.map((name) => (
+                  <span key={name} style={hotelPillStyle}>
+                    {name}
+                  </span>
+                ))}
+              </div>
+            );
+          }}
+        />
+
+
         <Column
           title="Total Price"
           dataIndex="totalPrice"
