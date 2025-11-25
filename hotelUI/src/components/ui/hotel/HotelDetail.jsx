@@ -7,38 +7,60 @@ import { FaStar } from "react-icons/fa6";
 import { IoLocation } from "react-icons/io5";
 import { FaConciergeBell, FaHeadset, FaInfoCircle } from "react-icons/fa";
 
+const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
+
 export function HotelDetail({
   rooms: roomsProp,
   hotel: hotelProp,
   showHeader = true,
 }) {
+  // hotel list
   const { hotels } = useSelector((state) => state.hotel);
+  // toàn bộ room trong hệ thống
+  const { rooms: allRooms } = useSelector((state) => state.room);
   const { myFavorite } = useSelector((state) => state.favorite);
   const { id: routeId } = useParams();
-  const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
 
   // === màu icon – chỉnh nhanh tại đây ===
   const iconColor = "#FFC30B"; // gợi ý: "#d4af37", "#ffcc00", ...
 
   // === chiều cao khối hero dùng chung cho 2 cột ===
-  const HERO_H = 420; // có thể đổi 400–500 tuỳ ý
+  const HERO_H = 420;
 
-  // Xác định hotel
+  /* =========================
+   *  XÁC ĐỊNH HOTEL HIỆN TẠI
+   * ========================= */
   const hotel = useMemo(() => {
     if (hotelProp) return hotelProp;
-    if (routeId) return hotels.find((h) => String(h.id) === String(routeId));
+    if (routeId) {
+      return hotels.find((h) => String(h.id) === String(routeId));
+    }
     return undefined;
   }, [hotelProp, routeId, hotels]);
 
-  // Danh sách phòng
+  /* =========================
+   *  DANH SÁCH PHÒNG
+   *  - Nếu truyền roomsProp => ưu tiên dùng
+   *  - Ngược lại: lọc từ allRooms theo hotel.id
+   * ========================= */
   const rooms = useMemo(() => {
-    if (hotel) return hotel.rooms ?? [];
-    if (roomsProp) return roomsProp;
+    if (roomsProp && roomsProp.length) return roomsProp;
+
+    if (hotel && allRooms && allRooms.length) {
+      return allRooms.filter((r) => {
+        // BE trả room.hotel (object) hoặc room.hotelId
+        const roomHotelId =
+          r?.hotel?.id ?? r?.hotelId ?? r?.hotel_id ?? null;
+        if (roomHotelId == null) return false;
+        return String(roomHotelId) === String(hotel.id);
+      });
+    }
     return [];
-  }, [hotel, roomsProp]);
+  }, [roomsProp, hotel, allRooms]);
 
   return (
     <>
+      {/* ===== HERO / HEADER KHÁCH SẠN ===== */}
       {hotel && showHeader && (
         <div className="container-xxl py-5">
           <div className="container">
@@ -62,7 +84,7 @@ export function HotelDetail({
               {/* Nội dung */}
               <div className="col-lg-6 d-flex" style={{ minHeight: HERO_H }}>
                 <div className="h-100 w-100 d-flex flex-column justify-content-center">
-                  {/* Welcome to + 2 gạch xanh bên phải */}
+                  {/* Welcome to + 2 gạch bên phải */}
                   <div
                     style={{
                       display: "flex",
@@ -71,7 +93,10 @@ export function HotelDetail({
                       marginBottom: 8,
                     }}
                   >
-                    <h1 className="m-0" style={{ lineHeight: 1.3, fontWeight: 900 }}>
+                    <h1
+                      className="m-0"
+                      style={{ lineHeight: 1.3, fontWeight: 900 }}
+                    >
                       Welcome to
                     </h1>
 
@@ -85,11 +110,14 @@ export function HotelDetail({
                       }}
                     >
                       <span className="divider" style={{ "--w": "150px" }} />
-                      <span className="divider" style={{ "--w": "100px", "--alpha": 0.6 }} />
+                      <span
+                        className="divider"
+                        style={{ "--w": "100px", "--alpha": 0.6 }}
+                      />
                     </span>
                   </div>
 
-                  {/* Tên khách sạn – in đậm */}
+                  {/* Tên khách sạn */}
                   <h1
                     className="text-primary mb-4"
                     style={{ lineHeight: 1.3, fontWeight: 900 }}
@@ -126,7 +154,11 @@ export function HotelDetail({
                       <div className="d-flex mt-2">
                         <p
                           className="mb-2 d-flex align-items-center"
-                          style={{ gap: 8, fontSize: "1.05rem", fontWeight: 600 }}
+                          style={{
+                            gap: 8,
+                            fontSize: "1.05rem",
+                            fontWeight: 600,
+                          }}
                         >
                           <FaConciergeBell style={{ color: iconColor }} />
                           {hotel.amenities}
@@ -167,6 +199,7 @@ export function HotelDetail({
       {/* ===== GRID PHÒNG ===== */}
       <div className="container-xxl py-5">
         <div className="container">
+          {/* Nếu không có hotel (dùng như page Rooms) */}
           {!hotel && showHeader && (
             <div className="text-center">
               <h6 className="text-2xl text-center text-primary px-3">Room</h6>
@@ -196,6 +229,12 @@ export function HotelDetail({
                 </div>
               );
             })}
+
+            {rooms.length === 0 && (
+              <p className="text-center text-muted mt-3">
+                This hotel currently has no rooms.
+              </p>
+            )}
           </div>
         </div>
       </div>
