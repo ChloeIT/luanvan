@@ -1,15 +1,17 @@
-// src/main/java/com/java/hotel/controller/RoomController.java
 package com.java.hotel.controller;
 
 import com.java.hotel.model.Hotel;
 import com.java.hotel.model.Room;
 import com.java.hotel.repository.HotelRepository;
 import com.java.hotel.repository.RoomRepository;
+import com.java.hotel.security.services.UserDetailsImpl;
 import com.java.hotel.service.RoomService;
 import com.java.hotel.service.StoreService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,62 +37,118 @@ public class RoomController {
     @Autowired
     private StoreService storeService;
 
+    // ⭐ PUBLIC – cho Home/RoomsPage
     @GetMapping("/all")
     public ResponseEntity<List<Room>> getAllRooms() {
-        List<Room> rooms = roomRepository.findAll();
-        return ResponseEntity.ok(rooms);
+        return ResponseEntity.ok(roomRepository.findAll());
     }
 
+    // ⭐ ADMIN + MOD tạo room
     @PostMapping("/create")
-    public ResponseEntity<Room> createRoom(@RequestParam String capacity,
-                                           @RequestParam String availability,
-                                           @RequestParam String type,
-                                           @RequestParam String price,
-                                           @RequestParam String name,
-                                           @RequestParam Long hotel_id,
-                                           @RequestParam("file") MultipartFile file) throws IOException {
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
+    public ResponseEntity<?> createRoom(
+            @RequestParam String capacity,
+            @RequestParam String availability,
+            @RequestParam String type,
+            @RequestParam String price,
+            @RequestParam String name,
+            @RequestParam Long hotel_id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) throws IOException {
 
-        String originalFilename = file.getOriginalFilename();
-        String newFilename = (originalFilename != null && originalFilename.contains("."))
-                ? originalFilename.substring(0, originalFilename.lastIndexOf('.')) + ".jpg"
-                : "default.jpg";
-
-        // tìm hotel
         Hotel hotel = hotelRepository.findById(hotel_id)
-                .orElseThrow(() -> new RuntimeException("Hotel not found with id: " + hotel_id));
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        boolean isModerator = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+
+        // MOD chỉ được tạo room cho hotel mà mình là owner
+        if (isModerator &&
+                (hotel.getOwner() == null ||
+                        !hotel.getOwner().getId().equals(userDetails.getId()))) {
+            return ResponseEntity.status(403)
+                    .body("You are not the owner of this hotel");
+        }
+
+        String newFilename = storeService.generateImageName(file);
 
         Room room = new Room();
-        room.setCapacity(Integer.parseInt(capacity));
         room.setName(name);
+        room.setCapacity(Integer.parseInt(capacity));
         room.setAvailability(Boolean.parseBoolean(availability));
-        room.setUpdate_at(Date.valueOf(LocalDate.now()));
-        room.setCreate_at(Date.valueOf(LocalDate.now()));
-        room.setImage(newFilename);
         room.setType(type);
         room.setPrice(Float.parseFloat(price));
-        room.setHotel(hotel); // gắn quan hệ hotel_id
+        room.setCreate_at(Date.valueOf(LocalDate.now()));
+        room.setUpdate_at(Date.valueOf(LocalDate.now()));
+        room.setImage(newFilename);
+        room.setHotel(hotel);
 
         Room savedRoom = roomRepository.save(room);
-
-        // lưu file ảnh vào thư mục "rooms"
         storeService.saveFile(file, newFilename, "rooms");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
     }
 
+    // ⭐ ADMIN + MOD sửa room
     @PutMapping("/edit/{id}")
-    public ResponseEntity<Room> editRoom(@PathVariable("id") Long id,
-                                         @RequestBody Room roomUpdates) throws Exception {
-        Room updateRoom = roomService.updateRoom(id, roomUpdates);
-        return ResponseEntity.ok(updateRoom);
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
+    public ResponseEntity<?> editRoom(
+            @PathVariable Long id,
+            @RequestBody Room updates,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) throws Exception {
+
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        boolean isModerator = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+
+        // MOD chỉ được sửa room thuộc hotel của mình
+        if (isModerator &&
+                (room.getHotel().getOwner() == null ||
+                        !room.getHotel().getOwner().getId().equals(userDetails.getId()))) {
+            return ResponseEntity.status(403).body("Not your hotel");
+        }
+
+        Room updated = roomService.updateRoom(id, updates);
+        return ResponseEntity.ok(updated);
     }
 
+    // ⭐ ADMIN + MOD xoá room
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteRoom(@PathVariable("id") Long id) {
-        if (!roomRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
+    public ResponseEntity<?> deleteRoom(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        boolean isModerator = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+
+        // MOD chỉ được xoá room thuộc hotel của mình
+        if (isModerator &&
+                (room.getHotel().getOwner() == null ||
+                        !room.getHotel().getOwner().getId().equals(userDetails.getId()))) {
+            return ResponseEntity.status(403).body("Not allowed");
         }
+
         roomRepository.deleteById(id);
-        return ResponseEntity.ok().body("Room deleted");
+        return ResponseEntity.ok("Room deleted");
+    }
+
+    // ⭐ Lấy tất cả room thuộc các hotel mà current user là owner (cho trang MOD)
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
+    public ResponseEntity<?> getMyRooms(
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+        Long ownerId = userDetails.getId();
+        List<Room> list = roomRepository.findByHotelOwnerId(ownerId);
+        return ResponseEntity.ok(list);
     }
 }

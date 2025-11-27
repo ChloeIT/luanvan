@@ -11,14 +11,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-
 @Entity
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name = "full_name", nullable = true)
     private String fullName;
+
     @Email
     private String email;
 
@@ -47,8 +49,17 @@ public class User {
     @JsonIgnore
     private Favorite favorite;
 
+    // 🔗 Các khách sạn mà user này làm chủ (owner_id trong bảng hotel)
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Hotel> ownedHotels;
+
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
     private Set<Role> roles = new HashSet<>();
 
     public User() {}
@@ -59,7 +70,14 @@ public class User {
         this.password = password;
     }
 
-    public User(Long id, String fullName, String email, String username, String password, Integer phone, String image, List<Booking> bookings) {
+    public User(Long id,
+                String fullName,
+                String email,
+                String username,
+                String password,
+                Integer phone,
+                String image,
+                List<Booking> bookings) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -70,13 +88,7 @@ public class User {
         this.bookings = bookings;
     }
 
-    public Favorite getFavorite() {
-        return favorite;
-    }
-
-    public void setFavorite(Favorite favorite) {
-        this.favorite = favorite;
-    }
+    // ===== Getter / Setter =====
 
     public Long getId() {
         return id;
@@ -118,11 +130,11 @@ public class User {
         this.password = password;
     }
 
-    public Integer   getPhone() {
+    public Integer getPhone() {
         return phone;
     }
 
-    public void setPhone(int phone) {
+    public void setPhone(Integer phone) {
         this.phone = phone;
     }
 
@@ -140,6 +152,14 @@ public class User {
 
     public void setBookings(List<Booking> bookings) {
         this.bookings = bookings;
+    }
+
+    public Favorite getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Favorite favorite) {
+        this.favorite = favorite;
     }
 
     public String getAddress() {
@@ -172,5 +192,13 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public List<Hotel> getOwnedHotels() {
+        return ownedHotels;
+    }
+
+    public void setOwnedHotels(List<Hotel> ownedHotels) {
+        this.ownedHotels = ownedHotels;
     }
 }

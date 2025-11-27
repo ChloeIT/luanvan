@@ -1,87 +1,103 @@
-package com.java.hotel.controller;
+    package com.java.hotel.controller;
 
-import com.java.hotel.model.Hotel;
-import com.java.hotel.model.Room;
-import com.java.hotel.model.User;
-import com.java.hotel.repository.HotelRepository;
-import com.java.hotel.service.HotelService;
-import com.java.hotel.service.StoreService;
-import org.antlr.v4.runtime.misc.LogManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+    import com.java.hotel.model.Hotel;
+    import com.java.hotel.repository.HotelRepository;
+    import com.java.hotel.security.services.UserDetailsImpl;
+    import com.java.hotel.service.HotelService;
+    import com.java.hotel.service.StoreService;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
+    import org.springframework.security.access.prepost.PreAuthorize;
+    import org.springframework.security.core.annotation.AuthenticationPrincipal;
+    import org.springframework.web.bind.annotation.*;
+    import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+    import java.io.IOException;
+    import java.util.List;
 
-@RestController
-@CrossOrigin(origins = "*", maxAge = 3600)
-@RequestMapping("/api/hotel")
-public class HotelController {
-    @Autowired
-    HotelService hotelService;
-    @Autowired
-    private HotelRepository hotelRepository;
+    @RestController
+    @CrossOrigin(origins = "*", maxAge = 3600)
+    @RequestMapping("/api/hotel")
+    public class HotelController {
 
-    @Autowired
-    private StoreService storeService;
+        @Autowired
+        private HotelService hotelService;
 
-    @GetMapping("/all")
-    public ResponseEntity<List<Hotel>> getAllRooms() {
-        List<Hotel> hotels = hotelService.findAll();
-        System.out.println("hotel " +hotels);
-        return ResponseEntity.ok(hotels);
-    }
+        @Autowired
+        private HotelRepository hotelRepository;
 
-    @PostMapping("/create")
-    public ResponseEntity<Hotel> createHotel(@RequestParam String name,
-            @RequestParam String address,
-                                             @RequestParam String phone ,
-                                             @RequestParam String rating ,
-                                             @RequestParam String amenities ,
-                                             @RequestParam("file") MultipartFile file) throws IOException {
-        String originalFilename = file.getOriginalFilename();
-        String newFilename = originalFilename != null ? originalFilename.substring(0, originalFilename.lastIndexOf('.')) + ".jpg" : "default.jpg";
+        @Autowired
+        private StoreService storeService;
 
-        Hotel hotel = new Hotel();
-        hotel.setName(name);
-        hotel.setAddress(address);
-        hotel.setPhone(phone);
-        hotel.setRating(Float.parseFloat(rating));
-        hotel.setAmenities(amenities);
-        hotel.setImage(newFilename);
-        Hotel savedHotel = hotelRepository.save(hotel);
-
-        storeService.saveFile(file, newFilename, "hotels");
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedHotel);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteHotel(@PathVariable("id") Long id) {
-        if (!hotelRepository.existsById(id)) {
-            return ResponseEntity.notFound().build(); // Khách sạn không tồn tại
+        // ⭐ PUBLIC – dùng cho trang Home, không cần token
+        @GetMapping("/all")
+        public ResponseEntity<List<Hotel>> getAllHotels() {
+            return ResponseEntity.ok(hotelService.findAll());
         }
-        // Xóa khách sạn
-        hotelRepository.deleteById(id);
-        // Trả về phản hồi với HTTP 204 (No Content)
-        return ResponseEntity.ok().body("Hotel deleted");
-    }
 
-    @PutMapping("/edit/{id}")
-    public ResponseEntity<?> updateHotel(@PathVariable Long id, @RequestBody Hotel updatedHotel) {
-        try {
-            Optional<Hotel> hotelOptional = hotelRepository.findById(id);
-            if (hotelOptional.isPresent()) {
-                Hotel hotel = hotelService.updateHotel(id, updatedHotel);
-                return ResponseEntity.ok(hotel);
-            } else {
-                return ResponseEntity.status(404).body("Hotel not found");
+        // ADMIN tạo hotel
+        @PostMapping("/create")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> createHotel(
+                @RequestParam String name,
+                @RequestParam String address,
+                @RequestParam String phone,
+                @RequestParam String rating,
+                @RequestParam String amenities,
+                @RequestParam("file") MultipartFile file
+        ) throws IOException {
+
+            String newFilename = storeService.generateImageName(file);
+
+            Hotel hotel = new Hotel();
+            hotel.setName(name);
+            hotel.setAddress(address);
+            hotel.setPhone(phone);
+            hotel.setRating(Float.parseFloat(rating));
+            hotel.setAmenities(amenities);
+            hotel.setImage(newFilename);
+
+            Hotel saved = hotelRepository.save(hotel);
+            storeService.saveFile(file, newFilename, "hotels");
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        }
+
+        @DeleteMapping("/delete/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> deleteHotel(@PathVariable Long id) {
+            if (!hotelRepository.existsById(id)) {
+                return ResponseEntity.notFound().build();
             }
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating hotel: " + e.getMessage());
+            hotelRepository.deleteById(id);
+            return ResponseEntity.ok("Hotel deleted");
+        }
+
+        @PutMapping("/edit/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<?> updateHotel(
+                @PathVariable Long id,
+                @RequestBody Hotel updatedHotel) {
+
+            try {
+                Hotel updated = hotelService.updateHotel(id, updatedHotel);
+                return ResponseEntity.ok(updated);
+            } catch (Exception e) {
+                return ResponseEntity
+                        .status(500)
+                        .body("Error updating hotel: " + e.getMessage());
+            }
+        }
+
+        // ⭐ MOD / ADMIN xem hotel của chính mình
+        @GetMapping("/my")
+        @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
+        public ResponseEntity<?> getMyHotels(
+                @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+            Long userId = userDetails.getId();
+            List<Hotel> list = hotelRepository.findByOwnerId(userId);
+            return ResponseEntity.ok(list);
         }
     }
-}

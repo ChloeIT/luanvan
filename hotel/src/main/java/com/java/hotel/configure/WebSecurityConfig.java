@@ -19,7 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity
+@EnableMethodSecurity // để dùng @PreAuthorize ở controller
 public class WebSecurityConfig {
 
     @Autowired
@@ -54,8 +54,7 @@ public class WebSecurityConfig {
     }
 
     /**
-     * Bỏ qua hoàn toàn security cho một số static resources cơ bản.
-     * (Phần chính vẫn là securityMatcher("/api/**") ở dưới)
+     * Bỏ qua hoàn toàn security cho static resources (không ảnh hưởng /api/**).
      */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -74,25 +73,36 @@ public class WebSecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔥 Chỉ áp dụng security cho các URL bắt đầu bằng /api/**
+                // 🔥 Chỉ áp dụng config này cho các URL /api/**
                 .securityMatcher("/api/**")
 
                 .authorizeHttpRequests(auth -> auth
-                        // PUBLIC APIs
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/user/**").permitAll()
-                        .requestMatchers("/api/hotel/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll()
-                        .requestMatchers("/api/room/**").permitAll()
-                        .requestMatchers("/api/booking/**").permitAll()
-                        .requestMatchers("/api/favorite/**").permitAll()
 
-                        // Các API còn lại trong /api/** cần token
+                        // ====== PUBLIC APIs ======
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/test/**").permitAll()
+
+                        // Cho Home, trang khách dùng để xem danh sách khách sạn / phòng
+                        .requestMatchers("/api/hotel/all").permitAll()
+                        .requestMatchers("/api/room/all").permitAll()
+
+                        // Cho phép user (khách) tạo booking không cần role ADMIN
+                        .requestMatchers("/api/booking/create").permitAll()
+
+                        // ====== KHU VỰC MOD / ADMIN ======
+                        // Nếu sau này có controller riêng /api/mod/** thì:
+                        // chỉ MODERATOR hoặc ADMIN mới vào được
+                        .requestMatchers("/api/mod/**")
+                        .hasAnyRole("MODERATOR", "ADMIN")
+
+                        // Các API /api/** còn lại yêu cầu phải đăng nhập,
+                        // quyền cụ thể sẽ do @PreAuthorize trong controller kiểm soát
                         .anyRequest().authenticated()
                 );
 
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(authenticationJwtTokenFilter(),
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

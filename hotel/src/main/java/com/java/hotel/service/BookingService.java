@@ -120,4 +120,11 @@ public class BookingService {
         }
         bookingRepository.deleteById(id);
     }
+
+    /**
+     * Lấy danh sách booking của các hotel thuộc owner (dùng cho MOD)
+     */
+    public List<Booking> getBookingsByHotelOwner(Long ownerId) {
+        return bookingRepository.findAllByHotelOwner(ownerId);
+    }
 }
