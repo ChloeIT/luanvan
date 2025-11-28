@@ -2,9 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button, Image } from "antd";
 import { BsCurrencyDollar } from "react-icons/bs";
-import { FaUserLarge } from "react-icons/fa6";
+import { FaUserLarge, FaHeart, FaRegHeart } from "react-icons/fa6";
 import { IoMdPricetags } from "react-icons/io";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,15 +12,18 @@ import { favoriteAction } from "@/store";
 
 /** ========== helpers ========== */
 const readCompare = () => {
-  try { return JSON.parse(localStorage.getItem("compareRooms") || "[]"); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem("compareRooms") || "[]");
+  } catch {
+    return [];
+  }
 };
 const writeCompare = (list) => {
   localStorage.setItem("compareRooms", JSON.stringify(list));
   window.dispatchEvent(new Event("compare:changed"));
 };
 const toNum = (v) =>
-  (v === 0 || v === "0") ? 0 : (v != null && v !== "") ? Number(v) : NaN;
+  v === 0 || v === "0" ? 0 : v != null && v !== "" ? Number(v) : NaN;
 const getHotelIdFromRoom = (room) =>
   toNum(room?.hotel_id ?? room?.hotelId ?? room?.hotel?.id);
 
@@ -49,6 +51,7 @@ const resolveHotelName = (room, hotels, hotelNameProp) => {
  * @param {boolean} [props.isFavorite] - room đã có trong favorite
  * @param {"default"|"compact"} [props.variant="default"] - kiểu hiển thị
  * @param {boolean} [props.inCompare] - (deprecated) nếu true → compact
+ * @param {boolean} [props.isAvailableToday=true] - phòng có trống hôm nay không
  */
 export const RoomCard = ({
   room,
@@ -57,6 +60,7 @@ export const RoomCard = ({
   isFavorite,
   variant = "default",
   inCompare, // deprecated – để tương thích ngược
+  isAvailableToday = true,
 }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
   const { myFavorite } = useSelector((s) => s.favorite);
@@ -75,7 +79,7 @@ export const RoomCard = ({
 
   // resolve hotelId & hotelName
   const resolvedHotelId = useMemo(
-    () => (hotelIdProp ?? getHotelIdFromRoom(room)),
+    () => hotelIdProp ?? getHotelIdFromRoom(room),
     [hotelIdProp, room]
   );
   const hotelName = useMemo(
@@ -84,14 +88,16 @@ export const RoomCard = ({
   );
 
   // compare state
-  const [isInCompare, setIsInCompare] = useState(
-    () => readCompare().some((r) => r.id === room.id)
+  const [isInCompare, setIsInCompare] = useState(() =>
+    readCompare().some((r) => r.id === room.id)
   );
 
   useEffect(() => {
     const sync = () =>
       setIsInCompare(readCompare().some((r) => r.id === room.id));
-    const onStorage = (e) => { if (e.key === "compareRooms") sync(); };
+    const onStorage = (e) => {
+      if (e.key === "compareRooms") sync();
+    };
     window.addEventListener("storage", onStorage);
     window.addEventListener("compare:changed", sync);
     sync();
@@ -103,7 +109,8 @@ export const RoomCard = ({
 
   // actions
   const addToCompare = (e) => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     const cur = readCompare();
     if (cur.some((r) => r.id === room.id)) return;
     const payload = {
@@ -121,13 +128,15 @@ export const RoomCard = ({
   };
 
   const removeFromCompare = (e) => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     writeCompare(readCompare().filter((r) => r.id !== room.id));
     setIsInCompare(false);
   };
 
   const onToggleFavorite = async (e) => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     try {
       if (!myFavorite?.id) return;
       const res = isFavorite
@@ -140,9 +149,17 @@ export const RoomCard = ({
   };
 
   const onBook = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    if (room.availability) navigate(`/booking/${room.id}`);
+    e.preventDefault();
+    e.stopPropagation();
+    if (room.availability && isAvailableToday) {
+      navigate(`/booking/${room.id}`);
+    }
   };
+
+  // chỉ cho Book nếu:
+  // - room.availability (đang kinh doanh)
+  // - isAvailableToday (không bị booking chồng ngày hôm nay)
+  const canBook = !!room.availability && !!isAvailableToday;
 
   return (
     <div className={`room-card ${isCompact ? "room-card--compact" : ""}`}>
@@ -172,7 +189,7 @@ export const RoomCard = ({
           </h5>
         </div>
 
-        {/* Info lines: đồng bộ màu qua .room-info-line */}
+        {/* Info lines */}
         <div className="room-info d-flex flex-column align-items-center">
           <div className="d-flex justify-content-center">
             <p className="mb-1 d-flex align-items-center room-info-line">
@@ -192,7 +209,11 @@ export const RoomCard = ({
         <div className="room-actions d-flex justify-content-center align-items-center text-primary">
           <span
             role="button"
-            title={isFavorite ? "Remove room from favorites" : "Add room to favorites"}
+            title={
+              isFavorite
+                ? "Remove room from favorites"
+                : "Add room to favorites"
+            }
             className="me-2"
             style={{ fontSize: HEART_FS, lineHeight: 1, cursor: "pointer" }}
             onClick={onToggleFavorite}
@@ -205,9 +226,9 @@ export const RoomCard = ({
             className="mx-1"
             size={BTN_SIZE}
             onClick={onBook}
-            disabled={!room.availability}
+            disabled={!canBook}
           >
-            {room.availability ? "Book now" : "Booked"}
+            {canBook ? "Book now" : "Booked"}
           </Button>
 
           {isInCompare ? (

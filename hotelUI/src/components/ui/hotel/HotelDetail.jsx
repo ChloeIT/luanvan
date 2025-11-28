@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+// src/components/ui/hotel/HotelDetail.jsx
+import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { RoomCard } from "@/components/ui/Room/RoomCard";
@@ -7,7 +8,9 @@ import { FaStar } from "react-icons/fa6";
 import { IoLocation } from "react-icons/io5";
 import { FaConciergeBell, FaHeadset, FaInfoCircle } from "react-icons/fa";
 
-const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
+const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || "";
+const RAW_API_URL = (import.meta.env.VITE_HOTEL_API || "").replace(/\/+$/, "");
+const ROOM_API_BASE = RAW_API_URL ? `${RAW_API_URL}/api/room` : "/api/room";
 
 export function HotelDetail({
   rooms: roomsProp,
@@ -57,6 +60,57 @@ export function HotelDetail({
     }
     return [];
   }, [roomsProp, hotel, allRooms]);
+
+  /* =========================
+   *  GỌI API LẤY PHÒNG TRỐNG HÔM NAY
+   * ========================= */
+  // null = chưa load; [] = load xong nhưng không có phòng trống
+  const [availableTodayIds, setAvailableTodayIds] = useState(null);
+
+  useEffect(() => {
+    if (!hotel) return;
+
+    // khoảng: hôm nay 00:00 → ngày mai 00:00
+    const now = new Date();
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      0,
+      0,
+      0
+    );
+    const end = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0,
+      0,
+      0
+    );
+
+    const checkIn = start.toISOString();
+    const checkOut = end.toISOString();
+
+    const url = `${ROOM_API_BASE}/hotel/${hotel.id}/available?checkIn=${encodeURIComponent(
+      checkIn
+    )}&checkOut=${encodeURIComponent(checkOut)}`;
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        const ids = Array.isArray(data) ? data.map((r) => r.id) : [];
+        setAvailableTodayIds(ids);
+      })
+      .catch((err) => {
+        console.error("Fetch available rooms error:", err);
+        // để tránh khoá hết phòng nếu lỗi API -> cho phép book tạm
+        setAvailableTodayIds(null);
+      });
+  }, [hotel]);
 
   return (
     <>
@@ -212,6 +266,12 @@ export function HotelDetail({
               const isFavorite =
                 myFavorite?.rooms?.some((fav) => fav.id === room.id) || false;
 
+              // Nếu availableTodayIds chưa load (null) => tạm cho phép book
+              const isAvailableToday =
+                availableTodayIds === null
+                  ? true
+                  : availableTodayIds.includes(room.id);
+
               return (
                 <div
                   className="room-cell wow fadeInUp"
@@ -224,6 +284,7 @@ export function HotelDetail({
                       isFavorite={isFavorite}
                       hotelName={hotel?.name}
                       hotelId={hotel?.id}
+                      isAvailableToday={isAvailableToday}
                     />
                   </div>
                 </div>
