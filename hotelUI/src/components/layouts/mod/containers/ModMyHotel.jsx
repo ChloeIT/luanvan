@@ -7,6 +7,9 @@ import { authServices } from "../../../../services/auth";
 
 // ICONS
 import { FaSlidersH, FaCrown } from "react-icons/fa";
+import { IoLocation } from "react-icons/io5";
+import { FaPhoneAlt } from "react-icons/fa";
+import { FaStar } from "react-icons/fa6";
 
 const { TextArea } = Input;
 
@@ -25,6 +28,64 @@ const RAW_API_URL = (import.meta.env.VITE_HOTEL_API || "").replace(/\/+$/, "");
 // Chuẩn hoá base /api/hotel
 const HOTEL_API_BASE = RAW_API_URL ? `${RAW_API_URL}/api/hotel` : "/api/hotel";
 
+// Copy với fallback
+const copyText = async (text) => {
+    if (!text) return false;
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+// Ưu tiên lat/lng; nếu không có thì dùng địa chỉ text
+const buildDirectionsUrl = (hotel) => {
+    const hasLL = hotel?.lat != null && hotel?.lng != null;
+    const destination = hasLL
+        ? `${hotel.lat},${hotel.lng}`
+        : hotel?.address
+            ? encodeURIComponent(hotel.address)
+            : "";
+
+    if (!destination) return null;
+
+    // origin để Google tự lấy vị trí hiện tại (My Location)
+    return `https://www.google.com/maps/dir/?api=1&origin=My%20Location&destination=${destination}&travelmode=driving`;
+};
+
+// Link tới trang đánh giá Google của KS
+const buildGoogleReviewsUrl = (hotel) => {
+    const placeId = hotel?.placeId || hotel?.googlePlaceId || hotel?.place_id;
+
+    if (placeId) {
+        return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+    }
+
+    // Fallback: tìm theo TÊN + ĐỊA CHỈ
+    const q = [hotel?.name, hotel?.address].filter(Boolean).join(" ");
+    if (q) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+
+    // Fallback cuối: theo lat/lng
+    if (hotel?.lat != null && hotel?.lng != null) {
+        return `https://www.google.com/maps/search/?api=1&query=${hotel.lat},${hotel.lng}`;
+    }
+
+    return null;
+};
+
 /* ========= COMPONENT ========= */
 
 export const ModMyHotel = () => {
@@ -33,6 +94,7 @@ export const ModMyHotel = () => {
 
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
+    const [copiedPhone, setCopiedPhone] = useState(false);
 
     // hotel lấy từ Redux (store)
     const storeHotel = useMemo(() => {
@@ -113,10 +175,7 @@ export const ModMyHotel = () => {
     if (!hotelView) {
         return (
             <div className="p-6">
-                <h2
-                    className="text-xl font-bold mb-2"
-                    style={{ color: "var(--text)" }}
-                >
+                <h2 className="text-xl font-bold mb-2" style={{ color: "var(--text)" }}>
                     My Hotel
                 </h2>
                 <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
@@ -129,12 +188,26 @@ export const ModMyHotel = () => {
         );
     }
 
+    const directionsUrl = buildDirectionsUrl(hotelView);
+    const reviewsUrl = buildGoogleReviewsUrl(hotelView);
+
+    const handleCopyPhone = async () => {
+        const ok = await copyText(String(hotelView.phone || "").trim());
+        if (ok) {
+            setCopiedPhone(true);
+            setTimeout(() => setCopiedPhone(false), 900);
+        }
+    };
+
+    const clickableRowClass =
+        "inline-flex items-center gap-2 cursor-pointer hover:text-[var(--primary)] hover:underline transition-colors";
+
     return (
         <div className="flex flex-col lg:flex-row gap-4 p-4 items-stretch">
             {/* LEFT: Hotel preview card */}
             <div className="lg:w-3/5">
                 <div className="rounded-2xl themed-card shadow h-full flex flex-col overflow-hidden">
-                    {/* Ảnh – hạ nhẹ chiều cao để giảm cuộn */}
+                    {/* Ảnh */}
                     <div className="relative w-full h-[310px] md:h-[330px] bg-black/5">
                         <img
                             src={buildHotelImageUrl(hotelView.image)}
@@ -155,13 +228,13 @@ export const ModMyHotel = () => {
 
                     {/* Nội dung */}
                     <div className="p-4 pt-3 flex flex-col space-y-3">
-                        {/* Hotel name + address */}
+                        {/* Hotel name + address (address clickable) */}
                         <div>
                             <h2 className="flex items-center gap-3">
                                 {/* Line highlight */}
                                 <span className="block w-1.5 h-6 rounded-full bg-[var(--primary)] shadow-sm" />
 
-                                {/* Name với glow nhẹ */}
+                                {/* Name */}
                                 <span
                                     className="text-[26px] font-extrabold leading-tight"
                                     style={{
@@ -173,21 +246,88 @@ export const ModMyHotel = () => {
                                 </span>
                             </h2>
 
-                            <p className="text-xs mt-1 opacity-80">{hotelView.address}</p>
+                            {/* Địa chỉ – CLICKABLE, mở Google Maps */}
+                            <div className="mt-1">
+                                <div
+                                    className={directionsUrl ? clickableRowClass : "inline-flex items-center gap-2 text-xs opacity-80"}
+                                    role={directionsUrl ? "button" : undefined}
+                                    tabIndex={directionsUrl ? 0 : -1}
+                                    title={directionsUrl ? "Open Google Maps for directions" : ""}
+                                    onClick={() => {
+                                        if (!directionsUrl) return;
+                                        window.open(directionsUrl, "_blank", "noopener");
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (!directionsUrl) return;
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            window.open(directionsUrl, "_blank", "noopener");
+                                        }
+                                    }}
+                                >
+                                    <IoLocation size={15} className="flex-shrink-0" />
+                                    <span className="text-xs opacity-90">{hotelView.address}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Info block – phóng to nhẹ & cân khoảng cách */}
+                        {/* Info block */}
                         <div className="space-y-2 text-[15px]">
+                            {/* Phone – copy khi click */}
                             <div className="flex">
                                 <span className="w-28 font-semibold">Phone:</span>
-                                <span className="flex-1">{hotelView.phone || "Not set"}</span>
+                                <span className="flex-1">
+                                    <span
+                                        className={clickableRowClass}
+                                        role="button"
+                                        tabIndex={0}
+                                        title="Click to copy phone number"
+                                        onClick={handleCopyPhone}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                handleCopyPhone();
+                                            }
+                                        }}
+                                    >
+                                        <FaPhoneAlt size={15} className="flex-shrink-0" />
+                                        <span>
+                                            {copiedPhone ? "Copied!" : hotelView.phone || "Not set"}
+                                        </span>
+                                    </span>
+                                </span>
                             </div>
 
+                            {/* Rating – mở trang review */}
                             <div className="flex">
                                 <span className="w-28 font-semibold">Rating:</span>
-                                <span className="flex-1">{hotelView.rating || "N/A"}</span>
+                                <span className="flex-1">
+                                    <span
+                                        className={
+                                            reviewsUrl ? clickableRowClass : "inline-flex items-center gap-2"
+                                        }
+                                        role={reviewsUrl ? "button" : undefined}
+                                        tabIndex={reviewsUrl ? 0 : -1}
+                                        title={reviewsUrl ? "See Google reviews" : ""}
+                                        onClick={() => {
+                                            if (!reviewsUrl) return;
+                                            window.open(reviewsUrl, "_blank", "noopener");
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (!reviewsUrl) return;
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                window.open(reviewsUrl, "_blank", "noopener");
+                                            }
+                                        }}
+                                    >
+                                        <FaStar className="text-yellow-300 flex-shrink-0" size={16} />
+                                        <span>{hotelView.rating || "N/A"}</span>
+                                    </span>
+                                </span>
                             </div>
 
+                            {/* Amenities – chỉ hiển thị text bình thường */}
                             <div className="flex">
                                 <span className="w-28 font-semibold">Amenities:</span>
                                 <span className="flex-1">
@@ -224,7 +364,7 @@ export const ModMyHotel = () => {
             {/* RIGHT: Config form */}
             <div className="lg:w-2/5">
                 <div className="rounded-2xl themed-card shadow p-4 h-full flex flex-col">
-                    {/* Header: icon + title, khoảng cách đều với form */}
+                    {/* Header */}
                     <div className="flex items-center gap-4 mb-4">
                         <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/70 shadow-sm">
                             <FaSlidersH className="text-[var(--primary)]" size={20} />
