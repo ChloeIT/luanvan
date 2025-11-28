@@ -8,11 +8,10 @@ import com.java.hotel.repository.BookingRepository;
 import com.java.hotel.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -27,26 +26,62 @@ public class BookingService {
     @Autowired
     private StoreService storeService;
 
+    // ====== CREATE ======
+
     /**
-     * Tạo booking mới từ BookingRequest (DTO)
+     * Tạo booking mới từ BookingRequest
      * - Lấy user hiện tại
      * - Load Room từ roomIds
-     * - Map sang entity Booking rồi save
+     * - CHECK TRÙNG NGÀY cho từng room
      */
-    public Booking createBooking(BookingRequest request) throws ExecutionException, InterruptedException {
-        // user hiện tại (đang login)
+    @Transactional
+    public Booking createBooking(BookingRequest request)
+            throws ExecutionException, InterruptedException {
+
         User currentUser = storeService.getCurrentUser();
 
-        // Lấy rooms từ roomIds
-        Set<Room> rooms = new HashSet<>();
-        if (request.getRoomIds() != null && !request.getRoomIds().isEmpty()) {
-            rooms.addAll(roomRepository.findByIdIn(request.getRoomIds()));
+        LocalDateTime checkIn = request.getCheckIn();
+        LocalDateTime checkOut = request.getCheckOut();
+
+        if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
+            throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        // Map DTO -> entity
+        // lấy danh sách phòng
+        Set<Long> roomIds = request.getRoomIds() != null
+                ? new HashSet<>(request.getRoomIds())
+                : Collections.emptySet();
+
+        if (roomIds.isEmpty()) {
+            throw new IllegalArgumentException("Booking must contain at least one room");
+        }
+
+        Set<Room> rooms = new HashSet<>(roomRepository.findByIdIn(roomIds));
+
+        if (rooms.isEmpty()) {
+            throw new IllegalArgumentException("Rooms not found");
+        }
+
+        // ❗Check trùng ngày cho từng room
+        for (Room room : rooms) {
+            if (Boolean.FALSE.equals(room.getAvailability())) {
+                throw new RuntimeException("Room " + room.getName() + " is disabled");
+            }
+
+            boolean conflict = bookingRepository.existsOverlappingBooking(
+                    room.getId(), checkIn, checkOut
+            );
+            if (conflict) {
+                throw new RuntimeException(
+                        "Room " + room.getName() + " is already booked in this date range"
+                );
+            }
+        }
+
+        // map DTO -> entity
         Booking booking = new Booking();
-        booking.setCheckIn(request.getCheckIn());
-        booking.setCheckOut(request.getCheckOut());
+        booking.setCheckIn(checkIn);
+        booking.setCheckOut(checkOut);
         booking.setTotalPrice(request.getTotalPrice());
         booking.setPayment(request.isPayment());
         booking.setUser(currentUser);
@@ -55,65 +90,85 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    /**
-     * Lấy toàn bộ booking, kèm luôn rooms + hotel (fetch join)
-     */
+    // ====== READ ======
+
     public List<Booking> getAllBookings() {
         return bookingRepository.findAllWithRoomsAndHotel();
     }
 
-    /**
-     * Lấy 1 booking theo id, kèm rooms + hotel (fetch join)
-     */
     public Booking getBookingById(Long id) {
         return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
     }
 
-    /**
-     * Chỉ sửa trạng thái payment (dùng cho nút toggle thanh toán)
-     */
+    // chỉ toggle payment
+    @Transactional
     public Booking editBookingPayment(Long id, boolean payment) {
-        Booking booking = bookingRepository.findById(id).orElse(null);
-        if (booking != null) {
-            booking.setPayment(payment);
-            bookingRepository.save(booking);
-        }
-        return booking;
+        return bookingRepository.findById(id)
+                .map(b -> {
+                    b.setPayment(payment);
+                    return bookingRepository.save(b);
+                })
+                .orElse(null);
     }
 
-    /**
-     * Cập nhật booking bằng BookingRequest
-     * (Admin có thể sửa lại ngày, giá, payment, rooms)
-     */
+    // ====== UPDATE FULL ======
+
+    @Transactional
     public Booking updateBooking(Long id, BookingRequest request) throws Exception {
-        Optional<Booking> existingBookingOptional = bookingRepository.findById(id);
-        if (existingBookingOptional.isEmpty()) {
-            throw new Exception("Booking not found");
+        Booking existingBooking = bookingRepository.findById(id)
+                .orElseThrow(() -> new Exception("Booking not found"));
+
+        LocalDateTime checkIn = request.getCheckIn();
+        LocalDateTime checkOut = request.getCheckOut();
+
+        if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
+            throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        Booking existingBooking = existingBookingOptional.get();
-
-        // update các field cơ bản
-        existingBooking.setCheckIn(request.getCheckIn());
-        existingBooking.setCheckOut(request.getCheckOut());
+        existingBooking.setCheckIn(checkIn);
+        existingBooking.setCheckOut(checkOut);
         existingBooking.setTotalPrice(request.getTotalPrice());
         existingBooking.setPayment(request.isPayment());
 
-        // Nếu FE gửi roomIds (kể cả rỗng) thì cập nhật lại rooms
+        // cập nhật rooms nếu FE gửi roomIds
         if (request.getRoomIds() != null) {
-            Set<Room> rooms = new HashSet<>();
+            Set<Room> newRooms = new HashSet<>();
             if (!request.getRoomIds().isEmpty()) {
-                rooms.addAll(roomRepository.findByIdIn(request.getRoomIds()));
+                newRooms.addAll(roomRepository.findByIdIn(request.getRoomIds()));
             }
-            existingBooking.setRooms(rooms);
+            existingBooking.setRooms(newRooms);
+        }
+
+        Set<Room> rooms = existingBooking.getRooms();
+        if (rooms == null || rooms.isEmpty()) {
+            throw new IllegalArgumentException("Booking must contain at least one room");
+        }
+
+        // ❗Check trùng khi UPDATE (bỏ qua chính nó)
+        for (Room room : rooms) {
+            if (Boolean.FALSE.equals(room.getAvailability())) {
+                throw new RuntimeException("Room " + room.getName() + " is disabled");
+            }
+
+            boolean conflict = bookingRepository.existsOverlappingBookingForUpdate(
+                    existingBooking.getId(),
+                    room.getId(),
+                    checkIn,
+                    checkOut
+            );
+            if (conflict) {
+                throw new RuntimeException(
+                        "Room " + room.getName() + " is already booked in this date range"
+                );
+            }
         }
 
         return bookingRepository.save(existingBooking);
     }
 
-    /**
-     * Xoá booking theo id (dùng cho API DELETE)
-     */
+    // ====== DELETE ======
+
+    @Transactional
     public void deleteBooking(Long id) {
         if (!bookingRepository.existsById(id)) {
             throw new RuntimeException("Booking not found with id = " + id);
@@ -121,9 +176,8 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
-    /**
-     * Lấy danh sách booking của các hotel thuộc owner (dùng cho MOD)
-     */
+    // ====== DÙNG CHO MOD ======
+
     public List<Booking> getBookingsByHotelOwner(Long ownerId) {
         return bookingRepository.findAllByHotelOwner(ownerId);
     }

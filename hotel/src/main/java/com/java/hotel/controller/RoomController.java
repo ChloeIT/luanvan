@@ -14,10 +14,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -150,5 +152,23 @@ public class RoomController {
         Long ownerId = userDetails.getId();
         List<Room> list = roomRepository.findByHotelOwnerId(ownerId);
         return ResponseEntity.ok(list);
+    }
+
+    // ⭐ PUBLIC – Lấy danh sách phòng TRỐNG của một hotel trong khoảng thời gian
+    //   dùng cho trang /hotel/:id (ẩn nút Book now cho phòng đang bị booking)
+    @GetMapping("/hotel/{hotelId}/available")
+    public ResponseEntity<List<Room>> getAvailableRoomsForHotel(
+            @PathVariable Long hotelId,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime checkIn,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime checkOut
+    ) {
+        List<Room> available = roomRepository.findAvailableRoomsForHotel(
+                hotelId, checkIn, checkOut
+        );
+        return ResponseEntity.ok(available);
     }
 }

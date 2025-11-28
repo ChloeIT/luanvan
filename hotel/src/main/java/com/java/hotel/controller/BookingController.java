@@ -20,10 +20,9 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-    /* =========================
-         CREATE BOOKING (USER)
-       ========================= */
+    /* ========= CREATE BOOKING (USER / MOD / ADMIN) ========= */
     @PostMapping("/create")
+    @PreAuthorize("isAuthenticated()") // hoặc hasAnyRole('USER','MODERATOR','ADMIN')
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request) {
         try {
             Booking created = bookingService.createBooking(request);
@@ -33,29 +32,24 @@ public class BookingController {
         }
     }
 
-    /* =========================
-          GET ALL (ADMIN)
-       ========================= */
+    /* ========= GET ALL (ADMIN) ========= */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Booking>> getAll() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /* =========================
-         GET BOOKING BY ID
-       ========================= */
+    /* ========= GET BY ID (ADMIN / MOD tuỳ bạn) ========= */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
-        return booking != null
-                ? ResponseEntity.ok(booking)
-                : ResponseEntity.notFound().build();
+        if (booking == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(booking);
     }
 
-    /* =========================
-       EDIT PAYMENT (ADMIN)
-       ========================= */
+    /* ========= EDIT PAYMENT (ADMIN) ========= */
     @PutMapping("/{id}/payment")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> editPayment(
@@ -63,29 +57,27 @@ public class BookingController {
             @RequestParam boolean payment) {
 
         Booking updated = bookingService.editBookingPayment(id, payment);
-        return updated != null
-                ? ResponseEntity.ok(updated)
-                : ResponseEntity.notFound().build();
+        if (updated == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updated);
     }
 
-    /* =========================
-         UPDATE BOOKING (ADMIN)
-       ========================= */
+    /* ========= UPDATE BOOKING (ADMIN) ========= */
     @PutMapping("/edit/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateBooking(
             @PathVariable Long id,
             @RequestBody BookingRequest request) {
         try {
-            return ResponseEntity.ok(bookingService.updateBooking(id, request));
+            Booking updated = bookingService.updateBooking(id, request);
+            return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    /* =========================
-          DELETE (ADMIN)
-       ========================= */
+    /* ========= DELETE (ADMIN) ========= */
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
@@ -97,14 +89,11 @@ public class BookingController {
         }
     }
 
-    /* =========================
-          GET MY BOOKINGS (MOD/ADMIN)
-       ========================= */
+    /* ========= GET BOOKINGS BY HOTEL OWNER (MOD / ADMIN) ========= */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
     public ResponseEntity<?> getMyBookings(
             @AuthenticationPrincipal UserDetailsImpl user) {
-
         return ResponseEntity.ok(
                 bookingService.getBookingsByHotelOwner(user.getId())
         );

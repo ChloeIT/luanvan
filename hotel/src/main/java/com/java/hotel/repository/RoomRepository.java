@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -19,4 +20,26 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     //   (đi đường: Room -> hotel -> owner -> id)
     @Query("SELECT r FROM Room r WHERE r.hotel.owner.id = :ownerId")
     List<Room> findByHotelOwnerId(@Param("ownerId") Long ownerId);
+
+    // ⭐ Lấy các phòng TRỐNG trong một khoảng thời gian cho 1 hotel
+    // - Điều kiện "không trùng" ngày:
+    //   booking.checkOut > :checkIn  AND  booking.checkIn < :checkOut  ==> có overlap
+    //   => ta loại những room có overlap khỏi kết quả.
+    @Query("""
+           SELECT r
+           FROM Room r
+           WHERE r.hotel.id = :hotelId
+             AND r.id NOT IN (
+                 SELECT r2.id
+                 FROM Booking b
+                 JOIN b.rooms r2
+                 WHERE b.checkOut > :checkIn
+                   AND b.checkIn < :checkOut
+             )
+           """)
+    List<Room> findAvailableRoomsForHotel(
+            @Param("hotelId") Long hotelId,
+            @Param("checkIn") LocalDateTime checkIn,
+            @Param("checkOut") LocalDateTime checkOut
+    );
 }

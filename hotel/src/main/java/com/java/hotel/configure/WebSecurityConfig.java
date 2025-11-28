@@ -19,7 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // để dùng @PreAuthorize ở controller
+@EnableMethodSecurity // dùng @PreAuthorize ở controller
 public class WebSecurityConfig {
 
     @Autowired
@@ -73,30 +73,27 @@ public class WebSecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔥 Chỉ áp dụng config này cho các URL /api/**
+                // Chỉ áp dụng security cho các URL /api/**
                 .securityMatcher("/api/**")
 
                 .authorizeHttpRequests(auth -> auth
 
                         // ====== PUBLIC APIs ======
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll()
-
-                        // Cho Home, trang khách dùng để xem danh sách khách sạn / phòng
-                        .requestMatchers("/api/hotel/all").permitAll()
-                        .requestMatchers("/api/room/all").permitAll()
-
-                        // Cho phép user (khách) tạo booking không cần role ADMIN
-                        .requestMatchers("/api/booking/create").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/test/**",
+                                "/api/hotel/all",
+                                "/api/room/all",
+                                "/api/booking/create",
+                                // API check phòng trống theo thời gian
+                                "/api/room/hotel/*/available"
+                        ).permitAll()
 
                         // ====== KHU VỰC MOD / ADMIN ======
-                        // Nếu sau này có controller riêng /api/mod/** thì:
-                        // chỉ MODERATOR hoặc ADMIN mới vào được
                         .requestMatchers("/api/mod/**")
                         .hasAnyRole("MODERATOR", "ADMIN")
 
-                        // Các API /api/** còn lại yêu cầu phải đăng nhập,
-                        // quyền cụ thể sẽ do @PreAuthorize trong controller kiểm soát
+                        // Các URL /api/** còn lại yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 );
 
