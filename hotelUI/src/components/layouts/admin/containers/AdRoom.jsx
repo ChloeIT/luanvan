@@ -1,3 +1,4 @@
+// src/components/layouts/admin/AdRoom.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { AdEditRoom } from "./room/AdEditRoom";
@@ -22,19 +23,34 @@ export const AdRoom = () => {
   const navigate = useNavigate();
   const hotelId = new URLSearchParams(search).get("hotelId");
 
-  // Lấy rooms theo hotelId từ state.hotel (state.room không chứa hotelId)
+  // Lọc rooms theo hotelId (rooms có field hotel.id)
   const { dataSource, hotelName, hotelAddress } = useMemo(() => {
-    if (hotelId) {
-      const hotel = (hotels || []).find(
-        (h) => String(h.id) === String(hotelId)
-      );
+    const allRooms = rooms || [];
+
+    // Không có hotelId trên URL -> show tất cả
+    if (!hotelId) {
       return {
-        dataSource: hotel?.rooms || [],
-        hotelName: hotel?.name || `Hotel #${hotelId}`,
-        hotelAddress: hotel?.address || "",
+        dataSource: allRooms,
+        hotelName: null,
+        hotelAddress: "",
       };
     }
-    return { dataSource: rooms || [], hotelName: null, hotelAddress: "" };
+
+    // Có hotelId -> tìm hotel để lấy name/address
+    const hotel = (hotels || []).find(
+      (h) => String(h.id) === String(hotelId)
+    );
+
+    const filteredRooms = allRooms.filter((r) => {
+      const roomHotelId = r.hotel?.id ?? r.hotelId ?? r.hotel_id;
+      return String(roomHotelId) === String(hotelId);
+    });
+
+    return {
+      dataSource: filteredRooms,
+      hotelName: hotel?.name || `Hotel #${hotelId}`,
+      hotelAddress: hotel?.address || "",
+    };
   }, [rooms, hotels, hotelId]);
 
   // Pagination UI
@@ -300,7 +316,7 @@ export const AdRoom = () => {
                   }
                 }
 
-                // 4) Fallback: dò theo room.id trong hotels[].rooms
+                // 4) Fallback: dò theo room.id trong hotels[].rooms (phòng khi BE đổi)
                 if (!resolvedHotelId) {
                   const byRoomInHotel = (hotels || []).find((ht) =>
                     (ht.rooms || []).some(
