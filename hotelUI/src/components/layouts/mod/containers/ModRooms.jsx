@@ -21,8 +21,45 @@ const { Search } = Input;
 
 // ===== ENV & helpers =====
 const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(/\/+$/, "");
-const buildRoomImageUrl = (fileName) =>
-    fileName ? `${RAW_IMAGE_URL}/rooms/${fileName}` : "";
+const buildRoomImageUrl = (fileName, attempt = 0) =>
+    fileName
+        ? `${RAW_IMAGE_URL}/rooms/${fileName}${attempt ? `?v=${attempt}` : ""}`
+        : "";
+
+/** Ảnh room với retry nhẹ khi lần đầu 404 (file chưa sẵn sàng) */
+const RoomImage = ({ fileName, alt }) => {
+    const [attempt, setAttempt] = useState(0);
+
+    if (!fileName) {
+        return (
+            <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">
+                No image
+            </div>
+        );
+    }
+
+    const src = buildRoomImageUrl(fileName, attempt);
+
+    const handleError = (e) => {
+        // thử lại tối đa 2 lần, mỗi lần delay 700ms, sau đó fallback logo
+        if (attempt < 2) {
+            setTimeout(() => {
+                setAttempt((a) => a + 1);
+            }, 700);
+        } else {
+            e.currentTarget.src = "/hotel-logo.png";
+        }
+    };
+
+    return (
+        <img
+            src={src}
+            alt={alt}
+            className="w-full h-full object-cover"
+            onError={handleError}
+        />
+    );
+};
 
 // =========================
 
@@ -39,7 +76,7 @@ export const ModRooms = () => {
         sort: "name",
     });
 
-    // ===== Modal state giống admin / booking =====
+    // ===== Modal state =====
     const [isModalEditVisible, setIsModalEditVisible] = useState(false);
     const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
     const [isModalAddVisible, setIsModalAddVisible] = useState(false);
@@ -74,7 +111,7 @@ export const ModRooms = () => {
     const myRooms = useMemo(() => {
         if (!rooms || !user) return [];
         return rooms.filter(
-            (r) => r.hotel && r.hotel.ownerId === user.id // hotel.ownerId là field ảo trong Hotel BE
+            (r) => r.hotel && r.hotel.ownerId === user.id
         );
     }, [rooms, user]);
 
@@ -127,7 +164,7 @@ export const ModRooms = () => {
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    // ===== handlers mở modal (giống admin/booking) =====
+    // ===== handlers mở modal =====
     const handleEditRoom = (room) => {
         setItemACtion(room);
         setIsModalEditVisible(true);
@@ -161,10 +198,10 @@ export const ModRooms = () => {
             <ModAddRoom
                 isModalAddVisible={isModalAddVisible}
                 setIsModalAddVisible={setIsModalAddVisible}
-                onCreated={fetchRooms}
+                onCreated={fetchRooms} // create xong -> fetch lại
             />
 
-            {/* ====== HEADER (chỉ còn tên hotel, phóng to) ====== */}
+            {/* ====== HEADER ====== */}
             <div className="flex items-center justify-between gap-3">
                 <div>
                     <div className="flex items-center gap-3 mt-1">
@@ -273,20 +310,7 @@ export const ModRooms = () => {
                                 {/* LEFT: image + info */}
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
-                                        {room.image ? (
-                                            <img
-                                                src={buildRoomImageUrl(room.image)}
-                                                alt={room.name}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    e.currentTarget.src = "/hotel-logo.png";
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">
-                                                No image
-                                            </div>
-                                        )}
+                                        <RoomImage fileName={room.image} alt={room.name} />
                                     </div>
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold truncate">

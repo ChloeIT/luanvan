@@ -43,6 +43,7 @@ export const ModAddRoom = ({
     const [availability, setAvailability] = useState(true);
     const [hotelId, setHotelId] = useState(null);
     const [fileList, setFileList] = useState([]);
+    const [saving, setSaving] = useState(false);
 
     // Nếu MOD chỉ có 1 hotel -> auto chọn
     useEffect(() => {
@@ -57,11 +58,13 @@ export const ModAddRoom = ({
         setType("");
         setCapacity(1);
         setAvailability(true);
-        // giữ hotelId cũng được, đỡ phải chọn lại
+        // giữ hotelId để đỡ phải chọn lại
         setFileList([]);
     };
 
     const handleModalOk = async () => {
+        if (saving) return;
+
         const file = fileList[0]?.originFileObj;
         if (!file) {
             message.warning("Please upload an image.");
@@ -71,20 +74,35 @@ export const ModAddRoom = ({
             message.warning("Please choose a hotel.");
             return;
         }
+        if (!name.trim()) {
+            message.warning("Please enter room name.");
+            return;
+        }
+        if (!price || Number(price) <= 0) {
+            message.warning("Please enter a valid price.");
+            return;
+        }
+        if (!type) {
+            message.warning("Please choose room type.");
+            return;
+        }
 
         try {
+            setSaving(true);
+
             const formData = new FormData();
-            formData.append("name", name);
-            formData.append("price", price);
+            formData.append("name", name.trim());
+            formData.append("price", String(price));
             formData.append("type", type);
             formData.append("capacity", String(capacity));
             formData.append("availability", String(availability));
             formData.append("hotel_id", String(hotelId));
             formData.append("file", file);
 
-            const res = await roomServices.create(formData);
+            const res = await roomServices.create(formData); // POST
             message.success("Room created successfully");
 
+            // Gọi callback để ModRooms fetch lại list
             if (onCreated) {
                 onCreated(res?.data);
             }
@@ -94,29 +112,22 @@ export const ModAddRoom = ({
         } catch (error) {
             console.error("Error adding room (MOD):", error);
             message.error("Error adding room");
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleChange = ({ fileList: newFileList }) => {
+    const handleUploadChange = ({ fileList: newFileList }) => {
         setFileList(newFileList);
     };
 
     const uploadButton = (
         <button
-            style={{
-                border: 0,
-                background: "none",
-            }}
+            style={{ border: 0, background: "none" }}
             type="button"
         >
             <BiPlusCircle />
-            <div
-                style={{
-                    marginTop: 8,
-                }}
-            >
-                Upload
-            </div>
+            <div style={{ marginTop: 8 }}>Upload</div>
         </button>
     );
 
@@ -124,20 +135,25 @@ export const ModAddRoom = ({
         <Modal
             title="Add Room"
             open={isModalAddVisible}
-            onCancel={() => setIsModalAddVisible(false)}
+            onCancel={() => {
+                if (!saving) setIsModalAddVisible(false);
+            }}
             onOk={handleModalOk}
-            okText="OK"
+            okText={saving ? "Saving..." : "OK"}
+            okButtonProps={{ loading: saving }}
             cancelText="Cancel"
+            destroyOnClose
         >
             {/* Image */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Image</p>
+                <p className="min-w-20">Image</p>
                 <Upload
                     listType="picture-circle"
                     fileList={fileList}
-                    onChange={handleChange}
+                    onChange={handleUploadChange}
                     beforeUpload={() => false}
                     maxCount={1}
+                    accept="image/*"
                 >
                     {fileList.length >= 1 ? null : uploadButton}
                 </Upload>
@@ -162,13 +178,16 @@ export const ModAddRoom = ({
 
             {/* Name */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Name</p>
-                <Input value={name} onChange={(e) => setName(e.target.value)} />
+                <p className="min-w-20">Name</p>
+                <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
             </div>
 
             {/* Price */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Price</p>
+                <p className="min-w-20">Price</p>
                 <Input
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
@@ -179,7 +198,7 @@ export const ModAddRoom = ({
 
             {/* Capacity */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Capacity</p>
+                <p className="min-w-20">Capacity</p>
                 <InputNumber
                     min={1}
                     max={10}
@@ -190,7 +209,7 @@ export const ModAddRoom = ({
 
             {/* Type */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Type</p>
+                <p className="min-w-20">Type</p>
                 <Select
                     value={type || undefined}
                     onChange={setType}
@@ -207,7 +226,7 @@ export const ModAddRoom = ({
 
             {/* Availability */}
             <div className="flex items-center mb-2">
-                <p className=" min-w-20">Availability</p>
+                <p className="min-w-20">Availability</p>
                 <Select
                     value={availability}
                     onChange={setAvailability}
