@@ -4,6 +4,7 @@ import { NavLink, Link } from "react-router-dom";
 import { HiOutlineMenu } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
+import { useSelector } from "react-redux";
 import { routeMod } from "../../../../contant/linkmod"; // đổi lại đúng file routes của MOD
 import DarkModeToggle from "@/components/common/DarkModeToggle";
 
@@ -51,6 +52,22 @@ export const SideBar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobile = () => setMobileMenuOpen(false);
 
+    // lấy user + roles từ redux
+    const { user } = useSelector((state) => state.auth || {});
+
+    // roles có thể dạng: ["ROLE_ADMIN", "ROLE_MODERATOR"]
+    // hoặc [{name: "ROLE_ADMIN"}, {name: "ROLE_MODERATOR"}]
+    const roles = user?.roles || [];
+    const hasAdmin = roles.some(
+        (r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN"
+    );
+    const hasMod = roles.some(
+        (r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR"
+    );
+
+    // chỉ hiện nút nếu vừa là mod vừa là admin
+    const canGoAdmin = hasAdmin && hasMod;
+
     // Style chữ SB HOTEL giống admin
     const brandStyle = {
         fontFamily:
@@ -65,6 +82,18 @@ export const SideBar = () => {
         textShadow:
             "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
     };
+
+    // component nút “Go to Admin” để dùng cho cả desktop + mobile
+    const AdminSwitchButton = () =>
+        !canGoAdmin ? null : (
+            <Link
+                to="/admin"
+                className="mt-3 w-full inline-flex items-center justify-center gap-1 rounded-full bg-white/90 text-[var(--primary)] text-xs font-semibold py-1.5 px-3 hover:bg-white shadow-sm transition"
+            >
+                {/* em đổi text tuỳ ý */}
+                <span>Go to Admin</span>
+            </Link>
+        );
 
     return (
         <>
@@ -84,8 +113,9 @@ export const SideBar = () => {
                 <NavLinks />
 
                 {/* bottom tools */}
-                <div className="mt-auto pt-4 border-t border-white/20">
+                <div className="mt-auto pt-4 border-t border-white/20 space-y-3">
                     <DarkModeToggle />
+                    <AdminSwitchButton />
                 </div>
             </aside>
 
@@ -131,8 +161,18 @@ export const SideBar = () => {
 
                 <NavLinks handleClick={closeMobile} />
 
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                     <DarkModeToggle />
+                    {/* bấm xong thì đóng menu mobile luôn cho tiện */}
+                    {canGoAdmin && (
+                        <Link
+                            to="/admin"
+                            onClick={closeMobile}
+                            className="w-full inline-flex items-center justify-center gap-1 rounded-full bg-white/90 text-[var(--primary)] text-xs font-semibold py-1.5 px-3 hover:bg-white shadow-sm transition"
+                        >
+                            <span>Go to Admin</span>
+                        </Link>
+                    )}
                 </div>
             </aside>
         </>

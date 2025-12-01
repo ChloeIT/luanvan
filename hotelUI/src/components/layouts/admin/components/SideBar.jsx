@@ -4,6 +4,7 @@ import { NavLink, Link } from "react-router-dom";
 import { HiOutlineMenu } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
+import { useSelector } from "react-redux";
 import { routeAdmin } from "../../../../contant/linkadmin";
 import DarkModeToggle from "@/components/common/DarkModeToggle";
 
@@ -47,9 +48,34 @@ const NavLinks = ({ handleClick }) => (
     </nav>
 );
 
+// nút chuyển sang trang moderator
+const ModSwitchButton = ({ onClick }) => (
+    <Link
+        to="/moderator"
+        onClick={onClick}
+        className="mt-3 w-full inline-flex items-center justify-center gap-1 rounded-full bg-white/90 text-[var(--primary)] text-xs font-semibold py-1.5 px-3 hover:bg-white shadow-sm transition"
+    >
+        <span>Go to Moderator</span>
+    </Link>
+);
+
 export const Sidebar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobile = () => setMobileMenuOpen(false);
+
+    // lấy user + roles từ redux
+    const { user } = useSelector((state) => state.auth || {});
+    const roles = user?.roles || [];
+
+    const hasAdmin = roles.some(
+        (r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN"
+    );
+    const hasMod = roles.some(
+        (r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR"
+    );
+
+    // chỉ hiện nút khi vừa là admin vừa là mod
+    const canGoMod = hasAdmin && hasMod;
 
     // Style chữ to + vàng + 1 dòng
     const brandStyle = {
@@ -60,8 +86,8 @@ export const Sidebar = () => {
         lineHeight: 1.05,
         letterSpacing: "0.04em",
         textTransform: "uppercase",
-        whiteSpace: "nowrap", // luôn 1 dòng
-        color: "#FFFFFF", // vàng
+        whiteSpace: "nowrap",
+        color: "#FFFFFF",
         textShadow:
             "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
     };
@@ -84,8 +110,9 @@ export const Sidebar = () => {
                 <NavLinks />
 
                 {/* bottom tools */}
-                <div className="mt-auto pt-4 border-t border-white/20">
+                <div className="mt-auto pt-4 border-t border-white/20 space-y-3">
                     <DarkModeToggle />
+                    {canGoMod && <ModSwitchButton />}
                 </div>
             </aside>
 
@@ -132,8 +159,9 @@ export const Sidebar = () => {
 
                 <NavLinks handleClick={closeMobile} />
 
-                <div className="mt-6">
+                <div className="mt-6 space-y-3">
                     <DarkModeToggle />
+                    {canGoMod && <ModSwitchButton onClick={closeMobile} />}
                 </div>
             </aside>
         </>
