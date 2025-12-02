@@ -63,7 +63,6 @@ const classifyBookingByToday = (booking, todayStartMs, todayEndMs) => {
     const isCheckInToday =
         checkInMs >= todayStartMs && checkInMs < todayEndMs;
 
-    // dùng < todayEndMs để không lấn sang ngày hôm sau
     const isCheckOutToday =
         checkOutMs >= todayStartMs && checkOutMs < todayEndMs;
 
@@ -195,7 +194,6 @@ export const ModBookings = () => {
     const filteredBookings = useMemo(() => {
         let list = myBookings;
 
-        // Filter date: TODAY ONLY
         if (filters.date === "today") {
             list = list.filter((b) => {
                 const { flags } = classifyBookingByToday(
@@ -361,7 +359,6 @@ export const ModBookings = () => {
                     ]}
                 />
 
-                {/* 🔥 Filter ngày: TODAY ONLY */}
                 <Select
                     size="small"
                     value={filters.date}
@@ -382,13 +379,54 @@ export const ModBookings = () => {
                             : "No bookings found. Try adjusting filters."}
                     </p>
                 ) : (
-                    // 👇 Giới hạn chiều rộng list để bớt trống, căn giữa
-                    <div className="max-w-4xl mx-auto space-y-2">
+                    <div className="space-y-2">
+                        {/* HEADER ROW */}
+                        <div
+                            className="grid grid-cols-[180px_minmax(0,1.8fr)_130px_100px_120px_150px]
+                   items-center gap-3 px-4 pb-2 border-b border-black/5"
+                        >
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                BOOKING / GUEST
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                ROOMS &amp; DATES
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                TODAY
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                TOTAL
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                PAYMENT
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                ACTIONS
+                            </div>
+                        </div>
+
+                        {/* ROWS */}
                         {filteredBookings.map((b) => {
                             const firstRoom = b.rooms?.[0] || null;
-                            const roomNames = (b.rooms || [])
-                                .map((r) => r.name)
-                                .join(", ");
+                            const roomNames = (b.rooms || []).map((r) => r.name).join(", ");
 
                             const checkInStr = b.checkIn
                                 ? new Date(b.checkIn).toLocaleDateString()
@@ -401,11 +439,7 @@ export const ModBookings = () => {
                                 text: todayStatusText,
                                 color: todayStatusColor,
                                 flags,
-                            } = classifyBookingByToday(
-                                b,
-                                todayStartMs,
-                                todayEndMs
-                            );
+                            } = classifyBookingByToday(b, todayStartMs, todayEndMs);
 
                             const isTodayImportant =
                                 flags.isStayingToday ||
@@ -418,14 +452,12 @@ export const ModBookings = () => {
                                 <div
                                     key={b.id}
                                     className={
-                                        "flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl transition " +
-                                        (isTodayImportant
-                                            ? "booking-card--today"
-                                            : "hover:bg-black/5")
+                                        "grid grid-cols-[180px_minmax(0,1.8fr)_130px_100px_120px_150px] items-center gap-3 px-4 py-3 rounded-xl transition " +
+                                        (isTodayImportant ? "booking-card--today" : "hover:bg-black/5")
                                     }
                                 >
-                                    {/* LEFT: image + info */}
-                                    <div className="flex items-center gap-2 min-w-0">
+                                    {/* 1. BOOKING / GUEST – căn giữa */}
+                                    <div className="flex items-center gap-3 min-w-0 justify-center">
                                         <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
                                             {firstRoom?.image ? (
                                                 <img
@@ -433,8 +465,7 @@ export const ModBookings = () => {
                                                     alt={firstRoom.name}
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
-                                                        e.currentTarget.src =
-                                                            "/hotel-logo.png";
+                                                        e.currentTarget.src = "/hotel-logo.png";
                                                     }}
                                                 />
                                             ) : (
@@ -444,83 +475,67 @@ export const ModBookings = () => {
                                             )}
                                         </div>
 
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 text-center">
                                             <div className="text-[11px] opacity-70">
                                                 Booking #{b.id}
                                             </div>
-                                            <div className="text-base font-semibold truncate">
-                                                {b.user?.fullName ||
-                                                    b.user?.username ||
-                                                    "Guest"}
-                                            </div>
-                                            <Tooltip title={roomNames}>
-                                                <div className="text-xs opacity-70 truncate">
-                                                    {roomNames || "No rooms"}
-                                                </div>
-                                            </Tooltip>
-
-                                            <div className="text-xs opacity-70 flex items-center gap-2">
-                                                <span>
-                                                    {checkInStr} — {checkOutStr}
-                                                </span>
-                                                {isTodayImportant && (
-                                                    <span className="today-chip">
-                                                        Today
-                                                    </span>
-                                                )}
+                                            <div
+                                                className="text-sm font-semibold truncate whitespace-nowrap"
+                                                style={{ color: "var(--primary)" }}
+                                            >
+                                                {b.user?.fullName || b.user?.username || "Guest"}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* RIGHT: status + price + payment + actions */}
-                                    <div className="flex items-center gap-3 text-xs">
-                                        {/* status: cột cố định */}
-                                        <div className="w-24 text-center">
-                                            {todayStatusText && (
-                                                <Tag
-                                                    color={todayStatusColor}
-                                                    className="m-0 text-[11px]"
-                                                >
-                                                    {todayStatusText}
-                                                </Tag>
-                                            )}
+                                    {/* 2. ROOMS & DATES – căn giữa */}
+                                    <div className="min-w-0 text-xs flex flex-col items-center">
+                                        <Tooltip title={roomNames}>
+                                            <div className="truncate whitespace-nowrap text-center">
+                                                {roomNames || "No rooms"}
+                                            </div>
+                                        </Tooltip>
+                                        <div className="opacity-70 truncate whitespace-nowrap text-center">
+                                            {checkInStr} — {checkOutStr}
                                         </div>
+                                    </div>
 
-                                        {/* price: cột cố định */}
-                                        <div className="w-20 text-right">
-                                            <span className="text-sm font-semibold whitespace-nowrap">
-                                                ${b.totalPrice || 0}
-                                            </span>
-                                        </div>
-
-                                        {/* payment: cột cố định */}
-                                        <div className="w-24 flex justify-center">
-                                            <Tag
-                                                color={isPaid(b) ? "green" : "orange"}
-                                                className="m-0 text-[11px]"
-                                            >
-                                                {paymentLabel}
+                                    {/* 3. TODAY STATUS */}
+                                    <div className="flex justify-center">
+                                        {todayStatusText && (
+                                            <Tag color={todayStatusColor} className="m-0 text-[11px]">
+                                                {todayStatusText}
                                             </Tag>
-                                        </div>
+                                        )}
+                                    </div>
 
-                                        {/* actions: phần còn lại */}
-                                        <div className="flex gap-1">
-                                            <Button
-                                                size="small"
-                                                onClick={() => handleEditBooking(b)}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                size="small"
-                                                danger
-                                                onClick={() =>
-                                                    handleDeleteBooking(b)
-                                                }
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
+                                    {/* 4. TOTAL */}
+                                    <div className="text-xs font-semibold text-center whitespace-nowrap">
+                                        ${b.totalPrice || 0}
+                                    </div>
+
+                                    {/* 5. PAYMENT */}
+                                    <div className="flex justify-center">
+                                        <Tag
+                                            color={isPaid(b) ? "green" : "orange"}
+                                            className="m-0 text-[11px]"
+                                        >
+                                            {paymentLabel}
+                                        </Tag>
+                                    </div>
+
+                                    {/* 6. ACTIONS */}
+                                    <div className="flex justify-center gap-1">
+                                        <Button size="small" onClick={() => handleEditBooking(b)}>
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            danger
+                                            onClick={() => handleDeleteBooking(b)}
+                                        >
+                                            Delete
+                                        </Button>
                                     </div>
                                 </div>
                             );
@@ -528,6 +543,7 @@ export const ModBookings = () => {
                     </div>
                 )}
             </div>
+
         </div>
     );
 };

@@ -302,51 +302,92 @@ export const ModRooms = () => {
                     </p>
                 ) : (
                     <div className="space-y-2">
+                        {/* HEADER ROW */}
+                        <div
+                            className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px]
+             items-center gap-3 px-4 pb-2 border-b border-black/5"
+                        >
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                ROOM
+                            </div>
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                TYPE
+                            </div>
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                GUESTS
+                            </div>
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                PRICE
+                            </div>
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                STATUS
+                            </div>
+                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                ACTIONS
+                            </div>
+                        </div>
+
+
+                        {/* CÁC DÒNG ROOM */}
                         {filteredRooms.map((room) => (
                             <div
                                 key={room.id}
-                                className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-black/5 transition"
+                                className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px]
+                                           items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 transition"
                             >
-                                {/* LEFT: image + info */}
+                                {/* 1. ROOM (ảnh + tên) */}
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
                                         <RoomImage fileName={room.image} alt={room.name} />
                                     </div>
                                     <div className="min-w-0">
-                                        <div className="text-sm font-semibold truncate">
+                                        <div
+                                            className="text-sm font-semibold truncate"
+                                            style={{ color: "var(--primary)" }}
+                                        >
                                             {room.name}
                                         </div>
-                                        <div className="text-xs opacity-70 truncate">
-                                            {room.type || "Unspecified"} • {room.capacity} guests
-                                        </div>
+
                                     </div>
                                 </div>
 
-                                {/* RIGHT: price + status + actions */}
-                                <div className="flex items-center gap-4 text-xs">
-                                    <span className="font-semibold whitespace-nowrap">
-                                        ${room.price}
-                                    </span>
+                                {/* 2. TYPE */}
+                                <div className="text-xs text-center truncate">
+                                    {room.type || "Unspecified"}
+                                </div>
 
+                                {/* 3. GUESTS */}
+                                <div className="text-xs text-center truncate">
+                                    {room.capacity} guests
+                                </div>
+
+                                {/* 4. PRICE */}
+                                <div className="text-xs font-semibold text-center whitespace-nowrap">
+                                    ${room.price}
+                                </div>
+
+                                {/* 5. STATUS */}
+                                <div className="flex justify-center">
                                     <Tag
                                         color={room.availability ? "green" : "red"}
                                         className="m-0 text-[11px]"
                                     >
                                         {room.availability ? "Available" : "Unavailable"}
                                     </Tag>
+                                </div>
 
-                                    <div className="flex gap-1">
-                                        <Button size="small" onClick={() => handleEditRoom(room)}>
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            danger
-                                            onClick={() => handleDeleteRoom(room)}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </div>
+                                {/* 6. ACTIONS */}
+                                <div className="flex justify-center gap-2">
+                                    <Button size="small" onClick={() => handleEditRoom(room)}>
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        danger
+                                        onClick={() => handleDeleteRoom(room)}
+                                    >
+                                        Delete
+                                    </Button>
                                 </div>
                             </div>
                         ))}
