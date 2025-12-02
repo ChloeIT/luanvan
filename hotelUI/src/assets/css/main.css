@@ -1,106 +1,197 @@
-#background{
-    background-image: url('../images/cantho.jpg');
+/* ================== RESET CƠ BẢN ================== */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
 }
 
-.primarycolor{
-    color: #86B817 !important;
+/* ================== HEADER LUÔN TỐI MỜ ================== */
+
+/* Wrapper header cố định */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  background: rgba(0, 0, 0, 0.45); /* nền tối mờ */
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
-.pricecolor{
-    color:grey;
+
+/* Xoá mọi nền của navbar Bootstrap */
+.site-header-bar,
+.navbar,
+.navbar-light {
+  background: transparent !important;
+  box-shadow: none !important;
 }
+
+/* Link trong header */
+.header-link {
+  color: #ffffff !important;
+  font-weight: 600;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  transition: color 0.2s ease;
+}
+
+/* MENU HOVER: đổi sang màu xanh */
+.header-link:hover {
+  color: #86b817 !important;
+}
+
+/* ACTIVE LINK */
+.header-link.active {
+  color: #86b817 !important;
+  border-bottom: 2px solid #86b817;
+}
+
+/* Username (chloeit) */
+.header-user {
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+/* USERNAME HOVER (dropdown trigger) */
+.header-user:hover {
+  color: #86b817 !important;
+}
+
+/* ================== HERO BACKGROUND ================== */
+
+/* Hình nền phía sau hero */
+#background {
+  background-image: url("../images/cantho.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* chừa khoảng trống cho header fixed cao ~80–90px */
+.hero-header {
+  padding-top: 120px; /* đẩy chữ xuống dưới header */
+  padding-bottom: 80px;
+  background: transparent; /* không màu vàng */
+}
+
+/* Wrapper + chữ title */
+.hero-title-wrapper {
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.hero-title {
+  font-size: 56px;
+}
+
+/* ================== CÁC STYLE CŨ ================== */
+
+.primarycolor {
+  color: #86b817 !important;
+}
+
+.pricecolor {
+  color: grey;
+}
+
 .btn-primary {
-    background-color: #86B817 !important; /* Sử dụng !important để ghi đè các quy tắc CSS khác */
-    border-color: #86B817 !important; /* Có thể cần thiết nếu bạn muốn điều chỉnh cả màu viền */
-    /* Các thuộc tính khác của nút */
-}
-#btn-logout{
-    margin-right: 20px;
+  background-color: #86b817 !important;
+  border-color: #86b817 !important;
 }
 
-/* Add these styles to your CSS file or inside a <style> tag in your HTML file */
+#btn-logout {
+  margin-right: 20px;
+}
 
-/* Success toast */
+/* Toasts */
 .toast-success {
-    background-color: #28a745 !important; /* Green background */
-    color: #fff !important; /* White text */
+  background-color: #28a745 !important;
+  color: #fff !important;
 }
 
-/* Warning toast */
 .toast-warning {
-    background-color: #ffc107 !important; /* Yellow background */
-    color: #000 !important; /* Black text */
+  background-color: #ffc107 !important;
+  color: #000 !important;
 }
 
-/* Error toast */
 .toast-error {
-    background-color: #dc3545 !important; /* Red background */
-    color: #fff !important; /* White text */
+  background-color: #dc3545 !important;
+  color: #fff !important;
 }
 
-/* Info toast */
 .toast-info {
-    background-color: #17a2b8 !important; /* Blue background */
-    color: #fff !important; /* White text */
+  background-color: #17a2b8 !important;
+  color: #fff !important;
 }
+
+/* Compare card */
 .compare-card {
-    margin-bottom: 20px;
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-    overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
+  margin-bottom: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .compare-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .compare-card .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .compare-card .card-header .card-title {
-    font-size: 1.25rem;
-    margin-bottom: 0;
+  font-size: 1.25rem;
+  margin-bottom: 0;
 }
 
 .compare-card .card-header .remove-from-compare {
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #dc3545;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #dc3545;
 }
 
 .compare-card .card-img-top {
-    height: 200px;
-    object-fit: cover;
+  height: 200px;
+  object-fit: cover;
 }
 
 .compare-card .card-body {
-    padding: 15px;
+  padding: 15px;
 }
 
 .compare-card .card-text {
-    margin-bottom: 0;
-    font-size: 1rem;
+  margin-bottom: 0;
+  font-size: 1rem;
 }
-.remove-from-compare:hover{
-    opacity: 0.7;
-    background-color:#86B817 ;
-    color: #FFF;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 100%;
+
+.remove-from-compare:hover {
+  opacity: 0.7;
+  background-color: #86b817;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 100%;
 }
-.remove-from-compare{
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    border-radius: 100%;
+
+.remove-from-compare {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  border-radius: 100%;
 }
+
+/* Room image demo */
 .img-small {
   width: 800px;
-  height: 550px !important; /* Buộc chiều cao */
+  height: 550px !important;
   object-fit: cover;
   display: block;
 }
-
-

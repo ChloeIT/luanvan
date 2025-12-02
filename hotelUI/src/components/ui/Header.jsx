@@ -1,3 +1,4 @@
+// src/components/layouts/Header.jsx
 import React, { useEffect, useState } from "react";
 import { linkpage } from "../../contant/link";
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -9,120 +10,120 @@ import { authAction } from "../../store";
 import { SearchInput } from "./search/SearchInput";
 
 export const Header = () => {
-  const { user } = useSelector((state) => state.auth);
-  const [openToggle, setOpenToggle] = useState(false);
-  const [title, setTitle] = useState("");
+  const { user } = useSelector((s) => s.auth);
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // 📌 Lấy roles của user
-  const roles = Array.isArray(user?.roles) ? user.roles : [];
-  const isAdmin = roles.includes("ROLE_ADMIN");
-  const isModerator = roles.includes("ROLE_MODERATOR");
+  const [openToggle, setOpenToggle] = useState(false);
+  const [title, setTitle] = useState("");
 
-  // 📌 Update title khi đổi trang
+  // Cập nhật title theo route
   useEffect(() => {
-    const found = linkpage.find((link) => link.to === location.pathname);
+    const found = linkpage.find((x) => x.to === location.pathname);
     setTitle(found?.name ?? "");
   }, [location.pathname]);
 
-  // 📌 Logout
-  const handleLogOut = () => {
-    dispatch(authAction.setUser(null));
-    authServices.logout();
-  };
-
-  // 📌 Dropdown items
+  // Dropdown items
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
   const items = [
     { key: "profile", label: <Link to="/profile">Profile</Link> },
-
-    ...(isAdmin
-      ? [
-        {
-          key: "admin",
-          label: <Link to="/admin">Admin Panel</Link>,
-        },
-      ]
+    ...(roles.includes("ROLE_ADMIN")
+      ? [{ key: "admin", label: <Link to="/admin">Admin Panel</Link> }]
       : []),
-
-    ...(isModerator
-      ? [
-        {
-          key: "moderator",
-          label: <Link to="/moderator">Mod Panel</Link>,
-        },
-      ]
+    ...(roles.includes("ROLE_MODERATOR")
+      ? [{ key: "moderator", label: <Link to="/moderator">Mod Panel</Link> }]
       : []),
-
     {
       key: "logout",
       label: (
-        <span onClick={handleLogOut} role="button">
+        <span
+          onClick={() => {
+            dispatch(authAction.setUser(null));
+            authServices.logout();
+          }}
+        >
           Logout
         </span>
       ),
     },
   ];
 
-  // 📌 Toggle menu mobile
-  const clickMenu = () => {
-    setOpenToggle((prev) => !prev);
-  };
-
   return (
-    <div className="container-fluid z-50 position-relative p-0">
-      {/* NAVBAR */}
-      <div className="navbar navbar-expand-lg navbar-light px-4 px-lg-5 py-3 py-lg-0">
-        <Link to="/" className="navbar-brand p-0">
-          <h1 className="text-primary m-0">SB Hotels</h1>
-        </Link>
-
-        <Button className="navbar-toggler" type="button">
-          <TiThMenuOutline onClick={clickMenu} />
-        </Button>
-
-        <div
-          className={`collapse navbar-collapse ${openToggle ? "show" : ""}`}
-          id="navbarCollapse"
-        >
-          {/* NAVIGATIONS */}
-          <div className="navbar-nav ms-auto py-0">
-            {linkpage.map((item) => (
-              <NavLink key={item.name} className="nav-item nav-link" to={item.to}>
-                {item.name}
-              </NavLink>
-            ))}
-          </div>
-
-          {/* SEARCH */}
-          <div className="fixed top-20 right-5">
-            <SearchInput />
-          </div>
-
-          {/* USER DROPDOWN */}
-          {user ? (
-            <Dropdown menu={{ items }} placement="bottomRight">
-              <a onClick={(e) => e.preventDefault()}>
-                <Space>
-                  <span className={`${openToggle ? "nav-item nav-link" : ""} cursor-pointer`}>
-                    {user?.username}
-                  </span>
-                </Space>
-              </a>
-            </Dropdown>
-          ) : (
-            <Link to="/login" className="btn btn-primary rounded-pill py-2 px-4">
-              Login
+    <div className="position-relative p-0">
+      {/* ===== HEADER FIXED, NỀN TỐI MỜ ===== */}
+      <div className="site-header">
+        <div className="container-fluid p-0">
+          <nav className="navbar navbar-expand-lg px-4 px-lg-5 py-3 site-header-bar">
+            {/* Logo */}
+            <Link to="/" className="navbar-brand p-0">
+              <h1 className="m-0" style={{ color: "#86B817" }}>
+                SB Hotels
+              </h1>
             </Link>
-          )}
+
+            {/* Toggle mobile */}
+            <Button
+              className="navbar-toggler border-0"
+              type="button"
+              onClick={() => setOpenToggle((p) => !p)}
+            >
+              <TiThMenuOutline color="white" />
+            </Button>
+
+            <div
+              className={`collapse navbar-collapse ${openToggle ? "show" : ""
+                }`}
+            >
+              {/* MENU LINKS */}
+              <div className="navbar-nav ms-auto py-0">
+                {linkpage.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `nav-item nav-link header-link ${isActive ? "active" : ""
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                ))}
+              </div>
+
+              {/* SEARCH */}
+              <div className="ms-3">
+                <SearchInput />
+              </div>
+
+              {/* USER / LOGIN */}
+              <div className="ms-3">
+                {user ? (
+                  <Dropdown menu={{ items }} placement="bottomRight">
+                    <a onClick={(e) => e.preventDefault()}>
+                      <Space>
+                        <span className="header-user">{user.username}</span>
+                      </Space>
+                    </a>
+                  </Dropdown>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="btn btn-success rounded-pill px-4"
+                  >
+                    Login
+                  </Link>
+                )}
+              </div>
+            </div>
+          </nav>
         </div>
       </div>
 
-      {/* HERO TITLE */}
-      <div className="container-fluid bg-primary py-5 mb-5 hero-header" id="background">
-        <div className="container py-5">
-          <div className="row justify-content-center py-5">
-            <div className="col-lg-10 pt-lg-5 mt-lg-5 font-extrabold text-6xl text-center text-white">
+      {/* ===== HERO TITLE + BACKGROUND ===== */}
+      <div className="container-fluid hero-header" id="background">
+        <div className="container hero-title-wrapper">
+          <div className="row justify-content-center">
+            <div className="col-lg-10 text-center text-white fw-bold hero-title">
               {title}
             </div>
           </div>
