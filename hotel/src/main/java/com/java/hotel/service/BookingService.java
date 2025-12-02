@@ -26,20 +26,26 @@ public class BookingService {
     @Autowired
     private StoreService storeService;
 
-    // ====== CREATE ======
+    @Autowired
+    private EmailService emailService;
+
+    // ================== CREATE ==================
 
     /**
-     * Tạo booking mới từ BookingRequest
-     * - Lấy user hiện tại
-     * - Load Room từ roomIds
-     * - CHECK TRÙNG NGÀY cho từng room
+     * Tạo booking mới từ BookingRequest:
+     *  - Lấy user hiện tại
+     *  - Load Room từ roomIds
+     *  - Check trùng ngày cho từng room
+     *  - Sau khi lưu thành công -> Gửi email xác nhận
      */
     @Transactional
     public Booking createBooking(BookingRequest request)
             throws ExecutionException, InterruptedException {
 
+        // ----- Lấy user hiện tại -----
         User currentUser = storeService.getCurrentUser();
 
+        // ----- Validate ngày -----
         LocalDateTime checkIn = request.getCheckIn();
         LocalDateTime checkOut = request.getCheckOut();
 
@@ -47,8 +53,8 @@ public class BookingService {
             throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        // lấy danh sách phòng
-        Set<Long> roomIds = request.getRoomIds() != null
+        // ----- Lấy danh sách roomId -----
+        Set<Long> roomIds = (request.getRoomIds() != null)
                 ? new HashSet<>(request.getRoomIds())
                 : Collections.emptySet();
 
@@ -56,13 +62,13 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
+        // ----- Load Room từ DB -----
         Set<Room> rooms = new HashSet<>(roomRepository.findByIdIn(roomIds));
-
         if (rooms.isEmpty()) {
             throw new IllegalArgumentException("Rooms not found");
         }
 
-        // ❗Check trùng ngày cho từng room
+        // ----- Check trùng ngày cho từng room -----
         for (Room room : rooms) {
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
@@ -71,6 +77,7 @@ public class BookingService {
             boolean conflict = bookingRepository.existsOverlappingBooking(
                     room.getId(), checkIn, checkOut
             );
+
             if (conflict) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
@@ -78,7 +85,7 @@ public class BookingService {
             }
         }
 
-        // map DTO -> entity
+        // ----- Map DTO -> Entity -----
         Booking booking = new Booking();
         booking.setCheckIn(checkIn);
         booking.setCheckOut(checkOut);
@@ -87,10 +94,22 @@ public class BookingService {
         booking.setUser(currentUser);
         booking.setRooms(rooms);
 
-        return bookingRepository.save(booking);
+        // Lưu DB
+        Booking saved = bookingRepository.save(booking);
+
+        // ----- Gửi email xác nhận (KHÔNG được làm hỏng booking) -----
+        try {
+            // phương thức này có @Async nên chạy nền, không chặn response
+            emailService.sendBookingConfirmation(saved);
+        } catch (Exception e) {
+            // chỉ log, không ném ra để tránh rollback / 400
+            e.printStackTrace();
+        }
+
+        return saved;
     }
 
-    // ====== READ ======
+    // ================== READ ==================
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAllWithRoomsAndHotel();
@@ -100,7 +119,8 @@ public class BookingService {
         return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
     }
 
-    // chỉ toggle payment
+    // ================== EDIT PAYMENT ==================
+
     @Transactional
     public Booking editBookingPayment(Long id, boolean payment) {
         return bookingRepository.findById(id)
@@ -111,7 +131,7 @@ public class BookingService {
                 .orElse(null);
     }
 
-    // ====== UPDATE FULL ======
+    // ================== UPDATE FULL ==================
 
     @Transactional
     public Booking updateBooking(Long id, BookingRequest request) throws Exception {
@@ -130,7 +150,7 @@ public class BookingService {
         existingBooking.setTotalPrice(request.getTotalPrice());
         existingBooking.setPayment(request.isPayment());
 
-        // cập nhật rooms nếu FE gửi roomIds
+        // Cập nhật rooms nếu FE gửi roomIds
         if (request.getRoomIds() != null) {
             Set<Room> newRooms = new HashSet<>();
             if (!request.getRoomIds().isEmpty()) {
@@ -144,7 +164,7 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // ❗Check trùng khi UPDATE (bỏ qua chính nó)
+        // Check trùng khi UPDATE (bỏ qua chính nó)
         for (Room room : rooms) {
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
@@ -156,6 +176,7 @@ public class BookingService {
                     checkIn,
                     checkOut
             );
+
             if (conflict) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
@@ -166,7 +187,7 @@ public class BookingService {
         return bookingRepository.save(existingBooking);
     }
 
-    // ====== DELETE ======
+    // ================== DELETE ==================
 
     @Transactional
     public void deleteBooking(Long id) {
@@ -176,9 +197,19 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
-    // ====== DÙNG CHO MOD ======
+    // ================== DÙNG CHO MOD / OWNER ==================
 
     public List<Booking> getBookingsByHotelOwner(Long ownerId) {
         return bookingRepository.findAllByHotelOwner(ownerId);
+    }
+
+    /**
+     * Lấy booking theo hotel owner là user hiện tại (cho endpoint /api/booking/my).
+     */
+    public List<Booking> getBookingsByHotelOwnerForCurrentUser()
+            throws ExecutionException, InterruptedException {
+
+        User currentUser = storeService.getCurrentUser();
+        return bookingRepository.findAllByHotelOwner(currentUser.getId());
     }
 }

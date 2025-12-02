@@ -1,17 +1,17 @@
 package com.java.hotel.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.Set;
 
 @Entity
 public class Booking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private LocalDateTime checkIn;
     private LocalDateTime checkOut;
     private float totalPrice;
@@ -28,13 +28,23 @@ public class Booking {
     @JoinTable(
             name = "booking_room",
             joinColumns = @JoinColumn(name = "booking_id"),
-            inverseJoinColumns = @JoinColumn( name = "room_id")
+            inverseJoinColumns = @JoinColumn(name = "room_id")
     )
     private Set<Room> rooms;
 
-    public Booking() {}
+    public Booking() {
+    }
 
-    public Booking(Long id, LocalDateTime checkIn, float totalPrice, LocalDateTime checkOut, boolean payment, User user, Review review, Set<Room> rooms) {
+    public Booking(
+            Long id,
+            LocalDateTime checkIn,
+            float totalPrice,
+            LocalDateTime checkOut,
+            boolean payment,
+            User user,
+            Review review,
+            Set<Room> rooms
+    ) {
         this.id = id;
         this.checkIn = checkIn;
         this.totalPrice = totalPrice;

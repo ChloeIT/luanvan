@@ -82,10 +82,10 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/test/**",
+                                "/api/test-mail/**",          // 👈 mở cho API test mail
                                 "/api/hotel/all",
                                 "/api/room/all",
                                 "/api/booking/create",
-                                // API check phòng trống theo thời gian
                                 "/api/room/hotel/*/available"
                         ).permitAll()
 

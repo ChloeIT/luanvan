@@ -2,13 +2,13 @@ package com.java.hotel.controller;
 
 import com.java.hotel.model.Booking;
 import com.java.hotel.payload.request.BookingRequest;
-import com.java.hotel.security.services.UserDetailsImpl;
 import com.java.hotel.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.concurrent.ExecutionException;
+
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /* ========= GET BY ID (ADMIN / MOD tuỳ bạn) ========= */
+    /* ========= GET BY ID (ADMIN / tuỳ bạn cấu hình thêm quyền) ========= */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
@@ -54,8 +54,8 @@ public class BookingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> editPayment(
             @PathVariable Long id,
-            @RequestParam boolean payment) {
-
+            @RequestParam boolean payment
+    ) {
         Booking updated = bookingService.editBookingPayment(id, payment);
         if (updated == null) {
             return ResponseEntity.notFound().build();
@@ -68,7 +68,8 @@ public class BookingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateBooking(
             @PathVariable Long id,
-            @RequestBody BookingRequest request) {
+            @RequestBody BookingRequest request
+    ) {
         try {
             Booking updated = bookingService.updateBooking(id, request);
             return ResponseEntity.ok(updated);
@@ -89,13 +90,16 @@ public class BookingController {
         }
     }
 
-    /* ========= GET BOOKINGS BY HOTEL OWNER (MOD / ADMIN) ========= */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
-    public ResponseEntity<?> getMyBookings(
-            @AuthenticationPrincipal UserDetailsImpl user) {
-        return ResponseEntity.ok(
-                bookingService.getBookingsByHotelOwner(user.getId())
-        );
+    public ResponseEntity<?> getMyBookings() {
+        try {
+            return ResponseEntity.ok(
+                    bookingService.getBookingsByHotelOwnerForCurrentUser()
+            );
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 }
