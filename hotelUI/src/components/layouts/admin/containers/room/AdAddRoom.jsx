@@ -33,19 +33,39 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
   const [hotelId, setHotelId] = useState(null);
   const [fileList, setFileList] = useState([]);
 
+  // ===== DISCOUNT =====
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [discountStart, setDiscountStart] = useState("");
+  const [discountEnd, setDiscountEnd] = useState("");
+
   const { rooms } = useSelector((state) => state.room);
   const { hotels } = useSelector((state) => state.hotel);
   const dispatch = useDispatch();
-
   const { search } = useLocation();
 
-  // Nếu đang ở trang /admin/rooms?hotelId=..., tự set hotelId đó luôn
+  // Nếu đang ở /admin/rooms?hotelId=..., tự set hotelId
   useEffect(() => {
     const idFromQuery = new URLSearchParams(search).get("hotelId");
     if (idFromQuery) {
       setHotelId(Number(idFromQuery));
     }
   }, [search]);
+
+  // reset form mỗi lần mở modal
+  useEffect(() => {
+    if (isModalAddVisible) {
+      setName("");
+      setPrice("");
+      setType("");
+      setCapacity(1);
+      setAvailability(true);
+      setFileList([]);
+      setDiscountPercent("");
+      setDiscountStart("");
+      setDiscountEnd("");
+      // hotelId giữ nguyên nếu đang filter theo URL
+    }
+  }, [isModalAddVisible]);
 
   const handleModalOk = async () => {
     const file = fileList[0]?.originFileObj;
@@ -61,35 +81,30 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
     try {
       const formData = new FormData();
       formData.append("name", name);
-      formData.append("price", price);
+      formData.append("price", String(price));
       formData.append("type", type);
-      formData.append("capacity", String(capacity));          // int
-      formData.append("availability", String(availability));  // "true"/"false"
-      formData.append("hotel_id", String(hotelId));           // ⬅ gửi hotel_id
+      formData.append("capacity", String(capacity));
+      formData.append("availability", String(availability)); // "true"/"false"
+      formData.append("hotel_id", String(hotelId));
       formData.append("file", file);
+
+      // ✨ gửi discount nếu > 0
+      if (discountPercent !== "" && Number(discountPercent) > 0) {
+        formData.append("discountPercent", String(discountPercent)); // @RequestParam Integer
+        if (discountStart) formData.append("discountStart", discountStart);   // yyyy-MM-dd
+        if (discountEnd) formData.append("discountEnd", discountEnd);
+      }
 
       const response = await roomServices.create(formData);
 
-      // cập nhật redux
+      // cập nhật redux: thêm room mới vào list
       dispatch(roomAction.setRooms([...rooms, response.data]));
 
-      // reset form
       setIsModalAddVisible(false);
-      setName("");
-      setPrice("");
-      setType("");
-      setCapacity(1);
-      setAvailability(true);
-      setHotelId(null);
-      setFileList([]);
     } catch (error) {
       console.error("Error adding room:", error);
     }
   };
-
-  useEffect(() => {
-    console.log("Current fileList[0]: ", fileList[0]);
-  }, [fileList]);
 
   const handleChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
@@ -97,20 +112,11 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
 
   const uploadButton = (
     <button
-      style={{
-        border: 0,
-        background: "none",
-      }}
+      style={{ border: 0, background: "none" }}
       type="button"
     >
       <BiPlusCircle />
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        Upload
-      </div>
+      <div style={{ marginTop: 8 }}>Upload</div>
     </button>
   );
 
@@ -128,7 +134,7 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
           listType="picture-circle"
           fileList={fileList}
           onChange={handleChange}
-          beforeUpload={() => false} // không auto upload
+          beforeUpload={() => false}
           maxCount={1}
         >
           {fileList.length >= 1 ? null : uploadButton}
@@ -209,6 +215,38 @@ export const AdAddRoom = ({ isModalAddVisible, setIsModalAddVisible }) => {
           <Select.Option value={false}>Not available</Select.Option>
         </Select>
       </div>
+
+      {/* ===== DISCOUNT ===== */}
+      <div className="flex items-center mb-2">
+        <p className=" min-w-20">Discount %</p>
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          value={discountPercent}
+          onChange={(e) => setDiscountPercent(e.target.value)}
+          placeholder="0–100"
+        />
+      </div>
+
+      <div className="flex items-center mb-2">
+        <p className=" min-w-20">Start</p>
+        <Input
+          type="date"
+          value={discountStart}
+          onChange={(e) => setDiscountStart(e.target.value)}
+        />
+      </div>
+
+      <div className="flex items-center">
+        <p className=" min-w-20">End</p>
+        <Input
+          type="date"
+          value={discountEnd}
+          onChange={(e) => setDiscountEnd(e.target.value)}
+        />
+      </div>
+      {/* ===== END DISCOUNT ===== */}
     </Modal>
   );
 };

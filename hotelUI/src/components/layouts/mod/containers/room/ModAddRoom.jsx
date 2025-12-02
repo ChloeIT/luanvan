@@ -45,6 +45,11 @@ export const ModAddRoom = ({
     const [fileList, setFileList] = useState([]);
     const [saving, setSaving] = useState(false);
 
+    // ===== DISCOUNT =====
+    const [discountPercent, setDiscountPercent] = useState("");
+    const [discountStart, setDiscountStart] = useState("");
+    const [discountEnd, setDiscountEnd] = useState("");
+
     // Nếu MOD chỉ có 1 hotel -> auto chọn
     useEffect(() => {
         if (myHotels.length === 1 && !hotelId) {
@@ -58,8 +63,11 @@ export const ModAddRoom = ({
         setType("");
         setCapacity(1);
         setAvailability(true);
-        // giữ hotelId để đỡ phải chọn lại
         setFileList([]);
+        setDiscountPercent("");
+        setDiscountStart("");
+        setDiscountEnd("");
+        // hotelId giữ nguyên để đỡ phải chọn lại
     };
 
     const handleModalOk = async () => {
@@ -99,10 +107,16 @@ export const ModAddRoom = ({
             formData.append("hotel_id", String(hotelId));
             formData.append("file", file);
 
+            // ✨ Discount – gửi nếu > 0
+            if (discountPercent !== "" && Number(discountPercent) > 0) {
+                formData.append("discountPercent", String(discountPercent)); // @RequestParam Integer
+                if (discountStart) formData.append("discountStart", discountStart);   // yyyy-MM-dd
+                if (discountEnd) formData.append("discountEnd", discountEnd);
+            }
+
             const res = await roomServices.create(formData); // POST
             message.success("Room created successfully");
 
-            // Gọi callback để ModRooms fetch lại list
             if (onCreated) {
                 onCreated(res?.data);
             }
@@ -122,10 +136,7 @@ export const ModAddRoom = ({
     };
 
     const uploadButton = (
-        <button
-            style={{ border: 0, background: "none" }}
-            type="button"
-        >
+        <button style={{ border: 0, background: "none" }} type="button">
             <BiPlusCircle />
             <div style={{ marginTop: 8 }}>Upload</div>
         </button>
@@ -179,10 +190,7 @@ export const ModAddRoom = ({
             {/* Name */}
             <div className="flex items-center mb-2">
                 <p className="min-w-20">Name</p>
-                <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
 
             {/* Price */}
@@ -236,6 +244,38 @@ export const ModAddRoom = ({
                     <Select.Option value={false}>Not available</Select.Option>
                 </Select>
             </div>
+
+            {/* ===== DISCOUNT ===== */}
+            <div className="flex items-center mb-2">
+                <p className="min-w-20">Discount %</p>
+                <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(e.target.value)}
+                    placeholder="0–100"
+                />
+            </div>
+
+            <div className="flex items-center mb-2">
+                <p className="min-w-20">Start</p>
+                <Input
+                    type="date"
+                    value={discountStart}
+                    onChange={(e) => setDiscountStart(e.target.value)}
+                />
+            </div>
+
+            <div className="flex items-center">
+                <p className="min-w-20">End</p>
+                <Input
+                    type="date"
+                    value={discountEnd}
+                    onChange={(e) => setDiscountEnd(e.target.value)}
+                />
+            </div>
+            {/* ===== END DISCOUNT ===== */}
         </Modal>
     );
 };

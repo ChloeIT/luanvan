@@ -22,20 +22,50 @@ export const ModEditRoom = ({
     const [create_at, setCreate_at] = useState("");
     const [update_at, setUpdate_at] = useState("");
 
+    // DISCOUNT
+    const [discountPercent, setDiscountPercent] = useState("");
+    const [discountStart, setDiscountStart] = useState("");
+    const [discountEnd, setDiscountEnd] = useState("");
+
     const dispatch = useDispatch();
     const { rooms } = useSelector((state) => state.room);
 
-    useEffect(() => {
-        if (itemACtion) {
-            setName(itemACtion.name);
-            setPrice(itemACtion.price);
-            setImage(itemACtion.image);
-            setCapacity(itemACtion.capacity);
-            setType(itemACtion.type);
-            setAvailability(!!itemACtion.availability);
-            setCreate_at(itemACtion.create_at || "");
-            setUpdate_at(itemACtion.update_at || "");
+    // helper convert date -> yyyy-MM-dd
+    const toDateInputValue = (val) => {
+        if (!val) return "";
+        if (typeof val === "string") {
+            return val.slice(0, 10);
         }
+        const d = new Date(val);
+        if (Number.isNaN(d.getTime())) return "";
+        return d.toISOString().slice(0, 10);
+    };
+
+    useEffect(() => {
+        if (!itemACtion) return;
+
+        setName(itemACtion.name ?? "");
+        setPrice(itemACtion.price ?? "");
+        setImage(itemACtion.image ?? "");
+        setCapacity(itemACtion.capacity ?? "");
+        setType(itemACtion.type ?? "");
+        setAvailability(!!itemACtion.availability);
+        setCreate_at(itemACtion.create_at || "");
+        setUpdate_at(itemACtion.update_at || "");
+
+        const rawDiscount =
+            itemACtion.discountPercent ??
+            itemACtion.discount_percent ??
+            itemACtion.discount ??
+            "";
+        setDiscountPercent(rawDiscount);
+
+        const start =
+            itemACtion.discountStart ?? itemACtion.discount_start ?? null;
+        const end = itemACtion.discountEnd ?? itemACtion.discount_end ?? null;
+
+        setDiscountStart(toDateInputValue(start));
+        setDiscountEnd(toDateInputValue(end));
     }, [itemACtion]);
 
     const handleModalOk = async () => {
@@ -50,6 +80,11 @@ export const ModEditRoom = ({
             availability,
             create_at,
             update_at,
+            // discount
+            discountPercent:
+                discountPercent === "" ? 0 : Number(discountPercent),
+            discountStart: discountStart || null,
+            discountEnd: discountEnd || null,
         };
 
         try {
@@ -59,7 +94,6 @@ export const ModEditRoom = ({
             if (onUpdated) {
                 onUpdated();
             } else if (res?.data) {
-                // fallback: update local redux
                 const updated = res.data;
                 dispatch(
                     roomAction.setRooms(
@@ -119,6 +153,38 @@ export const ModEditRoom = ({
                 <p className=" min-w-20">Type</p>
                 <Input value={type} onChange={(e) => setType(e.target.value)} />
             </div>
+
+            {/* DISCOUNT */}
+            <div className="flex items-center mb-2">
+                <p className="min-w-20">Discount %</p>
+                <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(e.target.value)}
+                    placeholder="0–100"
+                />
+            </div>
+
+            <div className="flex items-center mb-2">
+                <p className="min-w-20">Start</p>
+                <Input
+                    type="date"
+                    value={discountStart}
+                    onChange={(e) => setDiscountStart(e.target.value)}
+                />
+            </div>
+
+            <div className="flex items-center mb-2">
+                <p className="min-w-20">End</p>
+                <Input
+                    type="date"
+                    value={discountEnd}
+                    onChange={(e) => setDiscountEnd(e.target.value)}
+                />
+            </div>
+            {/* END DISCOUNT */}
 
             <div className="flex items-center mb-2">
                 <p className=" min-w-20">Availability</p>

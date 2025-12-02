@@ -10,6 +10,43 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { IoLocationOutline } from "react-icons/io5";
 import { HomeOutlined } from "@ant-design/icons";
 
+/* ========= Helper: Discount info ========= */
+const getDiscountInfo = (room) => {
+  const raw =
+    room?.discountPercent ??
+    room?.discount_percent ??
+    room?.discount ??
+    0;
+
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    return { value: 0, isActive: false };
+  }
+
+  const start = room.discountStart ?? room.discount_start ?? null;
+  const end = room.discountEnd ?? room.discount_end ?? null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const toDate = (d) => {
+    if (!d) return null;
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return null;
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+
+  const startDate = toDate(start);
+  const endDate = toDate(end);
+
+  let isActive = true;
+  if (startDate && today < startDate) isActive = false;
+  if (endDate && today > endDate) isActive = false;
+
+  return { value, isActive };
+};
+
 export const AdRoom = () => {
   const { rooms } = useSelector((state) => state.room);
   const { hotels } = useSelector((state) => state.hotel);
@@ -150,6 +187,29 @@ export const AdRoom = () => {
     color: "#595959",
     border: "1px solid #D9D9D9",
   }; // Budget/Economy/Compact & fallback
+
+  // Discount pills
+  const discountActivePill = {
+    ...basePill,
+    backgroundColor: "#FFF1B8",
+    color: "#AD6800",
+    border: "1px solid #FFD666",
+    fontSize: 11,
+  };
+  const discountScheduledPill = {
+    ...basePill,
+    backgroundColor: "#E6F4FF",
+    color: "#0958D9",
+    border: "1px solid #91CAFF",
+    fontSize: 11,
+  };
+  const discountNonePill = {
+    ...basePill,
+    backgroundColor: "#F5F5F5",
+    color: "#8C8C8C",
+    border: "1px solid #D9D9D9",
+    fontSize: 11,
+  };
 
   // Chuẩn hoá & mapping theo type trong DB
   const typePillStyle = (raw) => {
@@ -316,7 +376,7 @@ export const AdRoom = () => {
                   }
                 }
 
-                // 4) Fallback: dò theo room.id trong hotels[].rooms (phòng khi BE đổi)
+                // 4) Fallback: dò theo room.id trong hotels[].rooms
                 if (!resolvedHotelId) {
                   const byRoomInHotel = (hotels || []).find((ht) =>
                     (ht.rooms || []).some(
@@ -352,6 +412,30 @@ export const AdRoom = () => {
           align="center"
           render={(v) => <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>}
         />
+
+        {/* ==== NEW: DISCOUNT COLUMN ==== */}
+        <Column
+          title="Discount"
+          key="discount"
+          align="center"
+          render={(_, room) => {
+            const { value, isActive } = getDiscountInfo(room);
+
+            if (value > 0) {
+              const style = isActive
+                ? discountActivePill
+                : discountScheduledPill;
+              return (
+                <span style={style}>
+                  {value}% {isActive ? "Active" : "Scheduled"}
+                </span>
+              );
+            }
+
+            return <span style={discountNonePill}>No discount</span>;
+          }}
+        />
+
         <Column
           title="Capacity"
           dataIndex="capacity"
@@ -393,7 +477,7 @@ export const AdRoom = () => {
             </span>
           )}
         />
-        <Column
+        {/* <Column
           title="Created At"
           dataIndex="create_at"
           key="create_at"
@@ -404,7 +488,7 @@ export const AdRoom = () => {
           dataIndex="update_at"
           key="update_at"
           align="center"
-        />
+        /> */}
         <Column
           title="Action"
           key="action"

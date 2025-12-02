@@ -6,7 +6,7 @@ import React, {
     useEffect,
 } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Input, Select, Button, Tag } from "antd";
+import { Input, Select, Button, Tag, Tooltip } from "antd";
 import { MdOutlineBedroomParent } from "react-icons/md";
 
 import { roomServices } from "../../../../services";
@@ -20,10 +20,14 @@ import { ModDeleteRoom } from "./room/ModDeleteRoom";
 const { Search } = Input;
 
 // ===== ENV & helpers =====
-const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(/\/+$/, "");
+const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(
+    /\/+$/,
+    ""
+);
 const buildRoomImageUrl = (fileName, attempt = 0) =>
     fileName
-        ? `${RAW_IMAGE_URL}/rooms/${fileName}${attempt ? `?v=${attempt}` : ""}`
+        ? `${RAW_IMAGE_URL}/rooms/${fileName}${attempt ? `?v=${attempt}` : ""
+        }`
         : "";
 
 /** Ảnh room với retry nhẹ khi lần đầu 404 (file chưa sẵn sàng) */
@@ -59,6 +63,93 @@ const RoomImage = ({ fileName, alt }) => {
             onError={handleError}
         />
     );
+};
+
+/* ===== DISCOUNT HELPERS ===== */
+
+const formatDateShort = (value) => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+};
+
+/** Lấy thông tin giảm giá từ room + trạng thái */
+const getDiscountInfo = (room) => {
+    const raw =
+        room?.discountPercent ??
+        room?.discount_percent ??
+        room?.discount ??
+        0;
+
+    const percent = Number(raw);
+    if (!Number.isFinite(percent) || percent <= 0) {
+        return {
+            percent: 0,
+            state: "none", // none | active | scheduled | expired
+            startRaw: null,
+            endRaw: null,
+            label: "No discount",
+        };
+    }
+
+    const startRaw = room.discountStart ?? room.discount_start ?? null;
+    const endRaw = room.discountEnd ?? room.discount_end ?? null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const toDate = (v) => {
+        if (!v) return null;
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return null;
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+
+    const start = toDate(startRaw);
+    const end = toDate(endRaw);
+
+    let state = "active";
+
+    if (start && today < start) {
+        state = "scheduled";
+    } else if (end && today > end) {
+        state = "expired";
+    }
+
+    let label = `${percent}% Active`;
+    if (state === "scheduled") label = `${percent}% Scheduled`;
+    if (state === "expired") label = `${percent}% Ended`;
+
+    return { percent, state, startRaw, endRaw, label };
+};
+
+const buildDiscountTooltip = (info) => {
+    if (!info || info.percent <= 0 || info.state === "none") {
+        return "No discount";
+    }
+
+    const range = [
+        info.startRaw ? formatDateShort(info.startRaw) : null,
+        info.endRaw ? formatDateShort(info.endRaw) : null,
+    ].filter(Boolean);
+
+    let stateLabel = "";
+    if (info.state === "active") stateLabel = "Currently active";
+    if (info.state === "scheduled") stateLabel = "Scheduled period";
+    if (info.state === "expired") stateLabel = "Ended period";
+
+    if (range.length === 2) {
+        return `${info.percent}% • ${stateLabel} (${range[0]} → ${range[1]})`;
+    }
+    if (range.length === 1) {
+        return `${info.percent}% • ${stateLabel} (${range[0]})`;
+    }
+    return `${info.percent}% • ${stateLabel}`;
 };
 
 // =========================
@@ -110,9 +201,7 @@ export const ModRooms = () => {
     // chỉ lấy room thuộc khách sạn mà MOD sở hữu
     const myRooms = useMemo(() => {
         if (!rooms || !user) return [];
-        return rooms.filter(
-            (r) => r.hotel && r.hotel.ownerId === user.id
-        );
+        return rooms.filter((r) => r.hotel && r.hotel.ownerId === user.id);
     }, [rooms, user]);
 
     // áp dụng filter & sort
@@ -304,93 +393,145 @@ export const ModRooms = () => {
                     <div className="space-y-2">
                         {/* HEADER ROW */}
                         <div
-                            className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px]
-             items-center gap-3 px-4 pb-2 border-b border-black/5"
+                            className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_120px_minmax(0,1fr)_160px]
+                         items-center gap-3 px-4 pb-2 border-b border-black/5"
                         >
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 ROOM
                             </div>
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 TYPE
                             </div>
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 GUESTS
                             </div>
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 PRICE
                             </div>
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
+                                DISCOUNT
+                            </div>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 STATUS
                             </div>
-                            <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                            <div
+                                className="text-center font-bold text-sm tracking-wide"
+                                style={{ color: "var(--text)" }}
+                            >
                                 ACTIONS
                             </div>
                         </div>
 
-
                         {/* CÁC DÒNG ROOM */}
-                        {filteredRooms.map((room) => (
-                            <div
-                                key={room.id}
-                                className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px]
-                                           items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 transition"
-                            >
-                                {/* 1. ROOM (ảnh + tên) */}
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
-                                        <RoomImage fileName={room.image} alt={room.name} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div
-                                            className="text-sm font-semibold truncate"
-                                            style={{ color: "var(--primary)" }}
-                                        >
-                                            {room.name}
+                        {filteredRooms.map((room) => {
+                            const info = getDiscountInfo(room);
+
+                            let pillClass =
+                                "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold";
+                            if (info.state === "active") {
+                                pillClass += " bg-emerald-100 text-emerald-700";
+                            } else if (info.state === "scheduled") {
+                                pillClass += " bg-amber-100 text-amber-700";
+                            } else if (info.state === "expired") {
+                                pillClass += " bg-neutral-100 text-neutral-600";
+                            }
+
+                            return (
+                                <div
+                                    key={room.id}
+                                    className="grid grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_120px_minmax(0,1fr)_160px]
+                             items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 transition"
+                                >
+                                    {/* 1. ROOM (ảnh + tên) */}
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
+                                            <RoomImage fileName={room.image} alt={room.name} />
                                         </div>
+                                        <div className="min-w-0">
+                                            <div
+                                                className="text-sm font-semibold truncate"
+                                                style={{ color: "var(--primary)" }}
+                                            >
+                                                {room.name}
+                                            </div>
+                                        </div>
+                                    </div>
 
+                                    {/* 2. TYPE */}
+                                    <div className="text-xs text-center truncate">
+                                        {room.type || "Unspecified"}
+                                    </div>
+
+                                    {/* 3. GUESTS */}
+                                    <div className="text-xs text-center truncate">
+                                        {room.capacity} guests
+                                    </div>
+
+                                    {/* 4. PRICE */}
+                                    <div className="text-xs font-semibold text-center whitespace-nowrap">
+                                        ${room.price}
+                                    </div>
+
+                                    {/* 5. DISCOUNT (tooltip hiển thị thời gian) */}
+                                    <div className="flex justify-center">
+                                        {info.percent > 0 ? (
+                                            <Tooltip title={buildDiscountTooltip(info)}>
+                                                <span className={pillClass}>{info.label}</span>
+                                            </Tooltip>
+                                        ) : (
+                                            <span className="text-[11px] opacity-60">
+                                                No discount
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* 6. STATUS */}
+                                    <div className="flex justify-center">
+                                        <Tag
+                                            color={room.availability ? "green" : "red"}
+                                            className="m-0 text-[11px]"
+                                        >
+                                            {room.availability ? "Available" : "Unavailable"}
+                                        </Tag>
+                                    </div>
+
+                                    {/* 7. ACTIONS */}
+                                    <div className="flex justify-center gap-2">
+                                        <Button
+                                            size="small"
+                                            onClick={() => handleEditRoom(room)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            danger
+                                            onClick={() => handleDeleteRoom(room)}
+                                        >
+                                            Delete
+                                        </Button>
                                     </div>
                                 </div>
-
-                                {/* 2. TYPE */}
-                                <div className="text-xs text-center truncate">
-                                    {room.type || "Unspecified"}
-                                </div>
-
-                                {/* 3. GUESTS */}
-                                <div className="text-xs text-center truncate">
-                                    {room.capacity} guests
-                                </div>
-
-                                {/* 4. PRICE */}
-                                <div className="text-xs font-semibold text-center whitespace-nowrap">
-                                    ${room.price}
-                                </div>
-
-                                {/* 5. STATUS */}
-                                <div className="flex justify-center">
-                                    <Tag
-                                        color={room.availability ? "green" : "red"}
-                                        className="m-0 text-[11px]"
-                                    >
-                                        {room.availability ? "Available" : "Unavailable"}
-                                    </Tag>
-                                </div>
-
-                                {/* 6. ACTIONS */}
-                                <div className="flex justify-center gap-2">
-                                    <Button size="small" onClick={() => handleEditRoom(room)}>
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        danger
-                                        onClick={() => handleDeleteRoom(room)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
