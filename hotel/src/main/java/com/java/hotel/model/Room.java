@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,6 +23,16 @@ public class Room {
     private Date create_at;
     private Date update_at;
     private Boolean availability;
+
+    // ====== DISCOUNT FIELDS ======
+    @Column(name = "discount_percent")
+    private Integer discountPercent = 0;  // % giảm, 0 = không giảm
+
+    @Column(name = "discount_start")
+    private Date discountStart;           // ngày bắt đầu
+
+    @Column(name = "discount_end")
+    private Date discountEnd;             // ngày kết thúc
 
     // Giữ lại hotel để FE đọc được tên khách sạn
     @ManyToOne
@@ -64,6 +75,7 @@ public class Room {
         this.id = id;
     }
 
+    // ========== ID / BASIC ==========
     public Long getId() {
         return id;
     }
@@ -158,5 +170,62 @@ public class Room {
 
     public void setFavorites(Set<Favorite> favorites) {
         this.favorites = favorites;
+    }
+
+    // ========== DISCOUNT GETTER / SETTER ==========
+
+    public Integer getDiscountPercent() {
+        return discountPercent;
+    }
+
+    public void setDiscountPercent(Integer discountPercent) {
+        this.discountPercent = discountPercent;
+    }
+
+    public Date getDiscountStart() {
+        return discountStart;
+    }
+
+    public void setDiscountStart(Date discountStart) {
+        this.discountStart = discountStart;
+    }
+
+    public Date getDiscountEnd() {
+        return discountEnd;
+    }
+
+    public void setDiscountEnd(Date discountEnd) {
+        this.discountEnd = discountEnd;
+    }
+
+    // ========== TÍNH TOÁN CHO FE (KHÔNG LƯU DB) ==========
+
+    /**
+     * Phòng có đang trong thời gian giảm giá không?
+     */
+    @Transient
+    public boolean isDiscountActive() {
+        if (discountPercent == null || discountPercent <= 0) return false;
+
+        LocalDate today = LocalDate.now();
+
+        if (discountStart != null && today.isBefore(discountStart.toLocalDate())) {
+            return false;
+        }
+        if (discountEnd != null && today.isAfter(discountEnd.toLocalDate())) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Giá sau giảm – FE có thể dùng trực tiếp.
+     */
+    @Transient
+    public Float getFinalPrice() {
+        if (!isDiscountActive()) {
+            return price;
+        }
+        return price * (100 - discountPercent) / 100.0f;
     }
 }

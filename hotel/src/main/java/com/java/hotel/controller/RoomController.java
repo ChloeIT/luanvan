@@ -45,6 +45,13 @@ public class RoomController {
         return ResponseEntity.ok(roomRepository.findAll());
     }
 
+    // ====== HELPER CHECK ROLE ======
+    private boolean hasRole(UserDetailsImpl userDetails, String role) {
+        if (userDetails == null) return false;
+        return userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(role));
+    }
+
     // ⭐ ADMIN + MOD tạo room
     @PostMapping("/create")
     @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
@@ -62,16 +69,18 @@ public class RoomController {
         Hotel hotel = hotelRepository.findById(hotel_id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found"));
 
-        boolean isModerator = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+        boolean isAdmin = hasRole(userDetails, "ROLE_ADMIN");
+        boolean isModerator = hasRole(userDetails, "ROLE_MODERATOR");
 
-        // MOD chỉ được tạo room cho hotel mà mình là owner
-        if (isModerator &&
-                (hotel.getOwner() == null ||
-                        !hotel.getOwner().getId().equals(userDetails.getId()))) {
-            return ResponseEntity.status(403)
-                    .body("You are not the owner of this hotel");
+        // 🔒 MOD (nhưng KHÔNG phải ADMIN) chỉ được tạo room cho hotel mình sở hữu
+        if (isModerator && !isAdmin) {
+            if (hotel.getOwner() == null ||
+                    !hotel.getOwner().getId().equals(userDetails.getId())) {
+                return ResponseEntity.status(403)
+                        .body("You are not the owner of this hotel");
+            }
         }
+        // ADMIN thì bỏ qua check trên
 
         String newFilename = storeService.generateImageName(file);
 
@@ -85,6 +94,11 @@ public class RoomController {
         room.setUpdate_at(Date.valueOf(LocalDate.now()));
         room.setImage(newFilename);
         room.setHotel(hotel);
+
+        // ✨ Discount mặc định (không giảm)
+        room.setDiscountPercent(0);
+        room.setDiscountStart(null);
+        room.setDiscountEnd(null);
 
         Room savedRoom = roomRepository.save(room);
         storeService.saveFile(file, newFilename, "rooms");
@@ -104,15 +118,17 @@ public class RoomController {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        boolean isModerator = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+        boolean isAdmin = hasRole(userDetails, "ROLE_ADMIN");
+        boolean isModerator = hasRole(userDetails, "ROLE_MODERATOR");
 
-        // MOD chỉ được sửa room thuộc hotel của mình
-        if (isModerator &&
-                (room.getHotel().getOwner() == null ||
-                        !room.getHotel().getOwner().getId().equals(userDetails.getId()))) {
-            return ResponseEntity.status(403).body("Not your hotel");
+        // 🔒 MOD (nhưng KHÔNG phải ADMIN) chỉ được sửa room thuộc hotel của mình
+        if (isModerator && !isAdmin) {
+            if (room.getHotel().getOwner() == null ||
+                    !room.getHotel().getOwner().getId().equals(userDetails.getId())) {
+                return ResponseEntity.status(403).body("Not your hotel");
+            }
         }
+        // ADMIN (hoặc admin+mod) thì bỏ qua check trên
 
         Room updated = roomService.updateRoom(id, updates);
         return ResponseEntity.ok(updated);
@@ -129,15 +145,17 @@ public class RoomController {
         Room room = roomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        boolean isModerator = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_MODERATOR"));
+        boolean isAdmin = hasRole(userDetails, "ROLE_ADMIN");
+        boolean isModerator = hasRole(userDetails, "ROLE_MODERATOR");
 
-        // MOD chỉ được xoá room thuộc hotel của mình
-        if (isModerator &&
-                (room.getHotel().getOwner() == null ||
-                        !room.getHotel().getOwner().getId().equals(userDetails.getId()))) {
-            return ResponseEntity.status(403).body("Not allowed");
+        // 🔒 MOD (nhưng KHÔNG phải ADMIN) chỉ được xoá room thuộc hotel mình
+        if (isModerator && !isAdmin) {
+            if (room.getHotel().getOwner() == null ||
+                    !room.getHotel().getOwner().getId().equals(userDetails.getId())) {
+                return ResponseEntity.status(403).body("Not allowed");
+            }
         }
+        // ADMIN thì xoá được tất cả
 
         roomRepository.deleteById(id);
         return ResponseEntity.ok("Room deleted");
@@ -155,7 +173,6 @@ public class RoomController {
     }
 
     // ⭐ PUBLIC – Lấy danh sách phòng TRỐNG của một hotel trong khoảng thời gian
-    //   dùng cho trang /hotel/:id (ẩn nút Book now cho phòng đang bị booking)
     @GetMapping("/hotel/{hotelId}/available")
     public ResponseEntity<List<Room>> getAvailableRoomsForHotel(
             @PathVariable Long hotelId,

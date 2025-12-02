@@ -5,12 +5,12 @@ import com.java.hotel.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class RoomService {
+
     @Autowired
     private RoomRepository roomRepository;
 
@@ -32,6 +32,11 @@ public class RoomService {
             existingRoom.setImage(updateRoom.getImage());
             existingRoom.setCreate_at(updateRoom.getCreate_at());
             existingRoom.setUpdate_at(updateRoom.getUpdate_at());
+
+            // ✨ Cập nhật discount
+            existingRoom.setDiscountPercent(updateRoom.getDiscountPercent());
+            existingRoom.setDiscountStart(updateRoom.getDiscountStart());
+            existingRoom.setDiscountEnd(updateRoom.getDiscountEnd());
 
             return roomRepository.save(existingRoom);
 
