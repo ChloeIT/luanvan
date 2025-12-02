@@ -285,6 +285,7 @@ export function HotelDetail({
                       hotelName={hotel?.name}
                       hotelId={hotel?.id}
                       isAvailableToday={isAvailableToday}
+                      linkToHotel={false}  // 👈 trên trang hotel: pill KHÔNG link
                     />
                   </div>
                 </div>

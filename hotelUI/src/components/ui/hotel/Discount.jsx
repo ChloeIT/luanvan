@@ -1,123 +1,135 @@
-import React from "react";
-import { Image } from "antd";
-import { hotel8, hotel7, hotel6, hotel5 } from "../../../assets";
+// src/components/ui/home/Discount.jsx
+import React, { useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { RoomCard } from "@/components/ui/Room/RoomCard";
+import { fetchAllRoom } from "@/store/room/thunk";
+
+// Swiper cho phần DISCOUNT
+import "swiper/css";
+import "swiper/css/autoplay";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+
+/** Đọc giá trị giảm giá từ room, convert sang number an toàn */
+const getDiscountValue = (room) => {
+  const raw =
+    room?.discountPercent ??
+    room?.discount_percent ??
+    room?.discount ??
+    0;
+
+  const num = Number(raw);
+  return Number.isFinite(num) && num > 0 ? num : 0;
+};
 
 export const Discount = () => {
+  const dispatch = useDispatch();
+  const { rooms = [] } = useSelector((s) => s.room || {});
+
+  /* ===== FETCH ROOMS NẾU CHƯA CÓ ===== */
+  useEffect(() => {
+    if (!rooms || rooms.length === 0) {
+      dispatch(fetchAllRoom());
+    }
+  }, [rooms?.length, dispatch]);
+
+  /* ===== LẤY TẤT CẢ ROOM CÓ DISCOUNT > 0 ===== */
+  const discountedRooms = useMemo(() => {
+    if (!Array.isArray(rooms)) return [];
+
+    return rooms
+      .map((r) => ({
+        ...r,
+        discountPercent: getDiscountValue(r),
+      }))
+      .filter((r) => r.discountPercent > 0)
+      .sort((a, b) => b.discountPercent - a.discountPercent); // giảm dần theo %
+  }, [rooms]);
+
+  // Nếu không có phòng giảm giá có thể return null, hoặc hiện message
+  if (!discountedRooms.length) {
+    return null;
+  }
+
   return (
     <div className="container-xxl py-5 destination">
       <div className="container">
+        {/* ===== HEADING ===== */}
         <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-          <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-            {/* 2 gạch bên trái – căn lề phải */}
+          <div
+            className="heading-line mx-auto"
+            style={{ "--heading-gap": "14px" }}
+          >
             <span
               style={{
                 display: "grid",
-                justifyItems: "end", // 👈 gạch thẳng hàng mép phải chữ
+                justifyItems: "end",
                 gap: "6px",
-                marginRight: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                marginRight: "2px",
               }}
             >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary text-uppercase">Discount</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">
+              Discount
+            </h6>
 
-            {/* 2 gạch bên phải */}
             <span
               style={{
                 display: "grid",
-                justifyItems: "start", // 👈 gạch bắt đầu từ mép trái chữ
+                justifyItems: "start",
                 gap: "6px",
-                marginLeft: "2px", // tạo khoảng cách nhỏ giữa chữ và gạch
+                marginLeft: "2px",
               }}
             >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
           </div>
 
           <h1 className="mb-5">Save big today!</h1>
         </div>
 
-
-        <div className="row g-3">
-          <div className="col-lg-7 col-md-6">
-            <div className="row g-3">
-              <div
-                className="col-lg-12 col-md-12 wow zoomIn"
-                data-wow-delay="0.1s"
-              >
-                <div className="position-relative d-block overflow-hidden">
-                  <Image
-                    src={hotel5}
-                    alt="des-1 Image"
-                    width="860"
-                    height="200"
-                  />
-                  <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
-                    30% OFF
-                  </div>
-                  <div className="bg-white text-primary fw-bold position-absolute bottom-0 end-0 m-3 py-1 px-2">
-                    Flower
-                  </div>
-                </div>
-              </div>
-              <div
-                className="col-lg-6 col-md-12 wow zoomIn"
-                data-wow-delay="0.3s"
-              >
-                <div className="position-relative d-block overflow-hidden">
-                  <Image
-                    src={hotel6}
-                    alt="des-1 mekong"
-                    width="380"
-                    height="200"
-                  />
-                  <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
-                    25% OFF
-                  </div>
-                  <div className="bg-white text-primary fw-bold position-absolute bottom-0 end-0 m-3 py-1 px-2">
-                    MeKong
-                  </div>
-                </div>
-              </div>
-              <div
-                className="col-lg-6 col-md-12 wow zoomIn"
-                data-wow-delay="0.5s"
-              >
-                <div className="position-relative d-block overflow-hidden">
-                  <Image
-                    src={hotel7}
-                    alt="thinh vuong"
-                    width="380"
-                    height="200"
-                  />
-                  <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
-                    35% OFF
-                  </div>
-                  <div className="bg-white text-primary fw-bold position-absolute bottom-0 end-0 m-3 py-1 px-2">
-                    Thịnh Vượng
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            className="col-lg-5 col-md-6 wow zoomIn min-h-80"
-            data-wow-delay="0.7s"
-          >
-            <div className="position-relative d-block h-100 overflow-hidden">
-              <Image src={hotel8} alt="tay do" width="500" height="415" />
-              <div className="bg-white text-danger fw-bold position-absolute top-0 start-0 m-3 py-1 px-2">
-                20% OFF
-              </div>
-              <div className="bg-white text-primary fw-bold position-absolute bottom-0 end-0 m-3 py-1 px-2">
-                Tây Đô
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* ===== SWIPER DISCOUNT ===== */}
+        <Swiper
+          modules={[Autoplay]}
+          loop
+          speed={900}
+          autoplay={{
+            delay: 2600,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+          }}
+          spaceBetween={18}
+          style={{ padding: "4px 0 20px" }}
+          breakpoints={{
+            0: { slidesPerView: 1 },
+            576: { slidesPerView: 2 },
+            768: { slidesPerView: 3 },
+            1200: { slidesPerView: 4 },
+          }}
+          className="home-discount-swiper" // dùng chung CSS pill-top với Home
+        >
+          {discountedRooms.map((room, idx) => (
+            <SwiperSlide key={`${room.id}-${idx}`} className="!h-auto">
+              <RoomCard
+                room={room}
+                hotelId={room.hotel?.id ?? room.hotel_id ?? null}
+                hotelName={room.hotel?.name ?? room.hotelName}
+                isAvailableToday={true}
+                linkToHotel={true}  // pill tên hotel dẫn tới trang hotel
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </div>
   );

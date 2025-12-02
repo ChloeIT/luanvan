@@ -5,12 +5,12 @@ import { BsCurrencyDollar } from "react-icons/bs";
 import { FaUserLarge, FaHeart, FaRegHeart } from "react-icons/fa6";
 import { IoMdPricetags } from "react-icons/io";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { favoriteServices } from "@/services/favorite";
 import { favoriteAction } from "@/store";
 
-/** ========== helpers ========== */
+/* ================= helpers ================= */
 const readCompare = () => {
   try {
     return JSON.parse(localStorage.getItem("compareRooms") || "[]");
@@ -18,12 +18,15 @@ const readCompare = () => {
     return [];
   }
 };
+
 const writeCompare = (list) => {
   localStorage.setItem("compareRooms", JSON.stringify(list));
   window.dispatchEvent(new Event("compare:changed"));
 };
+
 const toNum = (v) =>
   v === 0 || v === "0" ? 0 : v != null && v !== "" ? Number(v) : NaN;
+
 const getHotelIdFromRoom = (room) =>
   toNum(room?.hotel_id ?? room?.hotelId ?? room?.hotel?.id);
 
@@ -42,25 +45,17 @@ const resolveHotelName = (room, hotels, hotelNameProp) => {
   return "";
 };
 
-/**
- * RoomCard
- * @param {Object} props
- * @param {Object} props.room - dữ liệu phòng
- * @param {string} [props.hotelName] - override tên KS (ưu tiên)
- * @param {number|string} [props.hotelId] - override id KS
- * @param {boolean} [props.isFavorite] - room đã có trong favorite
- * @param {"default"|"compact"} [props.variant="default"] - kiểu hiển thị
- * @param {boolean} [props.inCompare] - (deprecated) nếu true → compact
- * @param {boolean} [props.isAvailableToday=true] - phòng có trống hôm nay không
- */
+/* ================= Component ================= */
 export const RoomCard = ({
   room,
   hotelName: hotelNameProp,
   hotelId: hotelIdProp,
   isFavorite,
   variant = "default",
-  inCompare, // deprecated – để tương thích ngược
+  inCompare,
   isAvailableToday = true,
+  /** 👉 nếu true thì pill tên hotel là Link tới /hotel/:id (dùng ở DISCOUNT) */
+  linkToHotel = false,
 }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
   const { myFavorite } = useSelector((s) => s.favorite);
@@ -68,26 +63,32 @@ export const RoomCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Chuẩn hoá variant (ưu tiên prop variant, nếu inCompare === true thì ép thành compact)
+  /* ----- variant sizing ----- */
   const cardVariant = inCompare ? "compact" : variant;
   const isCompact = cardVariant === "compact";
-
-  // sizing theo variant
   const ACTION_ICON = isCompact ? 24 : 28;
   const HEART_FS = isCompact ? "1.25rem" : "1.45rem";
   const BTN_SIZE = isCompact ? "small" : "middle";
 
-  // resolve hotelId & hotelName
+  /* ----- hotel name / id ----- */
   const resolvedHotelId = useMemo(
     () => hotelIdProp ?? getHotelIdFromRoom(room),
     [hotelIdProp, room]
   );
+
   const hotelName = useMemo(
     () => resolveHotelName(room, hotels, hotelNameProp) || room?.name || "",
     [room, hotels, hotelNameProp]
   );
 
-  // compare state
+  /* ----- DISCOUNT: chuẩn hoá field ----- */
+  const rawDiscount =
+    room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
+
+  const discountPercent = Number(rawDiscount) || 0;
+  const showDiscount = discountPercent > 0; // chỉ check >0
+
+  /* ----- compare state ----- */
   const [isInCompare, setIsInCompare] = useState(() =>
     readCompare().some((r) => r.id === room.id)
   );
@@ -95,24 +96,28 @@ export const RoomCard = ({
   useEffect(() => {
     const sync = () =>
       setIsInCompare(readCompare().some((r) => r.id === room.id));
+
     const onStorage = (e) => {
       if (e.key === "compareRooms") sync();
     };
+
     window.addEventListener("storage", onStorage);
     window.addEventListener("compare:changed", sync);
     sync();
+
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("compare:changed", sync);
     };
   }, [room.id]);
 
-  // actions
+  /* ----- actions ----- */
   const addToCompare = (e) => {
     e.preventDefault();
     e.stopPropagation();
     const cur = readCompare();
     if (cur.some((r) => r.id === room.id)) return;
+
     const payload = {
       ...room,
       hotel_id:
@@ -121,8 +126,9 @@ export const RoomCard = ({
         room?.hotelId ??
         room?.hotel?.id ??
         null,
-      hotelName, // gắn tên KS đã resolve
+      hotelName,
     };
+
     writeCompare([...cur, payload]);
     setIsInCompare(true);
   };
@@ -156,15 +162,17 @@ export const RoomCard = ({
     }
   };
 
-  // chỉ cho Book nếu:
-  // - room.availability (đang kinh doanh)
-  // - isAvailableToday (không bị booking chồng ngày hôm nay)
   const canBook = !!room.availability && !!isAvailableToday;
 
+  /* ================= Render ================= */
   return (
     <div className={`room-card ${isCompact ? "room-card--compact" : ""}`}>
-      {/* Ảnh */}
-      <div className="image-box">
+      {/* Ảnh + badge discount */}
+      <div className="image-box" style={{ position: "relative" }}>
+        {showDiscount && (
+          <div className="room-discount-badge">-{discountPercent}%</div>
+        )}
+
         <Image
           preview={false}
           className="room-image"
@@ -174,15 +182,26 @@ export const RoomCard = ({
         />
       </div>
 
-      {/* Pills */}
-      {/* Pill trên: tên khách sạn */}
-      <div className="room-pill pill-top">{hotelName}</div>
-      {/* Pill giữa (ranh giới ảnh + nền): type room */}
+      {/* Pills trên ảnh */}
+      {hotelName && (
+        linkToHotel && resolvedHotelId ? (
+          <Link
+            to={`/hotel/${resolvedHotelId}`}
+            className="room-pill pill-top room-pill--link"
+            style={{ textDecoration: "none", color: "inherit" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {hotelName}
+          </Link>
+        ) : (
+          <div className="room-pill pill-top">{hotelName}</div>
+        )
+      )}
+
       <div className="room-pill pill-middle">{room.type}</div>
 
       {/* Body */}
       <div className="room-card-body">
-        {/* Tiêu đề: room name */}
         <div className="text-center" style={{ padding: "8px 12px 4px" }}>
           <h5 className="primarycolor mb-1 room-title">
             {room.name || "\u00A0"}
