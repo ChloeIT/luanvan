@@ -724,6 +724,10 @@ html, body {
   object-position: center;
   display: block;
   border-radius: inherit;
+  transition: transform .5s ease;
+}
+.room-card:hover .ant-image-img{
+  transform: scale(1.1);
 }
 .room-card .ant-image-mask{
   border-radius: inherit !important;
