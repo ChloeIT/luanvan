@@ -29,31 +29,32 @@ public class BookingService {
     @Autowired
     private EmailService emailService;
 
-    // ================== CREATE ==================
+    // ==================================================
+    // ===============   CREATE BOOKING   ===============
+    // ==================================================
 
     /**
      * Tạo booking mới từ BookingRequest:
      *  - Lấy user hiện tại
      *  - Load Room từ roomIds
      *  - Check trùng ngày cho từng room
-     *  - Sau khi lưu thành công -> Gửi email xác nhận
+     *  - Sau khi lưu thành công -> Gửi email xác nhận (KHÁCH + OWNER)
      */
     @Transactional
     public Booking createBooking(BookingRequest request)
             throws ExecutionException, InterruptedException {
 
-        // ----- Lấy user hiện tại -----
+        // 1. Lấy user hiện tại
         User currentUser = storeService.getCurrentUser();
 
-        // ----- Validate ngày -----
+        // 2. Validate ngày nhận / trả
         LocalDateTime checkIn = request.getCheckIn();
         LocalDateTime checkOut = request.getCheckOut();
-
         if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
             throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        // ----- Lấy danh sách roomId -----
+        // 3. Lấy danh sách roomId từ request
         Set<Long> roomIds = (request.getRoomIds() != null)
                 ? new HashSet<>(request.getRoomIds())
                 : Collections.emptySet();
@@ -62,14 +63,15 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // ----- Load Room từ DB -----
+        // 4. Load Room từ DB theo roomIds
         Set<Room> rooms = new HashSet<>(roomRepository.findByIdIn(roomIds));
         if (rooms.isEmpty()) {
             throw new IllegalArgumentException("Rooms not found");
         }
 
-        // ----- Check trùng ngày cho từng room -----
+        // 5. Check trùng ngày cho từng room
         for (Room room : rooms) {
+            // phòng bị disable
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
             }
@@ -77,7 +79,6 @@ public class BookingService {
             boolean conflict = bookingRepository.existsOverlappingBooking(
                     room.getId(), checkIn, checkOut
             );
-
             if (conflict) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
@@ -85,7 +86,7 @@ public class BookingService {
             }
         }
 
-        // ----- Map DTO -> Entity -----
+        // 6. Map DTO -> Entity Booking
         Booking booking = new Booking();
         booking.setCheckIn(checkIn);
         booking.setCheckOut(checkOut);
@@ -94,33 +95,43 @@ public class BookingService {
         booking.setUser(currentUser);
         booking.setRooms(rooms);
 
-        // Lưu DB
+        // 7. Lưu vào DB
         Booking saved = bookingRepository.save(booking);
 
-        // ----- Gửi email xác nhận (KHÔNG được làm hỏng booking) -----
+        // 8. Gửi email (KHÔNG được làm hỏng booking nếu email lỗi)
         try {
-            // phương thức này có @Async nên chạy nền, không chặn response
+            // 1) Mail cho KHÁCH (Booking Confirmation)
             emailService.sendBookingConfirmation(saved);
+
+            // 2) Mail cho HOTEL OWNER / MOD khi có booking mới
+            emailService.sendNewBookingToOwner(saved);
         } catch (Exception e) {
-            // chỉ log, không ném ra để tránh rollback / 400
+            // chỉ log, không ném ra để tránh rollback / trả 400
             e.printStackTrace();
         }
 
         return saved;
     }
 
-    // ================== READ ==================
+    // ==================================================
+    // =====================  READ  =====================
+    // ==================================================
 
+    /** Lấy tất cả booking (đã join rooms & hotel) – dùng cho ADMIN. */
     public List<Booking> getAllBookings() {
         return bookingRepository.findAllWithRoomsAndHotel();
     }
 
+    /** Lấy booking theo id (đã join rooms & hotel). */
     public Booking getBookingById(Long id) {
         return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
     }
 
-    // ================== EDIT PAYMENT ==================
+    // ==================================================
+    // ================  EDIT PAYMENT  ==================
+    // ==================================================
 
+    /** Chỉ cập nhật trường payment (đã thanh toán / chưa thanh toán). */
     @Transactional
     public Booking editBookingPayment(Long id, boolean payment) {
         return bookingRepository.findById(id)
@@ -131,7 +142,9 @@ public class BookingService {
                 .orElse(null);
     }
 
-    // ================== UPDATE FULL ==================
+    // ==================================================
+    // ====================  UPDATE  ====================
+    // ==================================================
 
     @Transactional
     public Booking updateBooking(Long id, BookingRequest request) throws Exception {
@@ -140,7 +153,6 @@ public class BookingService {
 
         LocalDateTime checkIn = request.getCheckIn();
         LocalDateTime checkOut = request.getCheckOut();
-
         if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
             throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
@@ -164,7 +176,7 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // Check trùng khi UPDATE (bỏ qua chính nó)
+        // Check trùng ngày khi UPDATE (bỏ qua chính nó)
         for (Room room : rooms) {
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
@@ -176,7 +188,6 @@ public class BookingService {
                     checkIn,
                     checkOut
             );
-
             if (conflict) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
@@ -187,7 +198,9 @@ public class BookingService {
         return bookingRepository.save(existingBooking);
     }
 
-    // ================== DELETE ==================
+    // ==================================================
+    // ====================  DELETE  ====================
+    // ==================================================
 
     @Transactional
     public void deleteBooking(Long id) {
@@ -197,15 +210,16 @@ public class BookingService {
         bookingRepository.deleteById(id);
     }
 
-    // ================== DÙNG CHO MOD / OWNER ==================
+    // ==================================================
+    // ===========  DÙNG CHO MOD / OWNER VIEW  ==========
+    // ==================================================
 
+    /** Lấy booking theo ownerId – dùng cho MOD / OWNER. */
     public List<Booking> getBookingsByHotelOwner(Long ownerId) {
         return bookingRepository.findAllByHotelOwner(ownerId);
     }
 
-    /**
-     * Lấy booking theo hotel owner là user hiện tại (cho endpoint /api/booking/my).
-     */
+    /** Lấy booking theo hotel owner là user hiện tại (endpoint /api/booking/my). */
     public List<Booking> getBookingsByHotelOwnerForCurrentUser()
             throws ExecutionException, InterruptedException {
 
