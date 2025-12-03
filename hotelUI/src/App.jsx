@@ -10,15 +10,11 @@ function App() {
     if (currentLink) {
       document.title = `Hotel - ${currentLink.name}`;
     } else {
-      document.title = "Hotel"; 
+      document.title = "Hotel";
     }
   }, [location]);
-  return (
-    <>
-      {useRoutes(router)}
-      <script src="https://www.paypal.com/sdk/js?client-id=AcYTe_OCY2K5YrvFi644YtgTazdFsP0pwGIzTiUwKUwIL8GEy8wcCfoOwKrjJOimaTEXzaPNuV5QhOW0"></script>
-    </>
-  );
+
+  return <>{useRoutes(router)}</>;
 }
 
-export default App
+export default App;

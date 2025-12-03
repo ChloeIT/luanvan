@@ -17,16 +17,29 @@ export const Header = () => {
   const [openToggle, setOpenToggle] = useState(false);
   const [title, setTitle] = useState("");
 
-  // Cập nhật title theo route
+  // ========== Cập nhật title theo route ==========
   useEffect(() => {
-    const found = linkpage.find((x) => x.to === location.pathname);
+    const path = location.pathname;
+
+    // Trang my-bookings: không nằm trong linkpage nhưng vẫn muốn có title
+    if (path === "/my-bookings") {
+      setTitle("My bookings");
+      return;
+    }
+
+    const found = linkpage.find((x) => x.to === path);
     setTitle(found?.name ?? "");
   }, [location.pathname]);
 
-  // Dropdown items
+  // ========== Dropdown items ==========
   const roles = Array.isArray(user?.roles) ? user.roles : [];
+
   const items = [
     { key: "profile", label: <Link to="/profile">Profile</Link> },
+
+    // NEW: My bookings
+    { key: "my-bookings", label: <Link to="/my-bookings">My bookings</Link> },
+
     ...(roles.includes("ROLE_ADMIN")
       ? [{ key: "admin", label: <Link to="/admin">Admin Panel</Link> }]
       : []),

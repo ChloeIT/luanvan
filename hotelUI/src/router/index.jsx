@@ -15,6 +15,8 @@ import {
   Register,
   Review,
   Service,
+  Favorite,
+  MyBookings,          // 👈 nhớ export MyBookings trong "@/pages"
 } from "@/pages";
 
 import {
@@ -33,48 +35,69 @@ import {
   ModBookings,
 } from "../components/layouts";
 
-// 👇 THÊM: import dashboard của MOD, alias tên lại cho dễ phân biệt
 import { DashboardStats as ModDashboardStats } from "../components/layouts/mod/components/DashboardStats";
 
-import { HotelDetail } from "../components/ui";
-import { CheckOut } from "../components/ui/booking/CheckOut";
-import { Favorite } from "../pages/Favorite";
+import { HotelDetail } from "@/components/ui";
+import { CheckOut } from "@/components/ui/booking/CheckOut";
+import { PaymentSuccess } from "@/pages/PaymentSuccess";
 
-// ✅ Component dùng để check role
+// ================================================
+// 🔐 BẢO VỆ ROUTE THEO ROLE
+// ================================================
 function RequireRole({ allowedRoles, children }) {
   const { user } = useSelector((state) => state.auth);
 
+  // chưa đăng nhập -> về login
   if (!user) return <Navigate to="/login" replace />;
 
   const roles = Array.isArray(user.roles) ? user.roles : [];
   const hasRole = roles.some((r) => allowedRoles.includes(r));
 
+  // không đủ quyền -> đá về home
   if (!hasRole) return <Navigate to="/" replace />;
 
   return children;
 }
 
+// ================================================
+// 📌 ROUTER DEFINITIONS
+// ================================================
 export const router = [
+  // ===============================
+  // 🌐 PUBLIC PAGES (MainLayout)
+  // ===============================
   {
     path: "/",
     element: <MainLayout />,
     children: [
       { index: true, element: <Home /> },
-      { path: "/profile", element: <Profile /> },
-      { path: "/hotel", element: <Hotel /> },
-      { path: "/hotel/:id", element: <HotelDetail /> },
-      { path: "/booking", element: <Booking /> },
-      { path: "/booking/:id", element: <Booking /> },
-      { path: "/booking/:id/checkout", element: <CheckOut /> },
-      { path: "/contact", element: <Contact /> },
-      { path: "/payment", element: <Payment /> },
+
+      { path: "profile", element: <Profile /> },
+      { path: "hotel", element: <Hotel /> },
+      { path: "hotel/:id", element: <HotelDetail /> },
+
+      // Trang flow booking / checkout
+      { path: "booking", element: <Booking /> },
+      { path: "booking/:id", element: <Booking /> },
+      { path: "booking/:id/checkout", element: <CheckOut /> },
+
+      // Trang xem lại tất cả booking của user hiện tại
+      { path: "my-bookings", element: <MyBookings /> },
+
+      { path: "contact", element: <Contact /> },
+      { path: "payment", element: <Payment /> },
       { path: "review", element: <Review /> },
       { path: "service", element: <Service /> },
       { path: "favorite", element: <Favorite /> },
+
+      // 🎉 Trang báo thành công Paypal
+      { path: "success", element: <PaymentSuccess /> },
     ],
   },
 
-  // 🔐 ADMIN
+  // ===============================
+  // 🔐 ADMIN AREA
+  // ===============================
   {
     path: "/admin",
     element: (
@@ -83,7 +106,7 @@ export const router = [
       </RequireRole>
     ),
     children: [
-      { index: true, element: <DashBoard /> }, // dashboard tổng cho admin
+      { index: true, element: <DashBoard /> },
       { path: "users", element: <AdUser /> },
       { path: "rooms", element: <AdRoom /> },
       { path: "hotels", element: <AdHotel /> },
@@ -91,7 +114,9 @@ export const router = [
     ],
   },
 
-  // 🔐 MODERATOR
+  // ===============================
+  // 🔐 MODERATOR AREA
+  // ===============================
   {
     path: "/moderator",
     element: (
@@ -100,7 +125,6 @@ export const router = [
       </RequireRole>
     ),
     children: [
-      // 👇 DÙNG DashboardStats riêng của MOD
       { index: true, element: <ModDashboardStats /> },
       { path: "hotel", element: <ModMyHotel /> },
       { path: "rooms", element: <ModRooms /> },
@@ -108,6 +132,9 @@ export const router = [
     ],
   },
 
+  // ===============================
+  // 🔓 AUTH ROUTES
+  // ===============================
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
 ];
