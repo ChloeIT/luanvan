@@ -1,16 +1,17 @@
 package com.java.hotel.controller;
 
 import com.java.hotel.model.Booking;
+import com.java.hotel.model.Review;
 import com.java.hotel.payload.request.BookingRequest;
 import com.java.hotel.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.concurrent.ExecutionException;
-
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -102,4 +103,55 @@ public class BookingController {
         }
     }
 
+    // ==================================================
+    // ====================  REVIEW  ====================
+    // ==================================================
+
+    /* ========= CREATE REVIEW (USER) ========= */
+    @PostMapping("/{id}/review")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> createReview(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body
+    ) {
+        try {
+            Object ratingObj = body.get("rating");
+            float rating = ratingObj != null
+                    ? Float.parseFloat(ratingObj.toString())
+                    : 5.0f;
+
+            String comment = body.get("comment") != null
+                    ? body.get("comment").toString()
+                    : "";
+
+            Review review = bookingService.createReview(id, rating, comment);
+            return ResponseEntity.ok(review);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /* ========= UPDATE REVIEW (USER) ========= */
+    @PutMapping("/{id}/review")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateReview(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body
+    ) {
+        try {
+            Object ratingObj = body.get("rating");
+            float rating = ratingObj != null
+                    ? Float.parseFloat(ratingObj.toString())
+                    : 5.0f;
+
+            String comment = body.get("comment") != null
+                    ? body.get("comment").toString()
+                    : "";
+
+            Review review = bookingService.updateReview(id, rating, comment);
+            return ResponseEntity.ok(review);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

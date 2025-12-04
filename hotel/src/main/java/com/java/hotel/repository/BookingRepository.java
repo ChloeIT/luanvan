@@ -20,6 +20,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            FROM Booking b
            LEFT JOIN FETCH b.rooms r
            LEFT JOIN FETCH r.hotel
+           LEFT JOIN FETCH b.review
            """)
     List<Booking> findAllWithRoomsAndHotel();
 
@@ -28,6 +29,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            FROM Booking b
            LEFT JOIN FETCH b.rooms r
            LEFT JOIN FETCH r.hotel
+           LEFT JOIN FETCH b.review
            WHERE b.id = :id
            """)
     Optional<Booking> findByIdWithRoomsAndHotel(@Param("id") Long id);

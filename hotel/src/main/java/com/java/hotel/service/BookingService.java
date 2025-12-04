@@ -1,6 +1,7 @@
 package com.java.hotel.service;
 
 import com.java.hotel.model.Booking;
+import com.java.hotel.model.Review;
 import com.java.hotel.model.Room;
 import com.java.hotel.model.User;
 import com.java.hotel.payload.request.BookingRequest;
@@ -225,5 +226,91 @@ public class BookingService {
 
         User currentUser = storeService.getCurrentUser();
         return bookingRepository.findAllByHotelOwner(currentUser.getId());
+    }
+
+    // ==================================================
+    // ====================  REVIEW  ====================
+    // ==================================================
+
+    /**
+     * Tạo review cho booking:
+     *  - Chỉ chủ booking được review
+     *  - Booking phải đã thanh toán
+     *  - Booking đã check-out
+     *  - Chưa có review trước đó
+     */
+    @Transactional
+    public Review createReview(Long bookingId, float rating, String comment)
+            throws ExecutionException, InterruptedException {
+
+        User currentUser = storeService.getCurrentUser();
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Check chủ booking
+        if (booking.getUser() == null ||
+                !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
+            throw new RuntimeException("You cannot review someone else's booking");
+        }
+
+        // Check đã thanh toán
+        if (!booking.isPayment()) {
+            throw new RuntimeException("Booking not paid yet");
+        }
+
+        // Check đã check-out
+        if (booking.getCheckOut() == null ||
+                booking.getCheckOut().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Stay not completed yet");
+        }
+
+        // Check đã có review chưa
+        if (booking.getReview() != null) {
+            throw new RuntimeException("Review already exists for this booking");
+        }
+
+        Review review = new Review();
+        review.setRating(rating);
+        review.setComment(comment);
+        review.setAuthor(currentUser.getUsername());
+        review.setReview_date(LocalDateTime.now());
+        review.setBooking(booking);
+
+        booking.setReview(review);
+
+        Booking saved = bookingRepository.save(booking);
+        return saved.getReview();
+    }
+
+    /**
+     * Cập nhật review của booking (cho phép edit).
+     */
+    @Transactional
+    public Review updateReview(Long bookingId, float rating, String comment)
+            throws ExecutionException, InterruptedException {
+
+        User currentUser = storeService.getCurrentUser();
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Check chủ booking
+        if (booking.getUser() == null ||
+                !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
+            throw new RuntimeException("You cannot edit someone else's review");
+        }
+
+        Review review = booking.getReview();
+        if (review == null) {
+            throw new RuntimeException("Review does not exist for this booking");
+        }
+
+        review.setRating(rating);
+        review.setComment(comment);
+        review.setReview_date(LocalDateTime.now());
+
+        Booking saved = bookingRepository.save(booking);
+        return saved.getReview();
     }
 }

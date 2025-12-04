@@ -109,6 +109,9 @@ public class Booking {
 
     public void setReview(Review review) {
         this.review = review;
+        if (review != null) {
+            review.setBooking(this);
+        }
     }
 
     public Set<Room> getRooms() {

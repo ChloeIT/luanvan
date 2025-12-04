@@ -3,28 +3,39 @@ package com.java.hotel.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 public class Review {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-//    private String title;
+
     private float rating;
     private String author;
+
+    @Column(name = "review_date")
     private LocalDateTime review_date;
+
     private String comment;
 
     @OneToOne
-    @JoinColumn(name = "booking_id")
+    @JoinColumn(name = "booking_id", unique = true)
     @JsonIgnore
     private Booking booking;
 
-    public Review() {}
+    public Review() {
+    }
 
-    public Review(Long id, float rating, String author, Booking booking, LocalDateTime review_date, String comment) {
+    public Review(
+            Long id,
+            float rating,
+            String author,
+            Booking booking,
+            LocalDateTime review_date,
+            String comment
+    ) {
         this.id = id;
         this.rating = rating;
         this.author = author;
@@ -41,12 +52,12 @@ public class Review {
         this.id = id;
     }
 
-    public LocalDateTime getReview_date() {
-        return review_date;
+    public float getRating() {
+        return rating;
     }
 
-    public void setReview_date(LocalDateTime review_date) {
-        this.review_date = review_date;
+    public void setRating(float rating) {
+        this.rating = rating;
     }
 
     public String getAuthor() {
@@ -57,12 +68,12 @@ public class Review {
         this.author = author;
     }
 
-    public float getRating() {
-        return rating;
+    public LocalDateTime getReview_date() {
+        return review_date;
     }
 
-    public void setRating(float rating) {
-        this.rating = rating;
+    public void setReview_date(LocalDateTime review_date) {
+        this.review_date = review_date;
     }
 
     public String getComment() {
