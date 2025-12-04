@@ -29,8 +29,6 @@ export const Profile = () => {
 
   const fullnameInputRef = useRef(null);
   const AVATAR_SIZE = 132; // px
-
-  // để chỉ sync dữ liệu từ user lần đầu (tránh overwrite preview sau khi Save)
   const [initialized, setInitialized] = useState(false);
 
   // helpers
@@ -52,7 +50,7 @@ export const Profile = () => {
     }
   };
 
-  // ===== Lần ĐẦU load user => đổ form + avatar từ server =====
+  // ===== Lần ĐẦU load user => đổ form + avatar =====
   useEffect(() => {
     if (!user || initialized) return;
 
@@ -89,7 +87,6 @@ export const Profile = () => {
   const handleCancel = () => {
     if (!user) return;
 
-    // reset lại form + avatar từ user hiện tại
     setFullName(user?.fullName || "");
     setUserName(user?.username || "");
     setAddress(user?.address || "");
@@ -144,11 +141,11 @@ export const Profile = () => {
       const body = { fullName, phone, address, birthDate, gender };
       let finalUser = user;
 
-      // 1. update thông tin text
+      // 1. update text
       const resJson = await userServices.edit(user.id, body);
       if (resJson?.data) finalUser = resJson.data;
 
-      // 2. update avatar nếu có chọn file
+      // 2. update avatar nếu có
       const file = fileList[0]?.originFileObj;
       if (file) {
         const fd = new FormData();
@@ -157,14 +154,7 @@ export const Profile = () => {
         if (resAvatar?.data) finalUser = resAvatar.data;
       }
 
-      // lưu lại user mới (DB + localStorage)
       dispatch(authAction.setUser(finalUser));
-
-      // *** QUAN TRỌNG ***
-      // KHÔNG đổi fileList sang URL server ngay,
-      // để giữ preview local -> không bị lỗi 401 / ORB
-      // Lần F5 sau, useEffect (initialized=false) sẽ lấy ảnh từ server.
-
       message.success("Profile updated");
       setChangeInfo(false);
     } catch (e) {
@@ -215,151 +205,180 @@ export const Profile = () => {
   };
 
   return (
-    <div className="text-center">
-      {/* ===== Heading ===== */}
-      <div className="text-center">
-        <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-          <span
-            style={{
-              display: "grid",
-              justifyItems: "end",
-              gap: "6px",
-              marginRight: "2px",
-            }}
-          >
-            <span className="divider" style={{ "--w": "120px" }} />
-            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
-          </span>
-          <h6 className="heading-text text-3xl text-primary text-uppercase">
-            Profile
-          </h6>
-          <span
-            style={{
-              display: "grid",
-              justifyItems: "start",
-              gap: "6px",
-              marginLeft: "2px",
-            }}
-          >
-            <span className="divider" style={{ "--w": "120px" }} />
-            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
-          </span>
-        </div>
-        <h1 className="mb-5">Personalize it in your own way!</h1>
-      </div>
-
-      {/* ===== Upload avatar ===== */}
-      <div className="mb-4 flex justify-center">
-        <Upload
-          showUploadList={false}
-          beforeUpload={() => false}
-          onChange={isEditing ? onUploadChange : undefined}
-          openFileDialogOnClick={isEditing}
+    <div className="container-xxl py-5">
+      <div className="container">
+        {/* ===== Heading giống trang Hotel ===== */}
+        <div
+          className="text-center wow fadeInUp"
+          data-wow-delay="0.1s"
         >
           <div
-            style={ringStyle}
-            onClick={(e) => {
-              if (!isEditing) {
-                e.preventDefault();
-                onPreview();
-              }
-            }}
-            aria-label={isEditing ? "Change avatar" : "Preview avatar"}
+            className="heading-line mx-auto"
+            style={{ "--heading-gap": "14px" }}
           >
-            <div style={circleStyle}>
-              {fileList[0]?.url || fileList[0]?.originFileObj ? (
-                <img
-                  alt="avatar"
-                  src={
-                    fileList[0]?.url ||
-                    (fileList[0]?.originFileObj &&
-                      URL.createObjectURL(fileList[0].originFileObj))
-                  }
-                  style={imgStyle}
-                />
-              ) : (
-                <div
-                  style={{
-                    ...imgStyle,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    color: "#666",
-                    background: "rgba(0,0,0,.04)",
-                  }}
-                >
-                  Upload
-                </div>
-              )}
-              <div style={overlayStyle} />
-            </div>
+            {/* 2 gạch bên trái */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "end",
+                gap: "6px",
+                marginRight: "2px",
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
+            </span>
+
+            <h6 className="heading-text text-3xl text-primary text-uppercase">
+              Profile
+            </h6>
+
+            {/* 2 gạch bên phải */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "start",
+                gap: "6px",
+                marginLeft: "2px",
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
+            </span>
           </div>
-        </Upload>
-      </div>
 
-      {/* ===== Form fields ===== */}
-      {[
-        ["User name", username, setUserName, true],
-        ["Full Name", fullName, setFullName],
-        ["Email", email, setEmail, true],
-        ["Phone", phone, setPhone],
-        ["Address", address, setAddress],
-        ["Gender", gender, setGender],
-        ["Birth Date", birthDate, setBirthDate, false, "date"],
-      ].map(([label, value, setter, forceReadOnly, type], i) => (
-        <div className="mb-2" key={i}>
-          <label
-            className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto"
-            style={{ backgroundColor: "var(--card-yellow)" }}
-          >
-            <span className="min-w-[100px] font-semibold">{label}</span>
-            <input
-              ref={i === 1 ? fullnameInputRef : undefined}
-              type={type || "text"}
-              className="grow bg-transparent text-gray-800"
-              readOnly={forceReadOnly || !changeInfo}
-              value={value}
-              onChange={(e) => setter(e.target.value)}
-            />
-          </label>
+          <h1 className="mb-5">Personalize it in your own way!</h1>
         </div>
-      ))}
 
-      {/* ===== Actions ===== */}
-      <div className="mt-4">
-        {!changeInfo ? (
-          <button
-            className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2"
-            onClick={handleChangeInfo}
+        {/* ===== Upload avatar ===== */}
+        <div className="mb-4 flex justify-center">
+          <Upload
+            showUploadList={false}
+            beforeUpload={() => false}
+            onChange={isEditing ? onUploadChange : undefined}
+            openFileDialogOnClick={isEditing}
           >
-            Edit Profile
-          </button>
-        ) : (
-          <>
-            <button
-              className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2 disabled:opacity-60"
-              onClick={handleSaveInfo}
-              disabled={isSaving}
+            <div
+              style={ringStyle}
+              onClick={(e) => {
+                if (!isEditing) {
+                  e.preventDefault();
+                  onPreview();
+                }
+              }}
+              aria-label={isEditing ? "Change avatar" : "Preview avatar"}
             >
-              {isSaving ? "Saving..." : "Save"}
-            </button>
-            <button
-              className="rounded-2xl py-2 px-5 btn-outline m-1 btn-error"
-              onClick={handleCancel}
-              type="button"
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
+              <div style={circleStyle}>
+                {fileList[0]?.url || fileList[0]?.originFileObj ? (
+                  <img
+                    alt="avatar"
+                    src={
+                      fileList[0]?.url ||
+                      (fileList[0]?.originFileObj &&
+                        URL.createObjectURL(fileList[0].originFileObj))
+                    }
+                    style={imgStyle}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      ...imgStyle,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      color: "#666",
+                      background: "rgba(0,0,0,.04)",
+                    }}
+                  >
+                    Upload
+                  </div>
+                )}
+                <div style={overlayStyle} />
+              </div>
+            </div>
+          </Upload>
+        </div>
 
-      {/* Preview modal */}
-      <Modal open={previewOpen} footer={null} onCancel={() => setPreviewOpen(false)}>
-        <img alt="avatar preview" style={{ width: "100%" }} src={previewImage} />
-      </Modal>
+        {/* ===== Form fields ===== */}
+        <div className="text-center">
+          {[
+            ["User name", username, setUserName, true],
+            ["Full Name", fullName, setFullName],
+            ["Email", email, setEmail, true],
+            ["Phone", phone, setPhone],
+            ["Address", address, setAddress],
+            ["Gender", gender, setGender],
+            ["Birth Date", birthDate, setBirthDate, false, "date"],
+          ].map(([label, value, setter, forceReadOnly, type], i) => (
+            <div className="mb-2" key={i}>
+              <label
+                className="input input-bordered flex items-center gap-2 input-xs rounded-full p-4 max-w-md mx-auto"
+                style={{ backgroundColor: "var(--card-yellow)" }}
+              >
+                <span className="min-w-[100px] font-semibold">{label}</span>
+                <input
+                  ref={i === 1 ? fullnameInputRef : undefined}
+                  type={type || "text"}
+                  className="grow bg-transparent text-gray-800"
+                  readOnly={forceReadOnly || !changeInfo}
+                  value={value}
+                  onChange={(e) => setter(e.target.value)}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+
+        {/* ===== Actions ===== */}
+        <div className="mt-4 text-center">
+          {!changeInfo ? (
+            <button
+              className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2"
+              onClick={handleChangeInfo}
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <>
+              <button
+                className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2 disabled:opacity-60"
+                onClick={handleSaveInfo}
+                disabled={isSaving}
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                className="rounded-2xl py-2 px-5 btn-outline m-1 btn-error"
+                onClick={handleCancel}
+                type="button"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Preview modal */}
+        <Modal
+          open={previewOpen}
+          footer={null}
+          onCancel={() => setPreviewOpen(false)}
+        >
+          <img
+            alt="avatar preview"
+            style={{ width: "100%" }}
+            src={previewImage}
+          />
+        </Modal>
+      </div>
     </div>
   );
 };

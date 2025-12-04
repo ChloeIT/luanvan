@@ -21,9 +21,14 @@ export const Header = () => {
   useEffect(() => {
     const path = location.pathname;
 
-    // Trang my-bookings: không nằm trong linkpage nhưng vẫn muốn có title
+    // các trang không nằm trong linkpage nhưng vẫn muốn có title
     if (path === "/my-bookings") {
       setTitle("My bookings");
+      return;
+    }
+
+    if (path === "/profile") {
+      setTitle("Profile");          // 👈 sẽ hiện “Profile” trên hình
       return;
     }
 
@@ -36,8 +41,6 @@ export const Header = () => {
 
   const items = [
     { key: "profile", label: <Link to="/profile">Profile</Link> },
-
-    // NEW: My bookings
     { key: "my-bookings", label: <Link to="/my-bookings">My bookings</Link> },
 
     ...(roles.includes("ROLE_ADMIN")
