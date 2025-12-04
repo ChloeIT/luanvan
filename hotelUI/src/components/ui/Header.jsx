@@ -69,7 +69,7 @@ export const Header = () => {
       {/* ===== HEADER FIXED, NỀN TỐI MỜ ===== */}
       <div className="site-header">
         <div className="container-fluid p-0">
-          <nav className="navbar navbar-expand-lg px-4 px-lg-5 py-3 site-header-bar">
+          <nav className="navbar navbar-expand-xxl px-4 px-lg-5 py-3 site-header-bar">
             {/* Logo */}
             <Link to="/" className="navbar-brand p-0">
               <h1 className="m-0" style={{ color: "#86B817" }}>
@@ -87,8 +87,7 @@ export const Header = () => {
             </Button>
 
             <div
-              className={`collapse navbar-collapse ${openToggle ? "show" : ""
-                }`}
+              className={`collapse navbar-collapse ${openToggle ? "show text-end" : ""}`}
             >
               {/* MENU LINKS */}
               <div className="navbar-nav ms-auto py-0">
@@ -112,7 +111,7 @@ export const Header = () => {
               </div>
 
               {/* USER / LOGIN */}
-              <div className="ms-3">
+              <div className="ms-4 mt-3">
                 {user ? (
                   <Dropdown menu={{ items }} placement="bottomRight">
                     <a onClick={(e) => e.preventDefault()}>
