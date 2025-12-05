@@ -24,10 +24,10 @@ body,
 /* Xoá mọi nền của navbar Bootstrap */
 .site-header-bar,
 .navbar,
-.navbar-light {
+/* .navbar-light {
   background: transparent !important;
   box-shadow: none !important;
-}
+} */
 
 /* Link trong header */
 .header-link {

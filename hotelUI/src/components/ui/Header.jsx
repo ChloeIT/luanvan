@@ -69,7 +69,7 @@ export const Header = () => {
       {/* ===== HEADER FIXED, NỀN TỐI MỜ ===== */}
       <div className="site-header">
         <div className="container-fluid p-0">
-          <nav className="navbar navbar-expand-xxl px-4 px-lg-5 py-3 site-header-bar">
+          <nav className="navbar navbar-expand-xl px-4 px-lg-5 py-3 site-header-bar">
             {/* Logo */}
             <Link to="/" className="navbar-brand p-0">
               <h1 className="m-0" style={{ color: "#86B817" }}>
@@ -109,9 +109,11 @@ export const Header = () => {
               <div className="ms-3">
                 <SearchInput />
               </div>
-
               {/* USER / LOGIN */}
-              <div className="ms-4 mt-3">
+              <div
+                className={`ms-4 d-flex align-items-center ${openToggle ? "mt-3" : ""
+                  }`}
+              >
                 {user ? (
                   <Dropdown menu={{ items }} placement="bottomRight">
                     <a onClick={(e) => e.preventDefault()}>
@@ -129,6 +131,7 @@ export const Header = () => {
                   </Link>
                 )}
               </div>
+
             </div>
           </nav>
         </div>
