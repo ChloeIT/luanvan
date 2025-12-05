@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "hotel")
 public class Hotel {
 
     @Id
@@ -14,32 +15,41 @@ public class Hotel {
     private Long id;
 
     private String name;
+
     private String address;
+
     private String phone;
+
     private float rating;
+
     private String image;
+
     private String amenities;
 
-    // ⭐ Chủ khách sạn: map vào cột owner_id
+    // ⭐ THÊM TỌA ĐỘ
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    // ⭐ Chủ khách sạn: khóa ngoại owner_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
-    private User owner;   // KHÔNG @JsonIgnore ở field
+    @JsonIgnore   // tránh vòng lặp
+    private User owner;
 
-    // ⭐ Quan hệ với Room – ẩn đi để tránh vòng lặp Hotel <-> Room
+    // ⭐ Danh sách phòng – KHÔNG gửi ra FE để tránh vòng lặp
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Room> rooms;
 
     public Hotel() {}
 
-    public Hotel(Long id,
-                 String name,
-                 String phone,
-                 String address,
-                 float rating,
-                 String image,
-                 String amenities,
-                 User owner,
-                 List<Room> rooms) {
+    public Hotel(Long id, String name, String phone, String address,
+                 float rating, String image, String amenities,
+                 Double latitude, Double longitude,
+                 User owner, List<Room> rooms) {
         this.id = id;
         this.name = name;
         this.phone = phone;
@@ -47,11 +57,13 @@ public class Hotel {
         this.rating = rating;
         this.image = image;
         this.amenities = amenities;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.owner = owner;
         this.rooms = rooms;
     }
 
-    // ===== Getter / Setter =====
+    // ============= GETTER - SETTER ============= //
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -74,24 +86,21 @@ public class Hotel {
     public String getAmenities() { return amenities; }
     public void setAmenities(String amenities) { this.amenities = amenities; }
 
-    // ⛔ Không serialize owner để tránh vòng lặp
-    @JsonIgnore
-    public User getOwner() {
-        return owner;
-    }
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
+    // ⭐ GET/SET TỌA ĐỘ (QUAN TRỌNG CHO MAP & NEARBY)
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
 
-    @JsonIgnore
-    public List<Room> getRooms() {
-        return rooms;
-    }
-    public void setRooms(List<Room> rooms) {
-        this.rooms = rooms;
-    }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 
-    // ⭐ Field ảo: gửi thêm ownerId cho FE
+    // ⭐ Quan hệ owner
+    public User getOwner() { return owner; }
+    public void setOwner(User owner) { this.owner = owner; }
+
+    public List<Room> getRooms() { return rooms; }
+    public void setRooms(List<Room> rooms) { this.rooms = rooms; }
+
+    // ⭐ Field ảo gửi ownerId cho FE
     @JsonProperty("ownerId")
     public Long getOwnerId() {
         return owner != null ? owner.getId() : null;
