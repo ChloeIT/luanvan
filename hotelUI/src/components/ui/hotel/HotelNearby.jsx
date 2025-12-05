@@ -69,6 +69,7 @@ const MAX_ITEMS_COLLAPSED = 4;
 /** Build link Google Maps chỉ đường từ (hotelLat, hotelLon) tới place */
 const buildDirectionLink = (hotelLat, hotelLon, place) => {
     const props = place.properties || {};
+    const name = props.name || "";
     const coords = place.geometry?.coordinates || []; // [lon, lat]
     const [placeLon, placeLat] = coords;
 
@@ -79,12 +80,13 @@ const buildDirectionLink = (hotelLat, hotelLon, place) => {
     }
 
     if (placeLat && placeLon) {
+        // 👉 Dùng TOẠ ĐỘ để chỉ đường — CHUẨN NHẤT
         url += `&destination=${placeLat},${placeLon}`;
-    } else {
-        const destQuery = encodeURIComponent(
-            props.formatted || props.address_line2 || props.name || ""
-        );
-        url += `&destination=${destQuery}`;
+    }
+
+    // 👉 Thêm tên để Maps hiển thị tên đẹp (không dùng để tìm kiếm)
+    if (name) {
+        url += `&destination_place=${encodeURIComponent(name)}`;
     }
 
     url += "&travelmode=driving";
@@ -221,7 +223,7 @@ export const HotelNearby = ({ hotel }) => {
                     {/* Tabs */}
                     {hasData && (
                         <div
-                            className="mb-4 d-flex flex-wrap justify-content-center"
+                            className="mb-2 d-flex flex-wrap justify-content-center"
                             style={{ gap: 10 }}
                         >
                             {GROUP_ORDER.filter((g) => nearbyGroups[g]).map((g) => (
@@ -249,6 +251,17 @@ export const HotelNearby = ({ hotel }) => {
                                 </button>
                             ))}
                         </div>
+                    )}
+
+                    {/* Note nhỏ về địa chỉ Google */}
+                    {hasData && (
+                        <p
+                            className="text-center mb-3"
+                            style={{ fontSize: "0.78rem", color: "#99a0a8" }}
+                        >
+                            * Lưu ý: Google Maps có thể hiển thị số nhà gần đúng; đường đi vẫn
+                            dựa trên vị trí chính xác trên bản đồ.
+                        </p>
                     )}
 
                     {nearbyLoading && (
@@ -283,7 +296,10 @@ export const HotelNearby = ({ hotel }) => {
                                         const props = place.properties || {};
                                         const name = props.name || "Unnamed place";
                                         const address =
-                                            props.address_line2 || props.formatted || props.street || "";
+                                            props.address_line2 ||
+                                            props.formatted ||
+                                            props.street ||
+                                            "";
                                         const distance =
                                             typeof props.distance === "number"
                                                 ? Math.round(props.distance)
@@ -294,6 +310,9 @@ export const HotelNearby = ({ hotel }) => {
                                             hotelLon,
                                             place
                                         );
+
+                                        const tooltipText = `${name}${address ? " · " + address : ""
+                                            }\n(Lưu ý: Google Maps có thể hiển thị số nhà gần đúng, nhưng vị trí trên bản đồ là chính xác.)`;
 
                                         return (
                                             <div
@@ -362,7 +381,7 @@ export const HotelNearby = ({ hotel }) => {
                                                         </div>
 
                                                         <div style={{ minWidth: 0 }}>
-                                                            {/* 👉 Name: clickable, mở Google Maps trong tab mới */}
+                                                            {/* 👉 Name: clickable, mở Google Maps trong tab mới + tooltip */}
                                                             <a
                                                                 href={directionUrl}
                                                                 target="_blank"
@@ -371,6 +390,7 @@ export const HotelNearby = ({ hotel }) => {
                                                                     textDecoration: "none",
                                                                     color: "inherit",
                                                                 }}
+                                                                title={tooltipText}
                                                             >
                                                                 <div
                                                                     style={{
