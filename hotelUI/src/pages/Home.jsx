@@ -39,10 +39,14 @@ export const Home = () => {
   /* ===== POPULAR HOTELS ===== */
   useEffect(() => {
     const data = Array.isArray(hotels)
-      ? hotels.filter((hotel) => hotel.rating >= 4)
+      ? hotels
+        .filter((hotel) => Number(hotel.rating) > 4.5) // chỉ lấy > 4.5 sao
+        .sort((a, b) => b.rating - a.rating)           // (tuỳ chọn) sắp xếp từ cao xuống thấp
       : [];
+
     setPopularHotels(data);
   }, [hotels]);
+
 
   /* ===== FETCH ROOMS NẾU CHƯA CÓ ===== */
   useEffect(() => {
