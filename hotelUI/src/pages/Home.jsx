@@ -39,12 +39,16 @@ export const Home = () => {
 
   const [popularHotels, setPopularHotels] = useState([]);
 
+  // ➕ NEW: state điều khiển Show more / Show less
+  const [showAllPopular, setShowAllPopular] = useState(false);
+  const MAX_POPULAR_DISPLAY = 4;
+
   /* ===== POPULAR HOTELS ===== */
   useEffect(() => {
     const data = Array.isArray(hotels)
       ? hotels
         .filter((hotel) => Number(hotel.rating) > 4.5) // chỉ lấy > 4.5 sao
-        .sort((a, b) => b.rating - a.rating) // sắp xếp từ cao xuống thấp
+        .sort((a, b) => Number(b.rating) - Number(a.rating)) // sắp xếp từ cao xuống thấp
       : [];
 
     setPopularHotels(data);
@@ -69,6 +73,13 @@ export const Home = () => {
       .filter((r) => r.discountPercent > 0)
       .sort((a, b) => b.discountPercent - a.discountPercent); // giảm dần theo % giảm
   }, [rooms]);
+
+  /* ===== POPULAR HOTELS TO SHOW (SHOW MORE / LESS) ===== */
+  const popularHotelsToShow = useMemo(() => {
+    if (!Array.isArray(popularHotels)) return [];
+    if (showAllPopular) return popularHotels;
+    return popularHotels.slice(0, MAX_POPULAR_DISPLAY);
+  }, [popularHotels, showAllPopular]);
 
   return (
     <>
@@ -275,7 +286,7 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* ===== HOTEL ===== */}
+      {/* ===== HOTEL (POPULAR) ===== */}
       <div className="container-xxl py-5 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
@@ -321,11 +332,34 @@ export const Home = () => {
             <h1 className="mb-5">Popular Hotel!</h1>
           </div>
 
-          <div className="row g-4">
-            {popularHotels.map((hotel, index) => (
-              <HotelCard hotel={hotel} key={index} />
-            ))}
-          </div>
+          {popularHotels.length === 0 ? (
+            <p className="text-center text-muted">
+              Popular hotels will appear here when ratings are available.
+            </p>
+          ) : (
+            <>
+              <div className="row g-4">
+                {popularHotelsToShow.map((hotel, index) => (
+                  <HotelCard
+                    hotel={hotel}
+                    key={hotel.id ?? index}
+                  />
+                ))}
+              </div>
+
+              {popularHotels.length > MAX_POPULAR_DISPLAY && (
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary rounded-pill px-4"
+                    onClick={() => setShowAllPopular((prev) => !prev)}
+                  >
+                    {showAllPopular ? "Show less" : "Show more"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>
