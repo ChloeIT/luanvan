@@ -9,6 +9,9 @@ import { RoomCard } from "../components/ui/Room/RoomCard";
 import { Link } from "react-router-dom";
 import { fetchAllRoom } from "@/store/room/thunk";
 
+// 👇 import HeroContent (hero search bar)
+import { HeroContent } from "../components/ui/home/HeroContent";
+
 // Swiper cho phần DISCOUNT
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -41,12 +44,11 @@ export const Home = () => {
     const data = Array.isArray(hotels)
       ? hotels
         .filter((hotel) => Number(hotel.rating) > 4.5) // chỉ lấy > 4.5 sao
-        .sort((a, b) => b.rating - a.rating)           // (tuỳ chọn) sắp xếp từ cao xuống thấp
+        .sort((a, b) => b.rating - a.rating) // sắp xếp từ cao xuống thấp
       : [];
 
     setPopularHotels(data);
   }, [hotels]);
-
 
   /* ===== FETCH ROOMS NẾU CHƯA CÓ ===== */
   useEffect(() => {
@@ -70,12 +72,18 @@ export const Home = () => {
 
   return (
     <>
+      {/* ✅ HERO SEARCH BAR – đè lên nền banner từ Header.jsx */}
+      <HeroContent />
+
       {/* ===== ABOUT ===== */}
       <div className="container-xxl py-5">
         <div className="container">
           <div className="row g-5 align-items-stretch">
             {/* LEFT: Image */}
-            <div className="col-lg-6 wow fadeInUp d-flex" data-wow-delay="0.1s">
+            <div
+              className="col-lg-6 wow fadeInUp d-flex"
+              data-wow-delay="0.1s"
+            >
               <div
                 className="position-relative w-100"
                 style={{ maxHeight: 520, marginRight: "-32px" }}
@@ -258,7 +266,7 @@ export const Home = () => {
                     hotelId={room.hotel?.id ?? room.hotel_id ?? null}
                     hotelName={room.hotel?.name ?? room.hotelName}
                     isAvailableToday={true}
-                    linkToHotel={true}   // 👈 pill tên hotel ở DISCOUNT có link
+                    linkToHotel={true} // pill tên hotel ở DISCOUNT có link
                   />
                 </SwiperSlide>
               ))}

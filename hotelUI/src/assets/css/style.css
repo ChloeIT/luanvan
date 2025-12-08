@@ -1,4 +1,6 @@
-/********** THEME VARIABLES **********/
+/************************************************************
+ * 1. THEME VARIABLES
+ ************************************************************/
 :root {
   --primary: #86B817;
   --secondary: #FE8800;
@@ -15,19 +17,21 @@
 
   /* Light – Table */
   --tbl-card-bg: #fff;
-  --tbl-header-bg: rgba(253,255,124,.92);
+  --tbl-header-bg: rgba(253, 255, 124, .92);
   --tbl-row-bg: #fff;
-  --tbl-row-hover: rgba(253,255,124,.35);
+  --tbl-row-hover: rgba(253, 255, 124, .35);
   --tbl-text: #333;
-  --tbl-row-border: rgba(0,0,0,.06);
-  --tbl-header-border: rgba(0,0,0,.08);
+  --tbl-row-border: rgba(0, 0, 0, .06);
+  --tbl-header-border: rgba(0, 0, 0, .08);
 
   /* Light – Selected */
-  --tbl-row-selected: rgba(253,255,124,.55);
-  --tbl-row-selected-hover: rgba(253,255,124,.75);
+  --tbl-row-selected: rgba(253, 255, 124, .55);
+  --tbl-row-selected-hover: rgba(253, 255, 124, .75);
 }
 
-/********** DARK MODE OVERRIDE **********/
+/************************************************************
+ * 2. DARK THEME OVERRIDE
+ ************************************************************/
 [data-theme="dark"] {
   --bg: #0f160d;
   --surface: #111a12;
@@ -38,52 +42,79 @@
 
   /* Dark – Table */
   --tbl-card-bg: #111a12;
-  --tbl-header-bg: rgba(134,184,23,.55);
+  --tbl-header-bg: rgba(134, 184, 23, .55);
   --tbl-row-bg: #0c130c;
   --tbl-row-hover: #3a472f;
   --tbl-text: #ecffe6;
-  --tbl-row-border: rgba(255,255,255,.10);
-  --tbl-header-border: rgba(255,255,255,.18);
+  --tbl-row-border: rgba(255, 255, 255, .1);
+  --tbl-header-border: rgba(255, 255, 255, .18);
 
   /* Dark – Selected */
   --tbl-row-selected: #18220f;
   --tbl-row-selected-hover: #1f2b12;
 }
 
-/********** GLOBAL APPLY **********/
-html, body {
+/************************************************************
+ * 3. GLOBAL APPLY
+ ************************************************************/
+html,
+body {
   background: var(--bg);
   color: var(--text);
   transition: background .25s ease, color .25s ease;
 }
 
-.themed-card      { background: var(--card-yellow) !important; color: var(--text) !important; }
-.themed-surface   { background: var(--surface)    !important; color: var(--text) !important; }
-.themed-surface-2 { background: var(--surface-2)  !important; color: var(--text) !important; }
+.themed-card {
+  background: var(--card-yellow) !important;
+  color: var(--text) !important;
+}
 
-/********** DARK/LIGHT SWITCH **********/
+.themed-surface {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.themed-surface-2 {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}
+
+/************************************************************
+ * 4. DARK/LIGHT SWITCH
+ ************************************************************/
 .theme-switch {
   position: relative;
-  width: 50px; height: 28px;
+  width: 50px;
+  height: 28px;
   border-radius: 999px;
   background: var(--surface-2);
   cursor: pointer;
   transition: background .2s ease;
 }
+
 .theme-switch .knob {
-  position: absolute; top: 3px; left: 3px;
-  width: 22px; height: 22px; border-radius: 999px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   background: #fff;
   transform: translateX(0);
   transition: transform .2s ease;
 }
-.theme-switch[data-ison="true"] .knob { transform: translateX(22px); }
 
-/********** THEMED TABLE (Dùng chung) **********/
+.theme-switch[data-ison="true"] .knob {
+  transform: translateX(22px);
+}
+
+/************************************************************
+ * 5. THEMED TABLE (ANTD)
+ ************************************************************/
 .themed-table {
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
   background: var(--tbl-card-bg) !important;
   color: var(--tbl-text) !important;
 }
@@ -109,9 +140,11 @@ html, body {
 .themed-table .ant-table-tbody > tr.ant-table-row-selected > td {
   background: var(--tbl-row-selected) !important;
 }
+
 .themed-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
   background: var(--tbl-row-selected-hover) !important;
 }
+
 .themed-table .ant-table-tbody > tr.ant-table-row-selected > td:first-child {
   box-shadow: inset 4px 0 0 var(--primary);
 }
@@ -133,12 +166,16 @@ html, body {
 [data-theme="dark"] .themed-table td a {
   color: #b5ff9f !important;
 }
+
 [data-theme="dark"] .themed-table .ant-tag {
   color: #eaffde !important;
-  border-color: rgba(134,184,23,.6) !important;
-  background: rgba(134,184,23,.18) !important;
+  border-color: rgba(134, 184, 23, .6) !important;
+  background: rgba(134, 184, 23, .18) !important;
 }
 
+/************************************************************
+ * 6. TYPOGRAPHY HELPERS
+ ************************************************************/
 .fw-medium {
   font-weight: 600 !important;
 }
@@ -147,6 +184,9 @@ html, body {
   font-weight: 700 !important;
 }
 
+/************************************************************
+ * 7. FLOATING BUTTONS (BACK TO TOP / COMPARE)
+ ************************************************************/
 .back-to-top {
   position: fixed;
   display: none;
@@ -159,10 +199,12 @@ html, body {
   position: fixed;
   right: 45px;
   bottom: 90px;
-  z-index: 9999;   /* tăng cao hơn */
+  z-index: 9999;
 }
 
-/*** Spinner ***/
+/************************************************************
+ * 8. SPINNER
+ ************************************************************/
 #spinner {
   opacity: 0;
   visibility: hidden;
@@ -176,7 +218,9 @@ html, body {
   opacity: 1;
 }
 
-/*** Button ***/
+/************************************************************
+ * 9. BUTTONS (GLOBAL)
+ ************************************************************/
 .btn {
   font-family: 'Nunito', sans-serif;
   font-weight: 600;
@@ -214,111 +258,9 @@ html, body {
   border-radius: 0px;
 }
 
-/*** Navbar ***/
-/* .navbar-light .navbar-nav .nav-link {
-  font-family: 'Nunito', sans-serif;
-  position: relative;
-  margin-right: 25px;
-  padding: 35px 0;
-  color: #FFFFFF !important;
-  font-size: 18px;
-  font-weight: 600;
-  outline: none;
-  transition: .5s;
-} */
-
-/* .sticky-top.navbar-light .navbar-nav .nav-link {
-  padding: 20px 0;
-  color: var(--dark) !important;
-}
-
-.navbar-light .navbar-nav .nav-link:hover,
-.navbar-light .navbar-nav .nav-link.active {
-  color: var(--primary) !important;
-}
-
-.navbar-light .navbar-brand img {
-  max-height: 60px;
-  transition: .5s;
-}
-
-.sticky-top.navbar-light .navbar-brand img {
-  max-height: 45px;
-} */
-
-/* @media (max-width: 991.98px) {
-  .sticky-top.navbar-light {
-      position: relative;
-      background: #FFFFFF;
-  }
-
-  .navbar-light .navbar-collapse {
-      margin-top: 15px;
-      border-top: 1px solid #DDDDDD;
-  }
-
-  .navbar-light .navbar-nav .nav-link,
-  .sticky-top.navbar-light .navbar-nav .nav-link {
-      padding: 10px 0;
-      margin-left: 0;
-      color: var(--dark) !important;
-  }
-
-  .navbar-light .navbar-brand img {
-      max-height: 45px;
-  }
-}
-
-@media (min-width: 992px) {
-  .navbar-light {
-      position: absolute;
-      width: 100%;
-      top: 0;
-      left: 0;
-      border-bottom: 1px solid rgba(256, 256, 256, .1);
-      z-index: 999;
-  }
-  
-  .sticky-top.navbar-light {
-      position: fixed;
-      background: #FFFFFF;
-  }
-
-  .navbar-light .navbar-nav .nav-link::before {
-      position: absolute;
-      content: "";
-      width: 0;
-      height: 2px;
-      bottom: -1px;
-      left: 50%;
-      background: var(--primary);
-      transition: .5s;
-  }
-
-  .navbar-light .navbar-nav .nav-link:hover::before,
-  .navbar-light .navbar-nav .nav-link.active::before {
-      width: calc(100% - 2px);
-      left: 1px;
-  }
-
-  .navbar-light .navbar-nav .nav-link.nav-contact::before {
-      display: none;
-  }
-} */
-
-/*** Hero Header ***/
-/* .hero-header {
-  background: linear-gradient(rgba(20, 20, 31, .7), rgba(20, 20, 31, .7)), url(../img/bg-hero.jpg);
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-  color: rgba(255, 255, 255, .5);
-} */
-
-/*** Section Title ***/
+/************************************************************
+ * 10. SECTION TITLE
+ ************************************************************/
 .section-title {
   position: relative;
   display: inline-block;
@@ -357,7 +299,9 @@ html, body {
   left: 0;
 }
 
-/*** Service ***/
+/************************************************************
+ * 11. SERVICE
+ ************************************************************/
 .service-item {
   box-shadow: 0 0 45px rgba(0, 0, 0, .08);
   transition: .5s;
@@ -375,7 +319,9 @@ html, body {
   color: var(--light) !important;
 }
 
-/*** Destination ***/
+/************************************************************
+ * 12. DESTINATION / PACKAGE (IMAGES HOVER)
+ ************************************************************/
 .destination img {
   transition: .5s;
 }
@@ -384,7 +330,6 @@ html, body {
   transform: scale(1.1);
 }
 
-/*** Package ***/
 .package-item {
   box-shadow: 0 0 45px rgba(0, 0, 0, .08);
 }
@@ -397,15 +342,20 @@ html, body {
   transform: scale(1.1);
 }
 
-/*** Booking ***/
+/************************************************************
+ * 13. BOOKING BANNER
+ ************************************************************/
 .booking {
-  background: linear-gradient(rgba(15, 23, 43, .7), rgba(15, 23, 43, .7)),  url(../../images/booking1.jpg);
+  background: linear-gradient(rgba(15, 23, 43, .7), rgba(15, 23, 43, .7)),
+              url(../../images/booking1.jpg);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
 }
 
-/*** Team ***/
+/************************************************************
+ * 14. TEAM
+ ************************************************************/
 .team-item {
   box-shadow: 0 0 45px rgba(0, 0, 0, .08);
 }
@@ -430,7 +380,9 @@ html, body {
   color: #FFFFFF;
 }
 
-/*** Testimonial ***/
+/************************************************************
+ * 15. TESTIMONIAL CAROUSEL
+ ************************************************************/
 .testimonial-carousel::before {
   position: absolute;
   content: "";
@@ -438,7 +390,9 @@ html, body {
   left: 0;
   height: 100%;
   width: 0;
-  background: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0) 100%);
   z-index: 1;
 }
 
@@ -449,21 +403,23 @@ html, body {
   right: 0;
   height: 100%;
   width: 0;
-  background: linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to left,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0) 100%);
   z-index: 1;
 }
 
 @media (min-width: 768px) {
   .testimonial-carousel::before,
   .testimonial-carousel::after {
-      width: 200px;
+    width: 200px;
   }
 }
 
 @media (min-width: 992px) {
   .testimonial-carousel::before,
   .testimonial-carousel::after {
-      width: 300px;
+    width: 300px;
   }
 }
 
@@ -504,7 +460,9 @@ html, body {
   border-color: var(--primary);
 }
 
-/*** Footer ***/
+/************************************************************
+ * 16. FOOTER
+ ************************************************************/
 .footer .btn.btn-social {
   margin-right: 5px;
   width: 35px;
@@ -570,16 +528,18 @@ html, body {
   border-right: none;
 }
 
+/************************************************************
+ * 17. HOTEL CARD
+ ************************************************************/
 .hotel-card {
   width: 100%;
-  height: 500px;               
+  height: 500px;
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  overflow: hidden;        
-  box-shadow: 0 0 20px rgba(0,0,0,.05);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   background: var(--card-yellow);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .image-box {
@@ -587,7 +547,7 @@ html, body {
   width: 100%;
   height: 220px;
   overflow: hidden;
-  border-radius: 12px; /* bo góc cho container */
+  border-radius: 12px;
 }
 
 .image-box .ant-image,
@@ -597,43 +557,44 @@ html, body {
   object-fit: cover;
   object-position: center;
   display: block;
-  border-radius: 12px; /* bo góc cho ảnh */
+  border-radius: 12px;
 }
 
-.hotel-card-body{
+.hotel-card-body {
   padding: 16px 14px 18px;
   display: grid;
-  grid-template-rows: 56px 72px 28px; 
+  grid-template-rows: 56px 72px 28px;
   background: var(--card-yellow);
   text-align: center;
 }
 
-.hotel-name{
+.hotel-name {
   line-height: 1.25;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; /* 2 dòng */
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  margin-top: 7px;;
+  margin-top: 7px;
 }
 
-.hotel-address{
+.hotel-address {
   display: flex;
   justify-content: center;
   align-items: flex-start;
   gap: 8px;
   line-height: 1.35;
   text-align: center;
-  margin-top: 12px;   
+  margin-top: 12px;
 }
-.hotel-address .text{
+
+.hotel-address .text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2; 
+  -webkit-line-clamp: 2;
   overflow: hidden;
 }
 
-.hotel-phone{
+.hotel-phone {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -643,7 +604,8 @@ html, body {
   text-overflow: ellipsis;
   margin-top: 2px;
 }
-.hotel-phone .text{
+
+.hotel-phone .text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -651,47 +613,66 @@ html, body {
   text-decoration: none;
 }
 
-.hotel-address.clickable:focus{ outline: none; }
-
-.hotel-address.clickable:focus-visible{
+.hotel-address.clickable:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(134,184,23,.25); 
+}
+
+.hotel-address.clickable:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(134, 184, 23, .25);
   border-radius: 6px;
 }
 
-.rating-clickable { cursor: pointer; }
+.rating-clickable {
+  cursor: pointer;
+}
+
 .rating-clickable:focus,
-.rating-clickable:focus-visible { outline: none; box-shadow: none; }
+.rating-clickable:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 
-.hotel-phone.copyable { cursor: pointer; user-select: none; }
-.hotel-phone.copyable .text { transition: opacity .2s ease; }
+.hotel-phone.copyable {
+  cursor: pointer;
+  user-select: none;
+}
 
-/* ========= GRID ========= */
-.rooms-grid{
+.hotel-phone.copyable .text {
+  transition: opacity .2s ease;
+}
+
+/************************************************************
+ * 18. ROOMS GRID + ROOM CARD
+ ************************************************************/
+/* Grid wrapper cho rooms */
+.rooms-grid {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 24px;
   align-items: stretch;
 }
-.rooms-grid > *{
+
+.rooms-grid > * {
   min-width: 0;
   grid-column: auto / span 1 !important;
 }
-.rooms-grid .room-card{
+
+.rooms-grid .room-card {
   flex: none !important;
   width: auto !important;
   max-width: unset !important;
 }
 
-/* ========= CARD ========= */
-.room-card{
+/* ROOM CARD */
+.room-card {
   --card-h: 360px;
   --img-h: 180px;
   --pill-py: 6px;
   --pill-px: 14px;
   --title-fs: 1.1rem;
   --info-fs: .95rem;
-  --title-gap: 16px;   /* khoảng cách pill giữa → room name */
+  --title-gap: 16px;
 
   position: relative;
   display: flex;
@@ -701,13 +682,16 @@ html, body {
   border-radius: 12px;
   overflow: visible;
   padding: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
-  isolation: isolate; /* cô lập z-index cho từng card */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  isolation: isolate;
 }
-.room-card .team-item{ display: contents; }
 
-/* image */
-.room-card .image-box{
+.room-card .team-item {
+  display: contents;
+}
+
+/* Image area */
+.room-card .image-box {
   position: relative;
   width: 100%;
   height: var(--img-h);
@@ -716,8 +700,9 @@ html, body {
   border-radius: 12px 12px 0 0;
   margin: 0;
 }
+
 .room-card .ant-image,
-.room-card .ant-image-img{
+.room-card .ant-image-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -726,49 +711,45 @@ html, body {
   border-radius: inherit;
   transition: transform .5s ease;
 }
-.room-card:hover .ant-image-img{
+
+.room-card:hover .ant-image-img {
   transform: scale(1.1);
 }
-.room-card .ant-image-mask{
+
+.room-card .ant-image-mask {
   border-radius: inherit !important;
   overflow: hidden;
   pointer-events: none;
 }
 
-/* ====== DISCOUNT BADGE (Style A — Luxury Gradient, 25% bigger) ====== */
-.room-card .room-discount-badge{
+/* DISCOUNT BADGE */
+.room-card .room-discount-badge {
   position: absolute;
-  top: 50%;                      /* giữa ảnh */
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-
-  padding: 10px 22px;            /* tăng 25% so với 8px 18px */
+  padding: 10px 22px;
   border-radius: 999px;
-
   background: linear-gradient(135deg, #ff4d4f, #ff7072);
   color: #fff;
-
-  font-size: 17px;               /* tăng từ 14–15 lên 17 */
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: .6px;
-
-  box-shadow: 
-    0 6px 18px rgba(0,0,0,.25), 
-    0 0 0 4px rgba(255,255,255,.6); /* viền sáng hơn 1 chút */
-
-  text-shadow: 0 1px 3px rgba(0,0,0,.35);
-
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, .25),
+    0 0 0 4px rgba(255, 255, 255, .6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .35);
   z-index: 4;
 }
 
+/* chỉnh pill-top riêng cho swiper discount */
 .home-discount-swiper .room-card .pill-top {
-  top: -1px;   /* nâng lên 2px */
+  top: -1px;
   transform: translateX(-50%);
 }
 
-
-/* ========= PILLS ========= */
-.room-pill{
+/* PILLS */
+.room-pill {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -780,44 +761,48 @@ html, body {
   font-size: 14px;
   min-width: 140px;
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, .2);
   z-index: 2;
   white-space: nowrap;
 }
-.pill-top{
+
+.pill-top {
   top: 0;
   transform: translate(-50%, -50%);
   z-index: 4;
   pointer-events: auto;
 }
-.pill-middle{
-  top: var(--img-h);              /* đúng ranh giới ảnh + nền */
+
+.pill-middle {
+  top: var(--img-h);
   transform: translate(-50%, -60%);
   z-index: 3;
 }
 
-/* ========= BODY ========= */
-.room-card-body{
+/* BODY */
+.room-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 12px 14px 16px;
   background: transparent;
 }
-.room-title{
+
+.room-title {
   font-size: var(--title-fs);
   margin: var(--title-gap) 0 6px;
   color: #333;
 }
 
-/* INFO LINES – text + icon cùng màu #333 */
-.room-info{
+/* INFO LINES */
+.room-info {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 10px;
 }
-.room-info-line{
+
+.room-info-line {
   font-size: var(--info-fs);
   font-weight: 500;
   color: #333;
@@ -825,14 +810,15 @@ html, body {
   align-items: center;
   gap: 6px;
 }
-.room-info-line svg{
+
+.room-info-line svg {
   color: #333;
   font-size: 1rem;
   flex-shrink: 0;
 }
 
-/* actions */
-.room-actions{
+/* ACTIONS */
+.room-actions {
   margin-top: auto;
   display: flex;
   align-items: center;
@@ -842,31 +828,55 @@ html, body {
   z-index: 3;
 }
 
-/* ========= COMPACT (Compare Modal) ========= */
-.room-card--compact{
+/* COMPACT MODE (Compare Modal) */
+.room-card--compact {
   --card-h: 330px;
   --img-h: 160px;
   --title-fs: 1rem;
   --info-fs: .9rem;
   --title-gap: 12px;
 }
-.room-card--compact .room-actions{ gap: 8px; }
-.room-card--compact .ant-btn{
-  height: 28px; padding: 0 10px; font-size: 12px; line-height: 28px;
+
+.room-card--compact .room-actions {
+  gap: 8px;
 }
 
-/* ========= Compare Grid ========= */
-.compare-grid{
+.room-card--compact .ant-btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 28px;
+}
+
+/************************************************************
+ * 19. COMPARE GRID & FLOATING BUTTON
+ ************************************************************/
+.compare-grid {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 16px;
 }
-@media (max-width: 1199.98px){ .compare-grid{ grid-template-columns: repeat(3, 1fr) !important; } }
-@media (max-width: 991.98px){  .compare-grid{ grid-template-columns: repeat(2, 1fr) !important; } }
-@media (max-width: 575.98px){  .compare-grid{ grid-template-columns: 1fr !important; } }
 
-/* ========= FAB ========= */
-.compare-fab{
+@media (max-width: 1199.98px) {
+  .compare-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .compare-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .compare-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Floating Action Button compare */
+.compare-fab {
   position: fixed;
   right: 45px;
   bottom: 90px;
@@ -877,51 +887,90 @@ html, body {
   padding: 10px 14px;
   border-radius: 999px;
   border: none;
-  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
   background: #86B817;
   color: #fff;
   cursor: pointer;
   transition: transform .2s ease, box-shadow .2s ease;
 }
-.compare-fab:hover{ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
 
-/* ========= Responsive (Rooms Grid) ========= */
-@media (max-width: 1199.98px){
-  .rooms-grid{ grid-template-columns: repeat(3, 1fr) !important; }
-}
-@media (max-width: 991.98px){
-  .rooms-grid{ grid-template-columns: repeat(2, 1fr) !important; }
-  .room-card{ --card-h: 350px; --img-h: 170px; }
-}
-@media (max-width: 575.98px){
-  .rooms-grid{ grid-template-columns: 1fr !important; }
-  .room-card{ --card-h: 340px; --img-h: 160px; }
+.compare-fab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .25);
 }
 
-/* ========= Bootstrap row fallback ========= */
-.row.g-5:has(> .room-card){
+/************************************************************
+ * 20. ROOMS GRID – RESPONSIVE FALLBACK
+ ************************************************************/
+@media (max-width: 1199.98px) {
+  .rooms-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .rooms-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .room-card {
+    --card-h: 350px;
+    --img-h: 170px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .rooms-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .room-card {
+    --card-h: 340px;
+    --img-h: 160px;
+  }
+}
+
+/* Fallback khi dùng .row.g-5 chứa room-card */
+.row.g-5:has(> .room-card) {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 24px;
-  --bs-gutter-x: 0; --bs-gutter-y: 0;
-  margin-left: 0; margin-right: 0;
-}
-.row.g-5:has(> .room-card) > *{
-  padding-left: 0 !important; padding-right: 0 !important;
-  min-width: 0; width: auto !important; grid-column: auto / span 1 !important;
-}
-@media (max-width: 1199.98px){
-  .row.g-5:has(> .room-card){ grid-template-columns: repeat(3, 1fr) !important; }
-}
-@media (max-width: 991.98px){
-  .row.g-5:has(> .room-card){ grid-template-columns: repeat(2, 1fr) !important; }
-}
-@media (max-width: 575.98px){
-  .row.g-5:has(> .room-card){ grid-template-columns: 1fr !important; }
+  --bs-gutter-x: 0;
+  --bs-gutter-y: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
-/* === Green Divider (final) =============================================== */
-.divider{
+.row.g-5:has(> .room-card) > * {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  min-width: 0;
+  width: auto !important;
+  grid-column: auto / span 1 !important;
+}
+
+@media (max-width: 1199.98px) {
+  .row.g-5:has(> .room-card) {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .row.g-5:has(> .room-card) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .row.g-5:has(> .room-card) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/************************************************************
+ * 21. DIVIDER & HEADING LINE
+ ************************************************************/
+.divider {
   --w: 60px;
   --h: 2px;
   --c: var(--primary);
@@ -937,45 +986,192 @@ html, body {
   margin: 0;
 }
 
-/* nếu element là <hr> */
-hr.divider{ border: 0; }
+hr.divider {
+  border: 0;
+}
 
-/* size helpers */
-.divider--sm{ --w: 48px; --h: 2px; }
-.divider--md{ --w: 60px; --h: 2px; }
-.divider--lg{ --w: 80px; --h: 3px; }
-.divider--full{ --w: 100%; }
+.divider--sm {
+  --w: 48px;
+  --h: 2px;
+}
 
-/* nhạt màu */
-.divider--muted{ --alpha: .45; }
+.divider--md {
+  --w: 60px;
+  --h: 2px;
+}
 
-/* ========== Pair (2 gạch xếp dọc) ====================================== */
-.divider-pair{
+.divider--lg {
+  --w: 80px;
+  --h: 3px;
+}
+
+.divider--full {
+  --w: 100%;
+}
+
+.divider--muted {
+  --alpha: .45;
+}
+
+/* Pair (2 gạch xếp dọc) */
+.divider-pair {
   display: grid;
   justify-items: center;
   row-gap: var(--pair-gap, 4px);
   margin-top: var(--pair-mt, 12px);
   margin-bottom: var(--pair-mb, 12px);
 }
-.divider-pair .divider{
+
+.divider-pair .divider {
   margin: 0 !important;
 }
-.divider-pair--tight{    --pair-gap: 2px; }
-.divider-pair--tightest{ --pair-gap: 0px; }
 
-/* ========== Heading (chữ + 2 cụm gạch 2 bên) =========================== */
-.heading-line{
+.divider-pair--tight {
+  --pair-gap: 2px;
+}
+
+.divider-pair--tightest {
+  --pair-gap: 0px;
+}
+
+/* Heading (chữ + 2 cụm gạch 2 bên) */
+.heading-line {
   display: inline-flex;
   align-items: center;
   gap: var(--heading-gap, 12px);
 }
-.heading-line .heading-text{
+
+.heading-line .heading-text {
   margin: 0;
   line-height: 1;
 }
-.heading-line .divider{
+
+.heading-line .divider {
   --w: 64px;
   --h: 2px;
   --alpha: .45;
   align-self: center;
+}
+
+/************************************************************
+ * 22. HERO SEARCH BAR (HOME)
+ ************************************************************/
+.home-hero-search-wrapper {
+  position: relative;
+  z-index: 10;
+  margin-top: -60px;  /* nổi lên trên border hero background */
+  margin-bottom: 50px;
+}
+
+.home-hero-search {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 2fr auto;
+  gap: 14px;
+  padding: 20px 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.home-hero-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+}
+
+.home-hero-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.home-hero-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 14px;
+  color: var(--primary);
+}
+
+.home-hero-input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 14px;
+  background: #fff;
+}
+
+.home-hero-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(134, 184, 23, 0.2);
+  outline: none;
+}
+
+.home-hero-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.home-hero-btn-wrap {
+  display: flex;
+  align-items: flex-end;
+}
+
+.home-hero-btn {
+  height: 100%;
+  border-radius: 999px;
+  font-weight: 700;
+  background-color: var(--primary);
+  border-color: var(--primary);
+
+  /* 👇 thu chiều ngang nút */
+  padding: 0 18px;          /* trước là 28px */
+  font-size: 0.9rem;        /* chữ nhỏ lại chút */
+
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+
+/* Responsive hero search */
+@media (max-width: 992px) {
+  .home-hero-search {
+    border-radius: 20px;
+    grid-template-columns: 1fr 1fr;
+    padding: 16px 18px;
+  }
+
+  .home-hero-btn-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .home-hero-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .home-hero-search-wrapper {
+    margin-top: -40px;
+  }
+
+  .home-hero-search {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero-dual {
+    grid-template-columns: 1fr;
+  }
 }

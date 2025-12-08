@@ -27,7 +27,7 @@ export const SearchInput = () => {
     console.log(hotelFilter);
   }, [searchTerm])
   return (
-    <div className="relative w-full min-w-96 max-w-md">
+    <div className="relative header-search">
       <label className="flex items-center gap-2 bg-white shadow-md border border-gray-300 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
         <IoSearch className="text-gray-500 text-xl cursor-pointer" />
         <input
