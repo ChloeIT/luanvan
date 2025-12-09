@@ -1,12 +1,17 @@
-import React, { useState } from "react";
+// src/pages/Review.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAllBooking } from "@/store/booking/thunk";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 import "swiper/css/autoplay";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, FreeMode } from "swiper/modules";
-import { FaStar } from "react-icons/fa";
+// ⭐ dùng thêm half + empty
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 
-// images
+// Fallback avatars
 import review1 from "../assets/images/review/review1.jpg";
 import review2 from "../assets/images/review/review2.jpg";
 import review3 from "../assets/images/review/review3.jpg";
@@ -16,55 +21,104 @@ import review6 from "../assets/images/review/review6.jpg";
 import review7 from "../assets/images/review/review7.jpg";
 import review8 from "../assets/images/review/review8.jpg";
 
-const testimonialData = [
-  { name: "Chloe", location: "Hà Nội - Việt Nam", rating: 5, date: "2024-11-01", review: "Khách sạn view đẹp, rộng rãi, nhân viên nhiệt tình.", image: review2, verified: true },
-  { name: "Khanh Linh", location: "Đà Nẵng - Việt Nam", rating: 5, date: "2024-11-02", review: "Một kì nghỉ tuyệt vời cùng gia đình.", image: review3, verified: true },
-  { name: "Hoàng Bách", location: "Sài Gòn - Việt Nam", rating: 4.5, date: "2024-11-03", review: "Khách sạn sạch sẽ, thoáng mát, được giải quyết nâng hạng phòng nhanh chóng.", image: review4, verified: true },
-  { name: "Emma", location: "Singapore", rating: 4.8, date: "2024-11-04", review: "Great vacation, my family was very satisfied.", image: review5, verified: true },
-  { name: "Pamela", location: "Rạch Giá - Việt Nam", rating: 4.6, date: "2024-11-05", review: "Convenient location, spacious rooms and attentive service.", image: review8, verified: true },
-  { name: "Tuệ Mẫn", location: "Bình Phước - Việt Nam", rating: 4.7, date: "2024-11-06", review: "Phòng ốc sạch sẽ và thoải mái, nhân viên thân thiện và nhiệt tình.", image: review6, verified: true },
-  { name: "Daisy", location: "Thailand", rating: 4.9, date: "2024-11-06", review: "Beautiful room, great view and professional service. I will recommend to my friends and family.", image: review7, verified: false },
-  { name: "Harry Potter", location: "Hogwarts", rating: 4.4, date: "2024-11-07", review: "Great service and reasonable prices. I had a relaxing vacation.", image: review1, verified: false }
+const FALLBACK_IMAGES = [
+  review1,
+  review2,
+  review3,
+  review4,
+  review5,
+  review6,
+  review7,
+  review8,
 ];
 
-// Small, reusable card
+// URL ảnh BE: http://localhost:8080/images/users/<fileName>
+const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(/\/+$/, "");
+const buildUserImageUrl = (fileName) => {
+  if (!fileName || !RAW_IMAGE_URL) return null;
+  return `${RAW_IMAGE_URL}/users/${fileName}`;
+};
+
+// ================= CARD =================
 const TestimonialCard = ({ item }) => {
   const [expanded, setExpanded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(item.image);
+
   const maxChars = 110;
   const needsClamp = item.review.length > maxChars;
-  const text = expanded ? item.review : (needsClamp ? item.review.slice(0, maxChars) + "..." : item.review);
+  const text = expanded
+    ? item.review
+    : needsClamp
+      ? item.review.slice(0, maxChars) + "..."
+      : item.review;
 
-  const fullStars = Math.floor(item.rating);
-  const half = item.rating - fullStars >= 0.5;
+  // ⭐ TÍNH SAO
+  const rating = Number(item.rating) || 0;
+  const fullStars = Math.floor(rating);
+  const hasHalf = rating - fullStars >= 0.5;
+  const totalShown = fullStars + (hasHalf ? 1 : 0);
+  const emptyStars = Math.max(0, 5 - totalShown);
 
   return (
-    <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-5 text-center shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-5 text-center review-card transition-all duration-300">
+      {/* Avatar */}
       <div className="relative mx-auto mb-3 w-20 h-20">
         <img
-          src={item.image}
+          src={imgSrc}
+          onError={() => setImgSrc(item.fallbackImage)}
           alt={`Ảnh khách ${item.name}`}
-          loading="lazy"
           className="w-20 h-20 rounded-full object-cover ring-4 ring-yellow-200"
         />
-        {item.verified && (
-          <span
-            className="absolute -bottom-1 -right-1 text-[10px] bg-green-600 text-white px-2 py-[2px] rounded-full shadow"
-            title="Verified guest"
-            aria-label="Verified guest"
-          >
-            ✓ Verified
-          </span>
-        )}
+        <span className="absolute -bottom-1 -right-1 text-[10px] bg-green-600 text-white px-2 py-[2px] rounded-full shadow">
+          ✓ Verified
+        </span>
       </div>
 
+      {/* Name + location */}
       <h5 className="mb-0 font-semibold">{item.name}</h5>
       <p className="text-sm text-gray-600">{item.location}</p>
 
-      {/* Stars */}
-      <div className="flex items-center justify-center gap-1 my-2" aria-label={`Rating ${item.rating} out of 5`}>
-        {Array.from({ length: fullStars }).map((_, i) => <FaStar key={`s${i}`} />)}
-        {half && <FaStar className="opacity-60" title="half" />}
-        <span className="ml-2 text-sm text-gray-600">{item.rating.toFixed(1)}</span>
+      {/* Hotel + room */}
+      {(item.hotelName || item.roomName) && (
+        <p className="text-xs text-gray-500 mt-1">
+          {item.hotelName}
+          {item.roomName ? ` · ${item.roomName}` : ""}
+        </p>
+      )}
+
+      {/* ⭐ RATING – màu vàng + icon đẹp */}
+      <div
+        className="flex items-center justify-center gap-[3px] my-2"
+        aria-label={`Rating ${rating} out of 5`}
+      >
+        {/* full stars */}
+        {Array.from({ length: fullStars }).map((_, i) => (
+          <FaStar
+            key={`full-${i}`}
+            className="text-yellow-400 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]"
+          />
+        ))}
+
+        {/* half star */}
+        {hasHalf && (
+          <FaStarHalfAlt
+            key="half"
+            className="text-yellow-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]"
+          />
+        )}
+
+        {/* empty stars */}
+        {Array.from({ length: emptyStars }).map((_, i) => (
+          <FaRegStar
+            key={`empty-${i}`}
+            className="text-gray-300"
+          />
+        ))}
+
+        {/* numeric rating */}
+        <span className="ml-2 text-sm text-gray-700 font-semibold">
+          {rating.toFixed(1)}
+        </span>
       </div>
 
       {/* Review text */}
@@ -72,72 +126,184 @@ const TestimonialCard = ({ item }) => {
         {text}
         {needsClamp && (
           <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
             className="ml-1 text-primary underline decoration-dotted"
-            aria-expanded={expanded}
+            onClick={() => setExpanded(!expanded)}
           >
             {expanded ? "Thu gọn" : "Xem thêm"}
           </button>
         )}
       </p>
 
-      <p className="mt-3 text-xs text-gray-500">{new Date(item.date).toLocaleDateString()}</p>
+      {/* Date */}
+      <p className="mt-3 text-xs text-gray-500">
+        {item.date ? new Date(item.date).toLocaleDateString() : ""}
+      </p>
     </div>
   );
 };
 
+// ================= PAGE =================
 export const Review = () => {
+  const dispatch = useDispatch();
+  const { bookings } = useSelector((s) => s.booking || {});
+
+  useEffect(() => {
+    dispatch(fetchAllBooking());
+  }, [dispatch]);
+
+  // Map bookings -> testimonials
+  const testimonials = useMemo(() => {
+    if (!Array.isArray(bookings)) return [];
+
+    return bookings
+      .filter((b) => b.review)
+      .map((b, idx) => {
+        const r = b.review || {};
+        const u = b.user || {};
+
+        // Lấy room từ nhiều dạng khác nhau
+        let room = null;
+
+        if (b.room) {
+          room = b.room;
+        } else if (Array.isArray(b.rooms) && b.rooms.length > 0) {
+          room = b.rooms[0];
+        } else if (
+          Array.isArray(b.bookingDetails) &&
+          b.bookingDetails.length > 0 &&
+          b.bookingDetails[0].room
+        ) {
+          room = b.bookingDetails[0].room;
+        }
+
+        const hotel = room?.hotel || b.hotel || {};
+
+        const avatar = buildUserImageUrl(u.image);
+        const fallbackImg = FALLBACK_IMAGES[idx % FALLBACK_IMAGES.length];
+
+        return {
+          id: r.id || b.id,
+          name: r.author || u.fullName || u.username || "Guest",
+          location: u.address || hotel.address || "Việt Nam",
+          rating: Number(r.rating) || 5,
+          date: r.review_date || r.reviewDate || b.checkOut || b.checkIn,
+          review: r.comment || "",
+          image: avatar || fallbackImg,
+          fallbackImage: fallbackImg,
+          hotelName:
+            hotel.hotelName ||
+            hotel.name ||
+            b.hotelName ||
+            (b.hotel && b.hotel.hotelName) ||
+            "",
+          roomName:
+            room?.roomName ||
+            room?.name ||
+            room?.roomType ||
+            "",
+        };
+      });
+  }, [bookings]);
+
+  // Avg rating + total reviews
+  const { avgRating, totalReviews } = useMemo(() => {
+    if (!testimonials.length) return { avgRating: 0, totalReviews: 0 };
+    const sum = testimonials.reduce((acc, it) => acc + it.rating, 0);
+    return {
+      avgRating: sum / testimonials.length,
+      totalReviews: testimonials.length,
+    };
+  }, [testimonials]);
+
   return (
-    <div className="container-xxl py-5 wow fadeInUp" data-wow-delay="0.1s">
+    <div className="container-xxl py-5 review-section">
       <div className="container">
-        {/* Heading block */}
-        <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-          <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-            <span style={{ display: "grid", justifyItems: "end", gap: "6px", marginRight: "2px" }}>
+        {/* Heading */}
+        <div className="text-center">
+          <div
+            className="heading-line mx-auto"
+            style={{ "--heading-gap": "14px" }}
+          >
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "end",
+                gap: "6px",
+                marginRight: "2px",
+              }}
+            >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
-            <h6 className="heading-text text-3xl text-primary text-uppercase">Review</h6>
-            <span style={{ display: "grid", justifyItems: "start", gap: "6px", marginLeft: "2px" }}>
+
+            <h6 className="heading-text text-3xl text-primary text-uppercase">
+              REVIEW
+            </h6>
+
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "start",
+                gap: "6px",
+                marginLeft: "2px",
+              }}
+            >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
           </div>
+
           <h1 className="mb-1">Our Customers Say!!!</h1>
-          {/* Summary quick stats (tĩnh, có thể thay bằng API) */}
-          <p className="text-gray-600">⭐ 4.7/5 · 230+ reviews · Verified guests</p>
+          <p className="text-gray-600 review-stats">
+            ⭐ {avgRating.toFixed(1)}/5 · {totalReviews} reviews · Verified
+            guests
+          </p>
         </div>
 
-        {/* Carousel */}
-        <div className="mt-6">
-          <Swiper
-            modules={[FreeMode, Autoplay]}
-            freeMode
-            speed={900}                 // ✅ sửa peed -> speed
-            autoplay={{ delay: 2600, disableOnInteraction: false }}
-            loop
-            spaceBetween={18}
-            breakpoints={{
-              0: { slidesPerView: 1.1 },
-              480: { slidesPerView: 1.4 },
-              640: { slidesPerView: 2.1 },
-              768: { slidesPerView: 2.6 },
-              1024: { slidesPerView: 3.2 },
-              1280: { slidesPerView: 4.0 },
-            }}
-          >
-            {testimonialData.map((item, idx) => (
-              <SwiperSlide key={idx} className="!h-auto">
-                <TestimonialCard item={item} />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+        {/* Swiper */}
+        <div className="mt-4 review-swiper-wrapper">
+          {testimonials.length === 0 ? (
+            <p className="text-center text-gray-600">
+              Chưa có đánh giá nào.
+            </p>
+          ) : (
+            <Swiper
+              modules={[FreeMode, Autoplay]}
+              freeMode
+              speed={850}
+              autoplay={{ delay: 2500, disableOnInteraction: false }}
+              loop
+              spaceBetween={24}
+              breakpoints={{
+                0: { slidesPerView: 1.1 },
+                480: { slidesPerView: 1.4 },
+                640: { slidesPerView: 2.1 },
+                768: { slidesPerView: 2.4 },
+                1024: { slidesPerView: 3.1 },
+                1280: { slidesPerView: 3.6 },
+              }}
+            >
+              {testimonials.map((item) => (
+                <SwiperSlide key={item.id} className="!h-auto">
+                  <TestimonialCard item={item} />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-8">
-          <a href="/hotel" className="inline-block px-6 py-3 rounded-full bg-primary text-white hover:opacity-90">
+        <div className="text-center mt-7">
+          <a
+            href="/hotel"
+            className="inline-block px-6 py-3 rounded-full bg-primary text-white hover:opacity-90"
+          >
             Xem phòng trống & Đặt ngay
           </a>
         </div>

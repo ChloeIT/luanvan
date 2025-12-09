@@ -381,84 +381,40 @@ body {
 }
 
 /************************************************************
- * 15. TESTIMONIAL CAROUSEL
+ * 15. SWIPER (TESTIMONIAL)
  ************************************************************/
-.testimonial-carousel::before {
-  position: absolute;
-  content: "";
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 0;
-  background: linear-gradient(to right,
-      rgba(255, 255, 255, 1) 0%,
-      rgba(255, 255, 255, 0) 100%);
-  z-index: 1;
+
+/* Nền swiper trong suốt, không overlay mờ */
+.swiper,
+.swiper-wrapper,
+.swiper-slide {
+  background: transparent !important;
 }
 
-.testimonial-carousel::after {
-  position: absolute;
-  content: "";
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: 0;
-  background: linear-gradient(to left,
-      rgba(255, 255, 255, 1) 0%,
-      rgba(255, 255, 255, 0) 100%);
-  z-index: 1;
+/* Tắt shadow mờ mặc định hai bên (một số effect của Swiper) */
+.swiper-slide-shadow-left,
+.swiper-slide-shadow-right {
+  display: none !important;
 }
 
-@media (min-width: 768px) {
-  .testimonial-carousel::before,
-  .testimonial-carousel::after {
-    width: 200px;
-  }
-}
-
-@media (min-width: 992px) {
-  .testimonial-carousel::before,
-  .testimonial-carousel::after {
-    width: 300px;
-  }
-}
-
-.testimonial-carousel .owl-item .testimonial-item,
-.testimonial-carousel .owl-item.center .testimonial-item * {
-  transition: .5s;
-}
-
-.testimonial-carousel .owl-item.center .testimonial-item {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
-}
-
-.testimonial-carousel .owl-item.center .testimonial-item * {
-  color: #FFFFFF !important;
-}
-
-.testimonial-carousel .owl-dots {
-  margin-top: 24px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.testimonial-carousel .owl-dot {
+/* Giữ khoảng cách bên ngoài cho vùng review (optional) */
+.review-swiper-wrapper {
   position: relative;
-  display: inline-block;
-  margin: 0 5px;
-  width: 15px;
-  height: 15px;
-  border: 1px solid #CCCCCC;
-  border-radius: 15px;
-  transition: .5s;
+  width: 100%;
 }
 
-.testimonial-carousel .owl-dot.active {
-  background: var(--primary);
-  border-color: var(--primary);
+/* Nếu muốn canh giữa toàn bộ swiper trong container */
+.review-swiper-wrapper .swiper {
+  padding-bottom: 10px; /* cho card “thở” nhẹ ở dưới */
 }
+.review-card-body {
+  background: var(--card-yellow) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  border-radius: 20px;
+  color: var(--text);
+}
+
 
 /************************************************************
  * 16. FOOTER

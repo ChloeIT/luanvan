@@ -9,7 +9,7 @@ import { RoomCard } from "../components/ui/Room/RoomCard";
 import { Link } from "react-router-dom";
 import { fetchAllRoom } from "@/store/room/thunk";
 
-// 👇 import HeroContent (hero search bar)
+// Hero search bar
 import { HeroContent } from "../components/ui/home/HeroContent";
 
 // Swiper cho phần DISCOUNT
@@ -33,35 +33,34 @@ const getDiscountValue = (room) => {
 export const Home = () => {
   const dispatch = useDispatch();
 
-  const { hotels } = useSelector((state) => state.hotel);
+  const { hotels = [] } = useSelector((state) => state.hotel || {});
   const { rooms = [] } = useSelector((state) => state.room || {});
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth || {});
 
   const [popularHotels, setPopularHotels] = useState([]);
 
-  // ➕ NEW: state điều khiển Show more / Show less
+  // Show more / less popular hotels
   const [showAllPopular, setShowAllPopular] = useState(false);
   const MAX_POPULAR_DISPLAY = 4;
 
-  /* ===== POPULAR HOTELS ===== */
-  useEffect(() => {
-    const data = Array.isArray(hotels)
-      ? hotels
-        .filter((hotel) => Number(hotel.rating) > 4.5) // chỉ lấy > 4.5 sao
-        .sort((a, b) => Number(b.rating) - Number(a.rating)) // sắp xếp từ cao xuống thấp
-      : [];
-
-    setPopularHotels(data);
-  }, [hotels]);
-
-  /* ===== FETCH ROOMS NẾU CHƯA CÓ ===== */
+  /* ===== FETCH ROOMS NẾU CHƯA CÓ (phòng khi render Home độc lập) ===== */
   useEffect(() => {
     if (!rooms || rooms.length === 0) {
       dispatch(fetchAllRoom());
     }
   }, [rooms?.length, dispatch]);
 
-  /* ===== LẤY TẤT CẢ ROOM CÓ DISCOUNT > 0 ===== */
+  /* ===== POPULAR HOTELS ===== */
+  useEffect(() => {
+    const data = Array.isArray(hotels)
+      ? hotels
+        .filter((hotel) => Number(hotel.rating) > 4.5)
+        .sort((a, b) => Number(b.rating) - Number(a.rating))
+      : [];
+    setPopularHotels(data);
+  }, [hotels]);
+
+  /* ===== ROOMS CÓ DISCOUNT > 0 ===== */
   const discountedRooms = useMemo(() => {
     if (!Array.isArray(rooms)) return [];
 
@@ -71,10 +70,10 @@ export const Home = () => {
         discountPercent: getDiscountValue(r),
       }))
       .filter((r) => r.discountPercent > 0)
-      .sort((a, b) => b.discountPercent - a.discountPercent); // giảm dần theo % giảm
+      .sort((a, b) => b.discountPercent - a.discountPercent);
   }, [rooms]);
 
-  /* ===== POPULAR HOTELS TO SHOW (SHOW MORE / LESS) ===== */
+  /* ===== POPULAR HOTELS ĐANG HIỂN THỊ ===== */
   const popularHotelsToShow = useMemo(() => {
     if (!Array.isArray(popularHotels)) return [];
     if (showAllPopular) return popularHotels;
@@ -83,7 +82,7 @@ export const Home = () => {
 
   return (
     <>
-      {/* ✅ HERO SEARCH BAR – đè lên nền banner từ Header.jsx */}
+      {/* ✅ HERO SEARCH BAR – đè lên banner từ Header */}
       <HeroContent />
 
       {/* ===== ABOUT ===== */}
@@ -103,12 +102,14 @@ export const Home = () => {
                   src={about}
                   alt="About Image"
                   preview={false}
-                  style={{ width: "110%", height: 480, display: "block" }}
-                  imgStyle={{
-                    width: "100%",
-                    height: "100%",
+                  // 👉 dùng style bình thường, bỏ imgStyle để tránh warning
+                  style={{
+                    width: "110%",
+                    height: 480,
+                    display: "block",
                     objectFit: "cover",
                     borderRadius: "6px",
+                    overflow: "hidden",
                   }}
                 />
               </div>
@@ -277,7 +278,7 @@ export const Home = () => {
                     hotelId={room.hotel?.id ?? room.hotel_id ?? null}
                     hotelName={room.hotel?.name ?? room.hotelName}
                     isAvailableToday={true}
-                    linkToHotel={true} // pill tên hotel ở DISCOUNT có link
+                    linkToHotel={true}
                   />
                 </SwiperSlide>
               ))}
@@ -340,10 +341,7 @@ export const Home = () => {
             <>
               <div className="row g-4">
                 {popularHotelsToShow.map((hotel, index) => (
-                  <HotelCard
-                    hotel={hotel}
-                    key={hotel.id ?? index}
-                  />
+                  <HotelCard hotel={hotel} key={hotel.id ?? index} />
                 ))}
               </div>
 
