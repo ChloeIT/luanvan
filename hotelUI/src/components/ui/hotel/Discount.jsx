@@ -4,13 +4,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { RoomCard } from "@/components/ui/Room/RoomCard";
 import { fetchAllRoom } from "@/store/room/thunk";
 
-// Swiper cho phần DISCOUNT
 import "swiper/css";
 import "swiper/css/autoplay";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 
-/** Đọc giá trị giảm giá từ room, convert sang number an toàn */
+/** Convert discount safely */
 const getDiscountValue = (room) => {
   const raw =
     room?.discountPercent ??
@@ -33,90 +32,87 @@ export const Discount = () => {
     }
   }, [rooms?.length, dispatch]);
 
-  /* ===== LẤY TẤT CẢ ROOM CÓ DISCOUNT > 0 ===== */
+  /* ===== LẤY ROOM GIẢM GIÁ ===== */
   const discountedRooms = useMemo(() => {
     if (!Array.isArray(rooms)) return [];
-
     return rooms
-      .map((r) => ({
-        ...r,
-        discountPercent: getDiscountValue(r),
-      }))
+      .map((r) => ({ ...r, discountPercent: getDiscountValue(r) }))
       .filter((r) => r.discountPercent > 0)
-      .sort((a, b) => b.discountPercent - a.discountPercent); // giảm dần theo %
+      .sort((a, b) => b.discountPercent - a.discountPercent);
   }, [rooms]);
 
-  // Nếu không có phòng giảm giá có thể return null, hoặc hiện message
-  if (!discountedRooms.length) {
-    return null;
-  }
+  if (!discountedRooms.length) return null;
 
   return (
-    <div className="container-xxl py-5 destination">
+    <div className="container-xxl py-4 destination">
       <div className="container">
-        {/* ===== HEADING ===== */}
-        <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
+
+        {/* ===== HEADING Compact ===== */}
+        <div className="text-center">
           <div
             className="heading-line mx-auto"
-            style={{ "--heading-gap": "14px" }}
+            style={{ "--heading-gap": "10px" }}
           >
+            {/* Left divider */}
             <span
               style={{
                 display: "grid",
                 justifyItems: "end",
-                gap: "6px",
+                gap: "4px",
                 marginRight: "2px",
               }}
             >
-              <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+              <span className="divider" style={{ "--w": "100px" }} />
+              <span className="divider" style={{ "--w": "50px", "--alpha": 0.45 }} />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary text-uppercase">
+            {/* Title */}
+            <h6
+              className="heading-text text-primary text-uppercase"
+              style={{ fontSize: "18px" }}
+            >
               Discount
             </h6>
 
+            {/* Right divider */}
             <span
               style={{
                 display: "grid",
                 justifyItems: "start",
-                gap: "6px",
+                gap: "4px",
                 marginLeft: "2px",
               }}
             >
-              <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+              <span className="divider" style={{ "--w": "100px" }} />
+              <span className="divider" style={{ "--w": "50px", "--alpha": 0.45 }} />
             </span>
           </div>
 
-          <h1 className="mb-5">Save big today!</h1>
+          <h1 className="mt-1 mb-3" style={{ fontSize: "28px" }}>
+            Save big today!
+          </h1>
         </div>
 
-        {/* ===== SWIPER DISCOUNT ===== */}
+        {/* ===== SWIPER Compact ===== */}
         <Swiper
           modules={[Autoplay]}
           loop
-          speed={900}
+          speed={850}
           autoplay={{
-            delay: 2600,
+            delay: 2400,
             disableOnInteraction: false,
             pauseOnMouseEnter: true,
           }}
-          spaceBetween={18}
-          style={{ padding: "4px 0 20px" }}
+          spaceBetween={16}
+          style={{ padding: "2px 0 14px" }}
           breakpoints={{
-            0: { slidesPerView: 1 },
-            576: { slidesPerView: 2 },
-            768: { slidesPerView: 3 },
-            1200: { slidesPerView: 4 },
+            0: { slidesPerView: 1.05 },
+            480: { slidesPerView: 1.6 },
+            768: { slidesPerView: 2.3 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
           }}
-          className="home-discount-swiper" // dùng chung CSS pill-top với Home
+          className="home-discount-swiper"
         >
           {discountedRooms.map((room, idx) => (
             <SwiperSlide key={`${room.id}-${idx}`} className="!h-auto">
@@ -125,7 +121,7 @@ export const Discount = () => {
                 hotelId={room.hotel?.id ?? room.hotel_id ?? null}
                 hotelName={room.hotel?.name ?? room.hotelName}
                 isAvailableToday={true}
-                linkToHotel={true}  // pill tên hotel dẫn tới trang hotel
+                linkToHotel={true}
               />
             </SwiperSlide>
           ))}

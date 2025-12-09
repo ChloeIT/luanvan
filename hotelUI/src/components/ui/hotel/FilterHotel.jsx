@@ -26,12 +26,12 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
   const [sortBy, setSortBy] = useState("recommended");      // SORT
   const [resultCount, setResultCount] = useState(0);
 
-  /* Style chung cho tất cả select */
+  /* Style chung cho tất cả select (thu nhỏ) */
   const baseSelectStyle = {
-    fontSize: 14,
+    fontSize: 13,
+    padding: "4px 0",
     boxShadow: "none",
-    textAlignLast: "center", // căn giữa item đang hiển thị
-    textAlign: "center",     // căn giữa dropdown khi mở
+    textAlignLast: "center",
   };
 
   /* ===== Lấy keyword + guests + auto detect city ===== */
@@ -151,7 +151,8 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
         case "ratingHigh":
           return bRating - aRating || aMin - bMin;
         default:
-          return bRating - aRating || aMin - bMin; // recommended
+          // recommended: rating cao trước, rồi giá thấp
+          return bRating - aRating || aMin - bMin;
       }
     });
 
@@ -179,22 +180,20 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
     setSortBy("recommended");
   };
 
-  /* Component một dropdown (giúp code gọn + căn giữa perfect) */
-  const FilterItem = ({ label, children, minWidth = 130 }) => (
+  /* Component 1 ô filter (label + select) */
+  const FilterItem = ({ label, children, minWidth = 115 }) => (
     <div
       className="d-flex flex-column align-items-center"
       style={{ minWidth }}
     >
       <span
         style={{
-          fontSize: 11,
+          fontSize: 10,
           textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          fontWeight: 700,
+          letterSpacing: "0.06em",
+          fontWeight: 600,
           color: "var(--muted)",
-          marginBottom: 2,
-          textAlign: "center",
-          width: "100%",
+          marginBottom: 1,
         }}
       >
         {label}
@@ -204,72 +203,111 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
   );
 
   return (
-    <div className="container-xxl py-5 destination">
+    <div className="container-xxl py-4">
       <div className="container">
-
-        {/* TITLE */}
+        {/* ===== HEADING: gạch – HOTEL – gạch giống DISCOUNT ===== */}
         <div className="text-center">
-          <h2 className="mb-1">Your hotel, your way!</h2>
-          <p className="text-muted mb-4">
+          <div
+            className="heading-line mx-auto"
+            style={{ "--heading-gap": "14px" }}
+          >
+            {/* 2 gạch bên trái */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "end",
+                gap: "6px",
+                marginRight: "2px",
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
+            </span>
+
+            <h6
+              className="heading-text text-3xl text-primary text-uppercase"
+              style={{ fontSize: "20px" }}
+            >
+              Hotel
+            </h6>
+
+            {/* 2 gạch bên phải */}
+            <span
+              style={{
+                display: "grid",
+                justifyItems: "start",
+                gap: "6px",
+                marginLeft: "2px",
+              }}
+            >
+              <span className="divider" style={{ "--w": "120px" }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
+            </span>
+          </div>
+
+          <h1 className="mt-1 mb-1" style={{ fontSize: "28px" }}>
+            Your hotel, your way!
+          </h1>
+
+          <p
+            className="text-muted"
+            style={{ fontSize: 13, marginBottom: 20 }}
+          >
             Showing <strong>{resultCount}</strong>{" "}
             {resultCount === 1 ? "result" : "results"}{" "}
             {keyword.trim() ? (
-              <>for <strong>“{keyword}”</strong></>
+              <>
+                for <strong>“{keyword}”</strong>
+              </>
             ) : (
               "for all hotels"
             )}
           </p>
         </div>
 
-        {/* FILTER BAR */}
+
+        {/* ===== FILTER BAR THU NHỎ ===== */}
         <div className="d-flex justify-content-center">
           <div
-            className="themed-surface shadow-sm px-4 py-3 rounded-pill d-flex align-items-center w-100 flex-wrap"
+            className="rounded-pill px-3 py-2 d-flex align-items-center flex-wrap shadow-sm"
             style={{
-              maxWidth: 1000,
-              gap: 24,
               background: "#fff",
+              maxWidth: 950,
+              gap: 18,
             }}
           >
             {/* ICON + Reset */}
-            <div className="d-flex align-items-center" style={{ gap: 12 }}>
+            <div className="d-flex align-items-center" style={{ gap: 8 }}>
               <div
                 className="d-inline-flex align-items-center justify-content-center rounded-circle"
                 style={{
-                  width: 40,
-                  height: 40,
-                  backgroundColor: "rgba(255, 195, 11, 0.12)",
+                  width: 34,
+                  height: 34,
+                  backgroundColor: "rgba(255, 195, 11, 0.15)",
                 }}
               >
-                <FaFilter style={{ color: "#FFC30B", fontSize: 18 }} />
+                <FaFilter style={{ color: "#FFC30B", fontSize: 15 }} />
               </div>
 
-              <div className="d-flex flex-column">
-                {/* <span
-                  style={{
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    fontWeight: 700,
-                    color: "var(--muted)",
-                  }}
-                >
-                  Filters
-                </span> */}
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="btn btn-link p-0"
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "var(--primary)",
-                    textDecoration: "none",
-                  }}
-                >
-                  All hotels
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="btn btn-link p-0"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "var(--primary)",
+                  textDecoration: "none",
+                }}
+              >
+                All hotels
+              </button>
             </div>
 
             {/* WHERE */}
@@ -280,9 +318,9 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
               >
-                <option style={{ textAlign: "center" }} value="">All places</option>
+                <option value="">All places</option>
                 {cityOptions.map((c) => (
-                  <option key={c} style={{ textAlign: "center" }} value={c}>
+                  <option key={c} value={c}>
                     {c}
                   </option>
                 ))}
@@ -290,7 +328,7 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
             </FilterItem>
 
             {/* GUESTS */}
-            <FilterItem label="Guests" minWidth={110}>
+            <FilterItem label="Guests">
               <select
                 className="form-select border-0 p-0"
                 style={baseSelectStyle}
@@ -298,7 +336,7 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
                 onChange={(e) => setGuests(Number(e.target.value))}
               >
                 {[1, 2, 3, 4, 5, 6].map((g) => (
-                  <option key={g} style={{ textAlign: "center" }} value={g}>
+                  <option key={g} value={g}>
                     {g} guest{g > 1 ? "s" : ""}
                   </option>
                 ))}
@@ -313,10 +351,10 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
                 value={priceRange}
                 onChange={(e) => setPriceRange(e.target.value)}
               >
-                <option style={{ textAlign: "center" }} value="all">All prices</option>
-                <option style={{ textAlign: "center" }} value="lt1">Below 100$</option>
-                <option style={{ textAlign: "center" }} value="1to2">100$ – 200$</option>
-                <option style={{ textAlign: "center" }} value="gt2">Above 200$</option>
+                <option value="all">All prices</option>
+                <option value="lt1">Below 100$</option>
+                <option value="1to2">100$ – 200$</option>
+                <option value="gt2">Above 200$</option>
               </select>
             </FilterItem>
 
@@ -328,33 +366,29 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
                 value={selectedRating}
                 onChange={(e) => setSelectedRating(Number(e.target.value))}
               >
-                <option style={{ textAlign: "center" }} value={0}>All ratings</option>
-                <option style={{ textAlign: "center" }} value={1}>1+ stars</option>
-                <option style={{ textAlign: "center" }} value={2}>2+ stars</option>
-                <option style={{ textAlign: "center" }} value={3}>3+ stars</option>
-                <option style={{ textAlign: "center" }} value={4}>4+ stars</option>
-                <option style={{ textAlign: "center" }} value={5}>5 stars</option>
+                <option value={0}>All ratings</option>
+                <option value={1}>1+ stars</option>
+                <option value={2}>2+ stars</option>
+                <option value={3}>3+ stars</option>
+                <option value={4}>4+ stars</option>
+                <option value={5}>5 stars</option>
               </select>
             </FilterItem>
 
-            {/* SORT – rộng hơn các ô khác */}
-            <FilterItem label="Sort" minWidth={180}>   {/* tăng minWidth từ 130 → 180 */}
+            {/* SORT */}
+            <FilterItem label="Sort" minWidth={165}>
               <select
                 className="form-select border-0 p-0"
-                style={{
-                  ...baseSelectStyle,
-                  width: "100%",         // select chiếm hết chiều ngang FilterItem
-                }}
+                style={{ ...baseSelectStyle, width: "100%" }}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
-                <option style={{ textAlign: "center" }} value="recommended">Recommended</option>
-                <option style={{ textAlign: "center" }} value="priceLow">Low price</option>
-                <option style={{ textAlign: "center" }} value="priceHigh">High price</option>
-                <option style={{ textAlign: "center" }} value="ratingHigh">Top rated</option>
+                <option value="recommended">Recommended</option>
+                <option value="priceLow">Low price</option>
+                <option value="priceHigh">High price</option>
+                <option value="ratingHigh">Top rated</option>
               </select>
             </FilterItem>
-
           </div>
         </div>
       </div>

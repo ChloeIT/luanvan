@@ -85,8 +85,8 @@ export const Home = () => {
       {/* ✅ HERO SEARCH BAR – đè lên banner từ Header */}
       <HeroContent />
 
-      {/* ===== ABOUT ===== */}
-      <div className="container-xxl py-5">
+      {/* ===== ABOUT (thu nhỏ) ===== */}
+      <div className="container-xxl py-4">
         <div className="container">
           <div className="row g-5 align-items-stretch">
             {/* LEFT: Image */}
@@ -96,16 +96,15 @@ export const Home = () => {
             >
               <div
                 className="position-relative w-100"
-                style={{ maxHeight: 520, marginRight: "-32px" }}
+                style={{ maxHeight: 480, marginRight: "-28px" }}
               >
                 <Image
                   src={about}
                   alt="About Image"
                   preview={false}
-                  // 👉 dùng style bình thường, bỏ imgStyle để tránh warning
                   style={{
                     width: "110%",
-                    height: 480,
+                    height: 440,
                     display: "block",
                     objectFit: "cover",
                     borderRadius: "6px",
@@ -122,11 +121,11 @@ export const Home = () => {
             >
               <div
                 className="w-100 h-100 d-flex flex-column justify-content-center"
-                style={{ minHeight: 380 }}
+                style={{ minHeight: 340 }}
               >
                 <div
                   className="heading-line"
-                  style={{ "--heading-gap": "12px" }}
+                  style={{ "--heading-gap": "10px" }}
                 >
                   <h6 className="heading-text text-2xl text-primary text-uppercase">
                     About Us
@@ -139,40 +138,45 @@ export const Home = () => {
                       marginLeft: "2px",
                     }}
                   >
-                    <span className="divider" style={{ "--w": "150px" }} />
+                    <span className="divider" style={{ "--w": "140px" }} />
                     <span
                       className="divider"
-                      style={{ "--w": "100px", "--alpha": 0.6 }}
+                      style={{ "--w": "90px", "--alpha": 0.6 }}
                     />
                   </span>
                 </div>
 
-                <h1 className="mb-4">
-                  Welcome to <span className="text-primary">SB Hotel</span>
+                <h1 className="mb-3">
+                  Welcome to{" "}
+                  <span className="text-primary">SB Hotel</span>
                 </h1>
 
                 {user ? (
-                  <p>
+                  <p className="mb-2">
                     Hello,{" "}
                     <span
                       style={{ fontWeight: 900, color: "var(--primary)" }}
                     >
                       {user?.fullName}
                     </span>
+                    .
                   </p>
                 ) : (
-                  <Link to="/login">
-                    Please log in to see your information.
-                  </Link>
+                  <p className="mb-2">
+                    <Link to="/login">
+                      Please log in to see your information.
+                    </Link>
+                  </p>
                 )}
 
-                <p className="mb-4">
+                <p className="mb-3">
                   Welcome to our hotel search and booking page!
                 </p>
-                <p className="mb-4">
-                  Searching and booking hotels has never been easier. With a
-                  convenient booking system and extensive hotel database, we’ll
-                  help you find the ideal destination for all your trips.
+                <p className="mb-3">
+                  Searching and booking hotels has never been easier.
+                  With a convenient booking system and extensive hotel
+                  database, we’ll help you find the ideal destination
+                  for all your trips.
                 </p>
 
                 <div className="row gy-2 gx-4 mb-0">
@@ -185,7 +189,7 @@ export const Home = () => {
                     "Upgrade membership",
                   ].map((item, i) => (
                     <div className="col-sm-6" key={i}>
-                      <p className="mb-0 d-flex align-items-start fw-bold">
+                      <p className="mb-1 d-flex align-items-start fw-bold">
                         <FaArrowRight
                           className="mx-2"
                           style={{ color: "var(--primary)" }}
@@ -201,8 +205,8 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* ===== DISCOUNT ===== */}
-      <div className="container-xxl py-5 destination">
+      {/* ===== DISCOUNT (thu nhỏ giống các trang khác) ===== */}
+      <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
             <div
@@ -224,7 +228,10 @@ export const Home = () => {
                 />
               </span>
 
-              <h6 className="heading-text text-3xl text-primary text-uppercase">
+              <h6
+                className="heading-text text-primary text-uppercase"
+                style={{ fontSize: "20px" }}
+              >
                 Discount
               </h6>
 
@@ -244,11 +251,13 @@ export const Home = () => {
               </span>
             </div>
 
-            <h1 className="mb-5">Save big today!</h1>
+            <h1 className="mb-4" style={{ fontSize: "28px" }}>
+              Save big today!
+            </h1>
           </div>
 
           {discountedRooms.length === 0 ? (
-            <p className="text-center text-muted">
+            <p className="text-center text-muted mb-0">
               Currently there are no discount rooms.
             </p>
           ) : (
@@ -262,7 +271,7 @@ export const Home = () => {
                 pauseOnMouseEnter: true,
               }}
               spaceBetween={18}
-              style={{ padding: "4px 0 20px" }}
+              style={{ padding: "4px 0 16px" }}
               breakpoints={{
                 0: { slidesPerView: 1 },
                 576: { slidesPerView: 2 },
@@ -272,7 +281,10 @@ export const Home = () => {
               className="home-discount-swiper"
             >
               {discountedRooms.map((room, idx) => (
-                <SwiperSlide key={`${room.id}-${idx}`} className="!h-auto">
+                <SwiperSlide
+                  key={`${room.id}-${idx}`}
+                  className="!h-auto"
+                >
                   <RoomCard
                     room={room}
                     hotelId={room.hotel?.id ?? room.hotel_id ?? null}
@@ -287,8 +299,8 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* ===== HOTEL (POPULAR) ===== */}
-      <div className="container-xxl py-5 destination">
+      {/* ===== HOTEL (POPULAR) – thu nhỏ + nút Show more ===== */}
+      <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
             <div
@@ -310,7 +322,10 @@ export const Home = () => {
                 />
               </span>
 
-              <h6 className="heading-text text-3xl text-primary text-uppercase">
+              <h6
+                className="heading-text text-primary text-uppercase"
+                style={{ fontSize: "20px" }}
+              >
                 Hotel
               </h6>
 
@@ -330,11 +345,13 @@ export const Home = () => {
               </span>
             </div>
 
-            <h1 className="mb-5">Popular Hotel!</h1>
+            <h1 className="mb-4" style={{ fontSize: "28px" }}>
+              Popular Hotel!
+            </h1>
           </div>
 
           {popularHotels.length === 0 ? (
-            <p className="text-center text-muted">
+            <p className="text-center text-muted mb-0">
               Popular hotels will appear here when ratings are available.
             </p>
           ) : (

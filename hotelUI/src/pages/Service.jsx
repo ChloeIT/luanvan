@@ -26,10 +26,11 @@ export const Service = () => {
       });
   }, [user]);
 
+  // heading-line pair (nhỏ giống các page khác)
   const pairStyle = {
-    "--pair-gap": "4px",
-    "--pair-mt": "14px",
-    "--pair-mb": "14px",
+    "--pair-gap": "3px",
+    "--pair-mt": "10px",
+    "--pair-mb": "10px",
   };
 
   // ===== TÍNH PROGRESS TỚI TIER TIẾP THEO =====
@@ -47,7 +48,7 @@ export const Service = () => {
 
   const services = [
     {
-      icon: <AiOutlineGlobal size={50} color="white" />,
+      icon: <AiOutlineGlobal size={40} color="white" />,
       title: "Loyalty program",
       desc: (
         <>
@@ -62,7 +63,7 @@ export const Service = () => {
       delay: "0.1s",
     },
     {
-      icon: <FaHotel size={50} color="white" />,
+      icon: <FaHotel size={40} color="white" />,
       title: "Accumulate points",
       desc: (
         <>
@@ -71,15 +72,15 @@ export const Service = () => {
             from the room rate.
           </p>
           <p>
-            Under 10 points: <b>Bronze</b> · 10–99: <b>Silver</b> · From 100:
-            <b> Gold</b> with special privileges and discounts.
+            Under 10 points: <b>Bronze</b> · 10–99: <b>Silver</b> · From 100:{" "}
+            <b>Gold</b> with special privileges and discounts.
           </p>
         </>
       ),
       delay: "0.3s",
     },
     {
-      icon: <IoPersonSharp size={50} color="white" />,
+      icon: <IoPersonSharp size={40} color="white" />,
       title: "24/7 Customer Support",
       desc: (
         <>
@@ -93,7 +94,7 @@ export const Service = () => {
       delay: "0.5s",
     },
     {
-      icon: <IoSettingsSharp size={50} color="white" />,
+      icon: <IoSettingsSharp size={40} color="white" />,
       title: "Promotions and offers",
       desc: (
         <p>
@@ -106,17 +107,20 @@ export const Service = () => {
   ];
 
   return (
-    <div className="container-xxl py-5">
+    <div className="container-xxl py-4">
       <div className="container">
         {/* ====== LOYALTY CARD – DỮ LIỆU THẬT ====== */}
         {user && (
           <div className="row justify-content-center mb-4">
             <div className="col-lg-8">
-              <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-4 p-md-5 text-center shadow-sm">
-                <h3 className="mb-2 text-xl fw-semibold text-primary text-uppercase">
-                  YOUR LOYALTY PROGRAM
+              <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-4 p-md-4 text-center shadow-sm">
+                <h3
+                  className="mb-2 fw-semibold text-primary text-uppercase"
+                  style={{ fontSize: "20px" }}
+                >
+                  Your Loyalty Program
                 </h3>
-                <p className="mb-1">
+                <p className="mb-1" style={{ fontSize: "14px" }}>
                   Hello{" "}
                   <span className="fw-bold">
                     {user.fullName || user.username}
@@ -132,7 +136,6 @@ export const Service = () => {
                   .
                 </p>
 
-                {/* Progress tới tier tiếp theo */}
                 <p className="mb-1 small text-muted">{progressText}</p>
 
                 <p className="mb-0 small text-muted">
@@ -142,11 +145,11 @@ export const Service = () => {
                   member benefits with more rewards and special discounts.
                 </p>
 
-                {/* Nút dẫn tới MyBookings */}
                 <div className="mt-3">
                   <Link
                     to="/my-bookings"
                     className="btn btn-primary rounded-pill px-4 py-2"
+                    style={{ fontSize: "14px" }}
                   >
                     View my bookings
                   </Link>
@@ -157,29 +160,32 @@ export const Service = () => {
         )}
 
         {/* ====== TIÊU ĐỀ ====== */}
-        <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
+        <div className="text-center">
           <div
             className="heading-line mx-auto"
-            style={{ "--heading-gap": "14px" }}
+            style={{ "--heading-gap": "10px" }}
           >
             {/* 2 gạch bên trái */}
             <span
               style={{
                 display: "grid",
                 justifyItems: "end",
-                gap: "6px",
+                gap: "4px",
                 marginRight: "2px",
               }}
             >
-              <span className="divider" style={{ "--w": "120px" }} />
+              <span className="divider" style={{ "--w": "100px" }} />
               <span
                 className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
+                style={{ "--w": "50px", "--alpha": 0.45 }}
               />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary text-uppercase">
-              SERVICES
+            <h6
+              className="heading-text text-primary text-uppercase"
+              style={{ fontSize: "18px" }}
+            >
+              Services
             </h6>
 
             {/* 2 gạch bên phải */}
@@ -187,39 +193,41 @@ export const Service = () => {
               style={{
                 display: "grid",
                 justifyItems: "start",
-                gap: "6px",
+                gap: "4px",
                 marginLeft: "2px",
               }}
             >
-              <span className="divider" style={{ "--w": "120px" }} />
+              <span className="divider" style={{ "--w": "100px" }} />
               <span
                 className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
+                style={{ "--w": "50px", "--alpha": 0.45 }}
               />
             </span>
           </div>
-          <h1 className="mb-5">Our Services</h1>
+          <h1 className="mb-4" style={{ fontSize: "28px" }}>
+            Our Services
+          </h1>
         </div>
 
         {/* ====== 4 Ô DỊCH VỤ ====== */}
-        <div className="row gy-5 gx-4 justify-content-center align-items-stretch">
+        <div className="row gy-4 gx-3 justify-content-center align-items-stretch">
           {services.map((s, i) => (
             <div
               key={i}
-              className="col-lg-3 col-sm-6 text-center pt-4 wow fadeInUp d-flex"
+              className="col-lg-3 col-sm-6 text-center pt-3 d-flex"
               data-wow-delay={s.delay}
             >
-              <div className="position-relative border border-primary pt-5 pb-4 px-4 w-100 h-100 d-flex flex-column">
+              <div className="position-relative border border-primary pt-5 pb-3 px-3 w-100 h-100 d-flex flex-column">
                 <div
                   className="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle position-absolute top-0 start-50 translate-middle shadow"
-                  style={{ width: "100px", height: "100px" }}
+                  style={{ width: "80px", height: "80px" }}
                 >
                   {s.icon}
                 </div>
 
                 <h5
-                  className="mt-4 mb-0 d-flex align-items-center justify-content-center text-center"
-                  style={{ minHeight: "60px" }}
+                  className="mt-3 mb-1 d-flex align-items-center justify-content-center text-center"
+                  style={{ minHeight: "52px", fontSize: "17px" }}
                 >
                   {s.title}
                 </h5>
@@ -235,7 +243,9 @@ export const Service = () => {
                   />
                 </div>
 
-                <div className="flex-grow-1">{s.desc}</div>
+                <div className="flex-grow-1" style={{ fontSize: "14px" }}>
+                  {s.desc}
+                </div>
               </div>
             </div>
           ))}

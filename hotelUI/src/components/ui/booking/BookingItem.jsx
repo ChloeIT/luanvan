@@ -1,6 +1,6 @@
+// src/components/ui/booking/BookingItem.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
-import { Image } from "antd";
 import { formatDateTime } from "./../../../utils/dateService";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -17,7 +17,6 @@ export const BookingItem = ({ item }) => {
   const [checkIn, setCheckIn] = useState(todayDate);
   const [checkOut, setCheckOut] = useState(tomorrowDate);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [hotelCardColor, setHotelCardColor] = useState("#ffffb0"); // fallback
 
   const navigate = useNavigate();
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
@@ -67,15 +66,6 @@ export const BookingItem = ({ item }) => {
     }));
   }, [checkIn, checkOut, item, hotelName, hotelAddress]);
 
-  // Lấy màu vàng từ HotelCard
-  useEffect(() => {
-    const hotelEl = document.querySelector(".hotel-card-body");
-    if (hotelEl) {
-      const bg = getComputedStyle(hotelEl).backgroundColor;
-      if (bg) setHotelCardColor(bg);
-    }
-  }, []);
-
   const bookThisPlace = () => {
     localStorage.setItem("bookData", JSON.stringify(data));
     navigate("checkout");
@@ -95,51 +85,82 @@ export const BookingItem = ({ item }) => {
     color: "#111827",
     border: "1px solid #e5e7eb",
     borderRadius: 12,
-    padding: "10px 12px",
+    padding: "8px 10px",
     lineHeight: 1.2,
     outline: "none",
     WebkitAppearance: "auto",
     appearance: "auto",
+    fontSize: "14px",
   };
 
   return (
-    <div className="my-3">
-      {/* ===== Heading ===== */}
-      <div className="text-center mt-6 mb-4">
-        <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
-          <span style={{ display: "grid", justifyItems: "end", gap: "6px", marginRight: "2px" }}>
-            <span className="divider" style={{ "--w": "120px" }} />
-            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
+    <div className="my-4">
+      {/* ===== Heading: thu nhỏ giống Contact/Booking ===== */}
+      <div className="text-center mt-4 mb-4">
+        <div
+          className="heading-line mx-auto"
+          style={{ "--heading-gap": "10px" }}
+        >
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "end",
+              gap: "4px",
+              marginRight: "2px",
+            }}
+          >
+            <span className="divider" style={{ "--w": "100px" }} />
+            <span
+              className="divider"
+              style={{ "--w": "50px", "--alpha": 0.45 }}
+            />
           </span>
 
-          <h6 className="heading-text text-3xl text-primary text-uppercase">Booking</h6>
+          <h6
+            className="heading-text text-primary text-uppercase"
+            style={{ fontSize: "18px" }}
+          >
+            Booking
+          </h6>
 
-          <span style={{ display: "grid", justifyItems: "start", gap: "6px", marginLeft: "2px" }}>
-            <span className="divider" style={{ "--w": "120px" }} />
-            <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
+          <span
+            style={{
+              display: "grid",
+              justifyItems: "start",
+              gap: "4px",
+              marginLeft: "2px",
+            }}
+          >
+            <span className="divider" style={{ "--w": "100px" }} />
+            <span
+              className="divider"
+              style={{ "--w": "50px", "--alpha": 0.45 }}
+            />
           </span>
         </div>
 
-        <h1 className="mb-5">Room Information</h1>
+        <h1 className="mb-4" style={{ fontSize: "28px" }}>
+          Room Information
+        </h1>
       </div>
 
       {/* ===== Hình + Thông tin ===== */}
       <div className="container-xxl px-3 md:px-4">
         <div
-          className="flex flex-col md:flex-row justify-center gap-6 w-full"
-          style={{ alignItems: "stretch", minHeight: "320px" }}
+          className="flex flex-col md:flex-row justify-center gap-5 w-full"
+          style={{ alignItems: "stretch", minHeight: "280px" }}
         >
           {/* === ẢNH PHÒNG === */}
           <div
-            className="flex"
-            style={{ flexBasis: "35%", maxWidth: "35%", flexShrink: 0 }}
+            className="flex mb-3 md:mb-0"
+            style={{ flexBasis: "34%", maxWidth: "34%", flexShrink: 0 }}
           >
             <div
               style={{
                 flex: 1,
-                borderRadius: "18px",
+                borderRadius: "16px",
                 overflow: "hidden",
-                boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+                boxShadow: "0 5px 16px rgba(0,0,0,0.16)",
               }}
             >
               <img
@@ -155,49 +176,64 @@ export const BookingItem = ({ item }) => {
             </div>
           </div>
 
-          {/* === THÔNG TIN PHÒNG === */}
+          {/* === THÔNG TIN PHÒNG (compact) === */}
           <div
-            className="flex items-center justify-center rounded-2xl p-8"
+            className="flex items-center justify-center rounded-2xl p-6"
             style={{
-              flexBasis: "65%",
-              maxWidth: "65%",
+              flexBasis: "66%",
+              maxWidth: "66%",
               background: "var(--card-yellow)",
             }}
           >
             <div
-              className="text-lg font-semibold leading-relaxed"
+              className="font-medium"
               style={{
                 width: "100%",
-                lineHeight: "1.9",
+                fontSize: "15px",
+                lineHeight: 1.8,
                 display: "grid",
-                gridTemplateColumns: "160px 1fr",
+                gridTemplateColumns: "150px 1fr",
                 alignItems: "center",
-                rowGap: "10px",
+                rowGap: "8px",
                 columnGap: "8px",
               }}
             >
-              <span className="text-[#FFC30B] text-left text-xl">Hotel name:</span>
-              <span className="text-primary text-2xl font-extrabold text-left">
+              <span className="text-[#FFC30B] text-left text-base">
+                Hotel name:
+              </span>
+              <span className="text-primary text-xl font-extrabold text-left">
                 {hotelName}
               </span>
 
-              <span className="text-[#FFC30B] text-left text-xl">Room name:</span>
+              <span className="text-[#FFC30B] text-left text-base">
+                Room name:
+              </span>
               <span className="text-gray-700 text-left">{item.name}</span>
 
-              <span className="text-[#FFC30B] text-left text-xl">Address:</span>
+              <span className="text-[#FFC30B] text-left text-base">
+                Address:
+              </span>
               <span className="text-gray-700 text-left">{hotelAddress}</span>
 
-              <span className="text-[#FFC30B] text-left text-xl">Capacity:</span>
-              <span className="text-gray-700 text-left">{item.capacity} people</span>
+              <span className="text-[#FFC30B] text-left text-base">
+                Capacity:
+              </span>
+              <span className="text-gray-700 text-left">
+                {item.capacity} people
+              </span>
 
-              <span className="text-[#FFC30B] text-left text-xl">Price:</span>
-              <span className="text-gray-700 text-left">{item.price} $ / night</span>
+              <span className="text-[#FFC30B] text-left text-base">
+                Price:
+              </span>
+              <span className="text-gray-700 text-left">
+                {item.price} $ / night
+              </span>
             </div>
           </div>
         </div>
 
-        {/* ===== Ô thanh toán (inline-only) ===== */}
-        <div className="mt-6" style={{ colorScheme: "light" }}>
+        {/* ===== Ô thanh toán ===== */}
+        <div className="mt-5" style={{ colorScheme: "light" }}>
           <div className="bg-white shadow rounded-2xl p-4 md:p-5">
             {/* HÀNG 1: Ngày vào/ra */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -217,7 +253,6 @@ export const BookingItem = ({ item }) => {
                   onChange={(e) => {
                     const v = e.target.value;
                     setCheckIn(v);
-                    // nếu checkout <= checkin → auto set checkOut = checkIn + 1
                     const next = new Date(v);
                     next.setDate(next.getDate() + 1);
                     const nextStr = next.toISOString().split("T")[0];
@@ -293,16 +328,16 @@ export const BookingItem = ({ item }) => {
               <button
                 type="button"
                 onClick={bookThisPlace}
-                className="btn btn-primary mt-4"
+                className="btn btn-primary"
                 style={{
-                  borderRadius: 9999,        // pill
-                  padding: "10px 18px",      // tăng đệm cho đẹp
-                  boxShadow: "0 6px 18px rgba(0,0,0,.12)"
+                  borderRadius: 9999,
+                  padding: "8px 18px",
+                  boxShadow: "0 5px 16px rgba(0,0,0,.12)",
+                  fontSize: "15px",
                 }}
               >
                 Book this place
               </button>
-
             </div>
           </div>
         </div>
