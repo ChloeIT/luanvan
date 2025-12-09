@@ -41,6 +41,14 @@ public class User {
     @Temporal(TemporalType.DATE)
     private Date birthDate;
 
+    // ===== LOYALTY PROGRAM =====
+    @Column(name = "loyalty_points")
+    private Integer loyaltyPoints = 0;      // tương ứng loyalty_points INT DEFAULT 0
+
+    @Column(name = "loyalty_tier")
+    private String loyaltyTier = "BRONZE";  // tương ứng loyalty_tier VARCHAR(20) DEFAULT 'BRONZE'
+    // ============================
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Booking> bookings;
@@ -146,22 +154,6 @@ public class User {
         this.image = image;
     }
 
-    public List<Booking> getBookings() {
-        return bookings;
-    }
-
-    public void setBookings(List<Booking> bookings) {
-        this.bookings = bookings;
-    }
-
-    public Favorite getFavorite() {
-        return favorite;
-    }
-
-    public void setFavorite(Favorite favorite) {
-        this.favorite = favorite;
-    }
-
     public String getAddress() {
         return address;
     }
@@ -186,12 +178,20 @@ public class User {
         this.birthDate = birthDate;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public List<Booking> getBookings() {
+        return bookings;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
+    }
+
+    public Favorite getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Favorite favorite) {
+        this.favorite = favorite;
     }
 
     public List<Hotel> getOwnedHotels() {
@@ -200,5 +200,30 @@ public class User {
 
     public void setOwnedHotels(List<Hotel> ownedHotels) {
         this.ownedHotels = ownedHotels;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    // ===== LOYALTY getter / setter =====
+    public Integer getLoyaltyPoints() {
+        return loyaltyPoints;
+    }
+
+    public void setLoyaltyPoints(Integer loyaltyPoints) {
+        this.loyaltyPoints = loyaltyPoints;
+    }
+
+    public String getLoyaltyTier() {
+        return loyaltyTier;
+    }
+
+    public void setLoyaltyTier(String loyaltyTier) {
+        this.loyaltyTier = loyaltyTier;
     }
 }

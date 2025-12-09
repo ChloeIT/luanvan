@@ -7,6 +7,7 @@ import com.java.hotel.model.User;
 import com.java.hotel.payload.request.BookingRequest;
 import com.java.hotel.repository.BookingRepository;
 import com.java.hotel.repository.RoomRepository;
+import com.java.hotel.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,10 @@ public class BookingService {
     @Autowired
     private EmailService emailService;
 
+    // Dùng để lưu loyalty cho user
+    @Autowired
+    private UserRepository userRepository;
+
     // ==================================================
     // ===============   CREATE BOOKING   ===============
     // ==================================================
@@ -40,6 +45,7 @@ public class BookingService {
      *  - Load Room từ roomIds
      *  - Check trùng ngày cho từng room
      *  - Sau khi lưu thành công -> Gửi email xác nhận (KHÁCH + OWNER)
+     *  - Cộng điểm loyalty cho user nếu booking đã thanh toán
      */
     @Transactional
     public Booking createBooking(BookingRequest request)
@@ -98,6 +104,21 @@ public class BookingService {
 
         // 7. Lưu vào DB
         Booking saved = bookingRepository.save(booking);
+
+        // 7.1 LOYALTY PROGRAM: cộng điểm cho user nếu đã thanh toán
+        // (Nếu muốn cộng điểm ngay khi tạo booking, bỏ điều kiện saved.isPayment())
+        if (currentUser != null && saved.isPayment()) {
+            float totalPrice = saved.getTotalPrice();           // total_price trong DB là float
+            int pointsEarned = calculatePoints(totalPrice);     // tính điểm từ tổng tiền
+
+            Integer oldPoints = Optional.ofNullable(currentUser.getLoyaltyPoints()).orElse(0);
+            int newPoints = oldPoints + pointsEarned;
+
+            currentUser.setLoyaltyPoints(newPoints);
+            currentUser.setLoyaltyTier(calculateTier(newPoints));
+
+            userRepository.save(currentUser);
+        }
 
         // 8. Gửi email (KHÔNG được làm hỏng booking nếu email lỗi)
         try {
@@ -312,5 +333,29 @@ public class BookingService {
 
         Booking saved = bookingRepository.save(booking);
         return saved.getReview();
+    }
+
+    // ==================================================
+    // ============= LOYALTY HELPER METHODS =============
+    // ==================================================
+
+    /**
+     * Rule: 1 điểm cho mỗi 10 đơn vị tiền (ví dụ 10.000 VND).
+     */
+    private int calculatePoints(float totalPrice) {
+        if (totalPrice <= 0) return 0;
+        return (int) (totalPrice / 10f);   // 🔥 chia 10
+    }
+
+    /**
+     * Tier:
+     *  - < 10   điểm  -> BRONZE
+     *  - 10–99  điểm  -> SILVER
+     *  - >= 100 điểm  -> GOLD
+     */
+    private String calculateTier(int points) {
+        if (points >= 100) return "GOLD";
+        if (points >= 10)  return "SILVER";
+        return "BRONZE";
     }
 }
