@@ -1,15 +1,49 @@
-// src/components/ui/service/Service.jsx
-import React from "react";
+// src/pages/Service.jsx
+import React, { useEffect, useState } from "react";
 import { AiOutlineGlobal } from "react-icons/ai";
 import { FaHotel } from "react-icons/fa";
 import { IoPersonSharp, IoSettingsSharp } from "react-icons/io5";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { loyaltyService } from "../services/loyalty";
 
 export const Service = () => {
+  const { user } = useSelector((state) => state.auth || {});
+  const [loyalty, setLoyalty] = useState({ points: 0, tier: "BRONZE" });
+
+  useEffect(() => {
+    if (!user) return;
+    loyaltyService
+      .getMyLoyalty()
+      .then((data) => {
+        setLoyalty({
+          points: data.points ?? 0,
+          tier: data.tier ?? "BRONZE",
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to load loyalty", err);
+      });
+  }, [user]);
+
   const pairStyle = {
-    "--pair-gap": "4px",   // khoảng cách giữa 2 gạch
+    "--pair-gap": "4px",
     "--pair-mt": "14px",
     "--pair-mb": "14px",
   };
+
+  // ===== TÍNH PROGRESS TỚI TIER TIẾP THEO =====
+  let progressText = "";
+  if (loyalty.points >= 100) {
+    progressText =
+      "You are already at the highest tier GOLD. Thank you for being a loyal guest of SB Hotel!";
+  } else if (loyalty.points >= 10) {
+    const need = 100 - loyalty.points;
+    progressText = `You need ${need} more points to reach GOLD tier.`;
+  } else {
+    const need = Math.max(0, 10 - loyalty.points);
+    progressText = `You need ${need} more points to reach SILVER tier.`;
+  }
 
   const services = [
     {
@@ -17,10 +51,11 @@ export const Service = () => {
       title: "Loyalty program",
       desc: (
         <>
-          <p>Thank you for accompanying SB Hotel!</p>
+          <p>Thank you for choosing SB Hotel!</p>
           <p>
-            To thank customers who regularly use our services, we launch a
-            Loyalty program with many attractive incentives.
+            Our loyalty program rewards you with BRONZE, SILVER and GOLD tiers
+            based on your total points, giving you more benefits the more you
+            stay with us.
           </p>
         </>
       ),
@@ -32,10 +67,13 @@ export const Service = () => {
       desc: (
         <>
           <p>
-            Earn points every time you make a reservation, redeem attractive
-            gifts!
+            Every completed, paid booking earns you loyalty points calculated
+            from the room rate.
           </p>
-          <p>The higher the level, the greater the benefit!</p>
+          <p>
+            Under 10 points: <b>Bronze</b> · 10–99: <b>Silver</b> · From 100:
+            <b> Gold</b> with special privileges and discounts.
+          </p>
         </>
       ),
       delay: "0.3s",
@@ -46,10 +84,10 @@ export const Service = () => {
       desc: (
         <>
           <p>
-            Our professional and enthusiastic support staff will answer all your
-            questions and help you book a hotel room quickly and easily.
+            Our professional and enthusiastic support team is ready to assist
+            you anytime, from booking to check-out.
           </p>
-          <p>Please contact us today!</p>
+          <p>Please contact us whenever you need help!</p>
         </>
       ),
       delay: "0.5s",
@@ -58,7 +96,10 @@ export const Service = () => {
       icon: <IoSettingsSharp size={50} color="white" />,
       title: "Promotions and offers",
       desc: (
-        <p>Brilliant promotions - Surprisingly cheap prices!</p>
+        <p>
+          Enjoy brilliant promotions and surprisingly good prices, with extra
+          offers unlocked at higher loyalty tiers.
+        </p>
       ),
       delay: "0.7s",
     },
@@ -67,8 +108,60 @@ export const Service = () => {
   return (
     <div className="container-xxl py-5">
       <div className="container">
+        {/* ====== LOYALTY CARD – DỮ LIỆU THẬT ====== */}
+        {user && (
+          <div className="row justify-content-center mb-4">
+            <div className="col-lg-8">
+              <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-4 p-md-5 text-center shadow-sm">
+                <h3 className="mb-2 text-xl fw-semibold text-primary text-uppercase">
+                  YOUR LOYALTY PROGRAM
+                </h3>
+                <p className="mb-1">
+                  Hello{" "}
+                  <span className="fw-bold">
+                    {user.fullName || user.username}
+                  </span>
+                  , you currently have{" "}
+                  <span className="fw-bold text-primary">
+                    {loyalty.points} points
+                  </span>{" "}
+                  – tier{" "}
+                  <span className="fw-bold text-uppercase">
+                    {loyalty.tier}
+                  </span>
+                  .
+                </p>
+
+                {/* Progress tới tier tiếp theo */}
+                <p className="mb-1 small text-muted">{progressText}</p>
+
+                <p className="mb-0 small text-muted">
+                  Each completed, paid booking will earn you loyalty points
+                  based on the room rate. Under 10 points you are BRONZE, from
+                  10 to 99 you become SILVER, and from 100 points you enjoy GOLD
+                  member benefits with more rewards and special discounts.
+                </p>
+
+                {/* Nút dẫn tới MyBookings */}
+                <div className="mt-3">
+                  <Link
+                    to="/my-bookings"
+                    className="btn btn-primary rounded-pill px-4 py-2"
+                  >
+                    View my bookings
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== TIÊU ĐỀ ====== */}
         <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-          <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+          <div
+            className="heading-line mx-auto"
+            style={{ "--heading-gap": "14px" }}
+          >
             {/* 2 gạch bên trái */}
             <span
               style={{
@@ -79,10 +172,15 @@ export const Service = () => {
               }}
             >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary text-uppercase">Services</h6>
+            <h6 className="heading-text text-3xl text-primary text-uppercase">
+              SERVICES
+            </h6>
 
             {/* 2 gạch bên phải */}
             <span
@@ -94,13 +192,16 @@ export const Service = () => {
               }}
             >
               <span className="divider" style={{ "--w": "120px" }} />
-              <span className="divider" style={{ "--w": "60px", "--alpha": .45 }} />
+              <span
+                className="divider"
+                style={{ "--w": "60px", "--alpha": 0.45 }}
+              />
             </span>
           </div>
           <h1 className="mb-5">Our Services</h1>
         </div>
 
-        {/* 4 ô tương tự 3 Easy Steps */}
+        {/* ====== 4 Ô DỊCH VỤ ====== */}
         <div className="row gy-5 gx-4 justify-content-center align-items-stretch">
           {services.map((s, i) => (
             <div
@@ -122,11 +223,17 @@ export const Service = () => {
                 >
                   {s.title}
                 </h5>
-                <div className="divider-pair" style={pairStyle}>
-                  <span className="divider divider--muted" style={{ "--w": "25%", "--h": "2px" }} />
-                  <span className="divider divider--muted" style={{ "--w": "50%", "--h": "2px" }} />
-                </div>
 
+                <div className="divider-pair" style={pairStyle}>
+                  <span
+                    className="divider divider--muted"
+                    style={{ "--w": "25%", "--h": "2px" }}
+                  />
+                  <span
+                    className="divider divider--muted"
+                    style={{ "--w": "50%", "--h": "2px" }}
+                  />
+                </div>
 
                 <div className="flex-grow-1">{s.desc}</div>
               </div>

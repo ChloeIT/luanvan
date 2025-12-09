@@ -5,3 +5,4 @@ export * from "./room";
 export * from "./booking";
 export * from "./favorite";
 export * from "./map";
+export * from "./loyalty";
