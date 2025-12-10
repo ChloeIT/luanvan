@@ -18,6 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// 👇 cần import thêm
+import org.springframework.http.HttpMethod;
+
 @Configuration
 @EnableMethodSecurity // dùng @PreAuthorize ở controller
 public class WebSecurityConfig {
@@ -82,12 +85,15 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/test/**",
-                                "/api/test-mail/**",          // 👈 mở cho API test mail
+                                "/api/test-mail/**",
                                 "/api/hotel/all",
                                 "/api/room/all",
                                 "/api/booking/create",
                                 "/api/room/hotel/*/available"
                         ).permitAll()
+
+                        // Cho phép GUEST gọi POST /api/contact (form Contact Us)
+                        .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
 
                         // ====== KHU VỰC MOD / ADMIN ======
                         .requestMatchers("/api/mod/**")

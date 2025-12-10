@@ -1,6 +1,7 @@
 package com.java.hotel.service;
 
 import com.java.hotel.model.Booking;
+import com.java.hotel.model.Contact;
 import com.java.hotel.model.Room;
 import com.java.hotel.model.User;
 import jakarta.mail.MessagingException;
@@ -306,5 +307,50 @@ public class EmailService {
             return "status-paid";
         }
         return "status-unpaid";
+    }
+
+    // 8. EMAIL CHO CONTACT (ADMIN + KHÁCH) – chạy async
+    @Async
+    public void sendContactEmails(Contact contact, String adminEmail) {
+        if (contact == null) return;
+
+        // 8.1. Gửi cho ADMIN
+        if (adminEmail != null && !adminEmail.isBlank()) {
+            String subjectAdmin = "📩 New Contact from " + contact.getName();
+
+            StringBuilder bodyAdmin = new StringBuilder();
+            bodyAdmin.append("You have received a new contact message from SB Hotels.\n\n")
+                    .append("Name: ").append(contact.getName()).append("\n")
+                    .append("Email: ").append(contact.getEmail()).append("\n");
+
+            if (contact.getTopic() != null && !contact.getTopic().isBlank()) {
+                bodyAdmin.append("Topic: ").append(contact.getTopic()).append("\n");
+            }
+            if (contact.getSubject() != null && !contact.getSubject().isBlank()) {
+                bodyAdmin.append("Subject: ").append(contact.getSubject()).append("\n");
+            }
+
+            bodyAdmin.append("\nMessage:\n")
+                    .append(contact.getMessage()).append("\n\n")
+                    .append("Status: ").append(contact.getStatus()).append("\n")
+                    .append("Created at: ").append(contact.getCreatedAt());
+
+            sendSimpleEmail(adminEmail, subjectAdmin, bodyAdmin.toString());
+        }
+
+        // 8.2. Gửi auto-reply cho KHÁCH
+        if (contact.getEmail() != null && !contact.getEmail().isBlank()) {
+            String subjectUser = "We received your message - SB Hotels";
+
+            String bodyUser = "Hi " + contact.getName() + ",\n\n" +
+                    "Thank you for contacting SB Hotels.\n" +
+                    "We have received your message and our support team will get back to you as soon as possible.\n\n" +
+                    "Your message:\n" +
+                    contact.getMessage() + "\n\n" +
+                    "Best regards,\n" +
+                    "SB Hotels Support Team";
+
+            sendSimpleEmail(contact.getEmail(), subjectUser, bodyUser);
+        }
     }
 }
