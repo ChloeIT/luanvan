@@ -6,3 +6,4 @@ export * from "./booking";
 export * from "./favorite";
 export * from "./map";
 export * from "./loyalty";
+export * from "./newsletter";

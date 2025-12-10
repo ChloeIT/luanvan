@@ -1,5 +1,5 @@
 // src/components/ui/Footer.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   FaMapMarkerAlt,
   FaPhoneAlt,
@@ -11,12 +11,50 @@ import {
 } from "react-icons/fa";
 import { IoMdArrowDropright } from "react-icons/io";
 import { NavLink } from "react-router-dom";
+import { message } from "antd";
+import { newsletterService } from "@/services/newsletter";
 
 import { ga1, ga2, ga3, ga4, ga5, ga6 } from "../../assets";
 
 const gas = [ga1, ga2, ga3, ga4, ga5, ga6];
 
 export const Footer = () => {
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleNewsletterSubmit = async () => {
+    const email = newsletterEmail.trim();
+
+    if (!email) {
+      message.warning("Please enter your email.");
+      return;
+    }
+
+    // validate đơn giản phía FE
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      message.warning("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const res = await newsletterService.subscribe(email);
+      message.success(
+        res?.data || "Subscribed successfully! Please check your email."
+      );
+      setNewsletterEmail("");
+    } catch (err) {
+      const msg =
+        err?.response?.data ||
+        err?.response?.data?.message ||
+        "Subscription failed. Please try again.";
+      message.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-dark text-light pt-4 mt-5 footer-root">
       <div className="container pb-3">
@@ -126,6 +164,13 @@ export const Footer = () => {
                 type="email"
                 className="form-control w-100"
                 placeholder="Your email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleNewsletterSubmit();
+                  }
+                }}
                 style={{
                   padding: "8px 12px",
                   paddingRight: "95px", // chừa chỗ cho nút
@@ -139,6 +184,8 @@ export const Footer = () => {
               {/* BUTTON */}
               <button
                 type="button"
+                onClick={handleNewsletterSubmit}
+                disabled={submitting}
                 style={{
                   position: "absolute",
                   top: "50%",
@@ -153,11 +200,13 @@ export const Footer = () => {
                   lineHeight: 1,
                   minHeight: "26px",
                   whiteSpace: "nowrap",
-                  cursor: "pointer",
+                  cursor: submitting ? "not-allowed" : "pointer",
                   boxShadow: "0 2px 6px rgba(134,184,23,0.35)",
                   transition: "0.25s ease",
+                  opacity: submitting ? 0.7 : 1,
                 }}
                 onMouseOver={(e) => {
+                  if (submitting) return;
                   e.currentTarget.style.backgroundColor = "#6ea10f";
                   e.currentTarget.style.boxShadow =
                     "0 2px 8px rgba(134,184,23,0.45)";
@@ -168,7 +217,7 @@ export const Footer = () => {
                     "0 2px 6px rgba(134,184,23,0.35)";
                 }}
               >
-                Sign Up
+                {submitting ? "..." : "Sign Up"}
               </button>
             </div>
 
