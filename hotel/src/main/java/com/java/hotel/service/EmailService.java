@@ -353,4 +353,30 @@ public class EmailService {
             sendSimpleEmail(contact.getEmail(), subjectUser, bodyUser);
         }
     }
+
+    // =====================================================
+    // 9. EMAIL WELCOME CHO NEWSLETTER
+    // =====================================================
+    @Async
+    public void sendNewsletterWelcome(String to) {
+        if (to == null || to.isBlank()) return;
+
+        String subject = "Welcome to SB Hotel Newsletter";
+
+        String body = """
+                Xin chào,
+
+                Cảm ơn bạn đã đăng ký nhận bản tin từ SB Hotel.
+                Chúng tôi sẽ gửi cho bạn các ưu đãi độc quyền, mã giảm giá
+                và mẹo du lịch hữu ích tại Cần Thơ.
+
+                Nếu đây không phải là bạn, vui lòng bỏ qua email này.
+
+                Thân mến,
+                SB Hotel
+                """;
+
+        sendSimpleEmail(to, subject, body);
+    }
 }
+
