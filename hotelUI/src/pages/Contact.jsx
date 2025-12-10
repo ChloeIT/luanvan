@@ -1,17 +1,149 @@
-import React from "react";
-import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelopeOpen } from "react-icons/fa";
+// src/pages/Contact.jsx
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import {
+  FaMapMarkerAlt,
+  FaPhoneAlt,
+  FaEnvelopeOpen,
+  FaFacebookF,
+  FaInstagram,
+} from "react-icons/fa";
+import axios from "axios";
+import { authServices } from "../services/auth";
+
+const API_URL = import.meta.env.VITE_HOTEL_API;
 
 export const Contact = () => {
+  const { user } = useSelector((s) => s.auth || {});
+
+  const [form, setForm] = useState({
+    name: user?.username || "",
+    email: user?.email || "",
+    subject: "",
+    topic: "",
+    message: "",
+  });
+
+  const [alert, setAlert] = useState("");
+  const [alertType, setAlertType] = useState("info"); // success | danger | info
+  const [loading, setLoading] = useState(false);
+
+  // Auto-update name/email khi user login sau
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      name: user?.username || "",
+      email: user?.email || "",
+    }));
+  }, [user]);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!form.name || !form.email || !form.message) {
+      setAlertType("danger");
+      setAlert("Please fill all required fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setAlert("");
+
+      const headers = authServices.authHeader();
+
+      await axios.post(
+        `${API_URL}/api/contact`,
+        {
+          name: form.name,
+          email: form.email,
+          subject: form.subject,
+          topic: form.topic,
+          message: form.message,
+        },
+        { headers }
+      );
+
+      setAlertType("success");
+      setAlert("Your message has been sent! We will respond within 24 hours.");
+
+      // Reset nội dung nhưng giữ name + email
+      setForm((prev) => ({
+        ...prev,
+        subject: "",
+        topic: "",
+        message: "",
+      }));
+    } catch (err) {
+      console.error("Send contact failed:", err);
+      setAlertType("danger");
+      setAlert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Style custom cho banner thông báo
+  const buildAlertStyle = () => {
+    if (!alert) return {};
+    if (alertType === "success") {
+      return {
+        padding: "8px 12px",
+        borderRadius: "10px",
+        fontSize: "0.9rem",
+        marginBottom: "16px",
+        backgroundColor: "rgba(22,163,74,0.1)", // xanh lá nhạt
+        color: "#166534",
+        border: "1px solid rgba(22,163,74,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "8px",
+      };
+    }
+    if (alertType === "danger") {
+      return {
+        padding: "8px 12px",
+        borderRadius: "10px",
+        fontSize: "0.9rem",
+        marginBottom: "16px",
+        backgroundColor: "rgba(220,38,38,0.06)", // đỏ nhạt
+        color: "#b91c1c",
+        border: "1px solid rgba(220,38,38,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "8px",
+      };
+    }
+    return {
+      padding: "8px 12px",
+      borderRadius: "10px",
+      fontSize: "0.9rem",
+      marginBottom: "16px",
+      backgroundColor: "rgba(37,99,235,0.08)", // xanh dương nhạt
+      color: "#1d4ed8",
+      border: "1px solid rgba(37,99,235,0.4)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "8px",
+    };
+  };
+
   return (
     <div className="container-fluid py-4">
       <div className="container">
-        {/* ===== Heading ===== */}
+        {/* Heading */}
         <div className="text-center">
           <div
             className="heading-line mx-auto"
             style={{ "--heading-gap": "10px" }}
           >
-            {/* 2 gạch bên trái – căn lề phải */}
             <span
               style={{
                 display: "grid",
@@ -34,7 +166,6 @@ export const Contact = () => {
               We are here to help you!
             </h6>
 
-            {/* 2 gạch bên phải */}
             <span
               style={{
                 display: "grid",
@@ -51,14 +182,59 @@ export const Contact = () => {
             </span>
           </div>
 
-          <h1 className="mb-4" style={{ fontSize: "28px" }}>
+          <h1 className="mb-3" style={{ fontSize: "28px" }}>
             Contact us for support anytime, anywhere.
           </h1>
+
+          {user && (
+            <p className="small mb-2">
+              We will respond to your email:&nbsp;
+              <span
+                style={{
+                  background: "rgba(134,184,23,0.15)",
+                  padding: "2px 8px",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  color: "var(--primary)",
+                }}
+              >
+                {user.email}
+              </span>
+            </p>
+          )}
+
+
         </div>
 
-        {/* ===== 3 Cột: cao bằng nhau ===== */}
-        <div className="row g-3 align-items-stretch">
-          {/* Get In Touch */}
+        {/* 🔔 Banner thông báo ngay dưới heading, rất dễ thấy */}
+        {alert && (
+          <div className="row justify-content-center">
+            <div className="col-lg-6 col-md-8">
+              <div style={buildAlertStyle()}>
+                <span>{alert}</span>
+                <button
+                  type="button"
+                  onClick={() => setAlert("")}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "1rem",
+                    lineHeight: 1,
+                  }}
+                  aria-label="Close notification"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3 columns */}
+        <div className="row g-3 align-items-stretch mt-2">
+          {/* Left info */}
           <div className="col-lg-4 col-md-6 d-flex">
             <div className="d-flex flex-column h-100 w-100">
               <h5 className="mb-2">Get In Touch</h5>
@@ -111,7 +287,6 @@ export const Contact = () => {
                 </div>
               </div>
 
-              {/* Opening hours */}
               <hr className="my-3" />
 
               <h6 className="mb-1">Opening Hours</h6>
@@ -120,95 +295,172 @@ export const Contact = () => {
                 <li>Sat – Sun: 09:00 – 20:00</li>
               </ul>
 
-              <p className="text-muted small mb-0">
-                <strong>Response time:</strong> within 24 hours via email, instant via
-                phone.
+              <p className="text-muted small mb-3">
+                <strong>Response time:</strong> within 24 hours via email,
+                instant via phone.
               </p>
+
+              {/* social */}
+              <div className="mt-auto">
+                <h6 className="mb-2">Connect with us</h6>
+                <div className="d-flex gap-3 mb-3">
+                  <FaFacebookF
+                    size={20}
+                    className="text-primary"
+                    style={{ cursor: "pointer" }}
+                  />
+                  <FaInstagram
+                    size={20}
+                    className="text-danger"
+                    style={{ cursor: "pointer" }}
+                  />
+                </div>
+
+                <p className="fw-semibold text-primary">
+                  Hotline (24/7): 0999 68 68 68
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Google Map */}
+          {/* Google map */}
           <div className="col-lg-4 col-md-6 d-flex">
-            <div className="d-flex flex-column h-100 w-100">
-              <iframe
-                title="map"
-                className="flex-fill w-100 rounded border-0"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1005499.6739559979!2d104.34902184495179!3d10.120919264908531!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a0629f927382cd%3A0x72a463d91109ec67!2zQ-G6p24gVGjGoSwgVmlldG5hbQ!5e0!3m2!1sen!2sbd!4v1712213751233!5m2!1sen!2sbd"
-                style={{ minHeight: 260, height: "100%" }}
-                loading="lazy"
-                allowFullScreen=""
-              />
-            </div>
+            <iframe
+              title="map"
+              className="flex-fill w-100 rounded border-0"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1005499.6739559979!2d104.34902184495179!3d10.120919264908531!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a0629f927382cd%3A0x72a463d91109ec67!2zQ-G6p24gVGjGoSwgVmlldG5hbQ!5e0!3m2!1sen!2sbd!4v1712213751233!5m2!1sen!2sbd"
+              style={{ minHeight: 260 }}
+              loading="lazy"
+              allowFullScreen=""
+            />
           </div>
 
-          {/* Contact Form */}
+          {/* Contact form */}
           <div className="col-lg-4 col-md-12 d-flex">
-            <div className="d-flex flex-column h-100 w-100">
-              <form className="d-flex flex-column flex-fill" noValidate>
-                {/* Khối input co giãn để textarea lấp đầy phần còn lại */}
-                <div className="row g-2 flex-grow-1">
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="name"
-                        placeholder="Your Name"
-                      />
-                      <label htmlFor="name">Your Name</label>
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input
-                        type="email"
-                        className="form-control"
-                        id="email"
-                        placeholder="Your Email"
-                      />
-                      <label htmlFor="email">Your Email</label>
-                    </div>
-                  </div>
-
-                  <div className="col-12">
-                    <div className="form-floating">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="subject"
-                        placeholder="Subject"
-                      />
-                      <label htmlFor="subject">Subject</label>
-                    </div>
-                  </div>
-
-                  {/* Textarea chiếm toàn bộ phần còn lại */}
-                  <div className="col-12 d-flex flex-column flex-grow-1">
-                    <div className="form-floating flex-grow-1">
-                      <textarea
-                        className="form-control h-100"
-                        id="message"
-                        placeholder="Leave a message here"
-                        style={{ minHeight: 140 }}
-                      />
-                      <label htmlFor="message">Message</label>
-                    </div>
+            <form
+              className="d-flex flex-column h-100 w-100"
+              onSubmit={handleSubmit}
+              noValidate
+            >
+              <div className="row g-2 flex-grow-1">
+                {/* Name */}
+                <div className="col-md-6">
+                  <div className="form-floating">
+                    <input
+                      type="text"
+                      id="name"
+                      className="form-control"
+                      value={form.name}
+                      onChange={handleChange}
+                      placeholder="Your Name"
+                    />
+                    <label htmlFor="name">Your Name *</label>
                   </div>
                 </div>
 
-                {/* Nút nằm sát đáy */}
-                <button
-                  className="btn btn-primary w-100 py-2 mt-3"
-                  type="submit"
-                >
-                  Send Message
-                </button>
-              </form>
+                {/* Email */}
+                <div className="col-md-6">
+                  <div className="form-floating">
+                    <input
+                      type="email"
+                      id="email"
+                      className="form-control"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="Your Email"
+                    />
+                    <label htmlFor="email">Your Email *</label>
+                  </div>
+                </div>
+
+                {/* Topic */}
+                <div className="col-12">
+                  <div className="form-floating">
+                    <select
+                      id="topic"
+                      className="form-select"
+                      value={form.topic}
+                      onChange={handleChange}
+                    >
+                      <option value="" disabled>
+                        Select a topic
+                      </option>
+                      <option value="booking">Booking & Reservation</option>
+                      <option value="payment">Payment & Refund</option>
+                      <option value="loyalty">Loyalty Points</option>
+                      <option value="support">Technical Support</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <label htmlFor="topic">Topic</label>
+                  </div>
+                </div>
+
+                {/* Subject */}
+                <div className="col-12">
+                  <div className="form-floating">
+                    <input
+                      type="text"
+                      id="subject"
+                      className="form-control"
+                      value={form.subject}
+                      onChange={handleChange}
+                      placeholder="Subject"
+                    />
+                    <label htmlFor="subject">Subject</label>
+                  </div>
+                </div>
+
+                {/* Message */}
+                <div className="col-12 d-flex flex-column flex-grow-1">
+                  <div className="form-floating h-100">
+                    <textarea
+                      id="message"
+                      className="form-control h-100"
+                      style={{ minHeight: 140 }}
+                      value={form.message}
+                      onChange={handleChange}
+                      placeholder="Your Message"
+                    />
+                    <label htmlFor="message">Message *</label>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                className="btn btn-primary w-100 py-2 mt-3"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Sending..." : "Send Message"}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Help block */}
+        <div className="row mt-4">
+          <div className="col-md-8 mx-auto text-center">
+            <p className="mb-2 fw-semibold">
+              Need help with an existing booking?
+            </p>
+            <p className="small text-muted mb-3">
+              Check your booking details or send us a message if you want to
+              change dates, update guest information, or request special
+              services.
+            </p>
+            <div className="d-flex justify-content-center gap-2">
+              <a href="/my-bookings" className="btn btn-outline-primary btn-sm">
+                View my bookings
+              </a>
+              <button
+                type="button"
+                className="btn btn-link btn-sm text-decoration-underline"
+              >
+                FAQ & Support Guide
+              </button>
             </div>
           </div>
         </div>
-        {/* /row */}
       </div>
     </div>
   );
