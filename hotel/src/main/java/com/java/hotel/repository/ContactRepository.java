@@ -8,6 +8,9 @@ import java.util.List;
 
 public interface ContactRepository extends JpaRepository<Contact, Long> {
 
-    // để sau này Admin lọc PENDING...
+    // Lọc theo trạng thái (PENDING / IN_PROGRESS / DONE)
     List<Contact> findByStatus(Status status);
+
+    // Lấy tất cả contact, mới nhất lên trên
+    List<Contact> findAllByOrderByCreatedAtDesc();
 }

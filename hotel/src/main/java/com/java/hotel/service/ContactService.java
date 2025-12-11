@@ -10,6 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class ContactService {
 
@@ -60,6 +62,22 @@ public class ContactService {
         }
 
         return saved;
+    }
+
+    /**
+     * ADMIN: Lấy toàn bộ contact (mới nhất lên trên).
+     */
+    @Transactional(readOnly = true)
+    public List<Contact> getAllContacts() {
+        return contactRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    /**
+     * ADMIN: Lọc contact theo status.
+     */
+    @Transactional(readOnly = true)
+    public List<Contact> getContactsByStatus(Contact.Status status) {
+        return contactRepository.findByStatus(status);
     }
 
     /**

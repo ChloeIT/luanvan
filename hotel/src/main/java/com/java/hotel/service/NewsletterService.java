@@ -5,6 +5,8 @@ import com.java.hotel.repository.NewsletterSubscriberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 @Service
 public class NewsletterService {
 
@@ -18,7 +20,7 @@ public class NewsletterService {
     }
 
     /**
-     * Đăng ký newsletter:
+     * PUBLIC: Đăng ký newsletter
      *  - validate email
      *  - lưu DB nếu chưa tồn tại
      *  - gửi email Welcome
@@ -47,5 +49,15 @@ public class NewsletterService {
         emailService.sendNewsletterWelcome(email);
 
         return "Subscribed successfully.";
+    }
+
+    // ===== ADMIN: lấy tất cả subscribers =====
+    public List<NewsletterSubscriber> getAllSubscribers() {
+        return repo.findAllByOrderByCreatedAtDesc();
+    }
+
+    // ===== ADMIN: xoá 1 subscriber =====
+    public void deleteSubscriber(Long id) {
+        repo.deleteById(id);
     }
 }

@@ -5,8 +5,10 @@ import com.java.hotel.payload.request.ContactRequest;
 import com.java.hotel.service.ContactService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,7 +22,7 @@ public class ContactController {
         this.contactService = contactService;
     }
 
-    // ====== Tạo contact từ trang Contact Us ======
+    // ====== PUBLIC: Tạo contact từ trang Contact Us ======
     @PostMapping
     public ResponseEntity<Map<String, String>> createContact(
             @Valid @RequestBody ContactRequest request
@@ -29,15 +31,32 @@ public class ContactController {
         return ResponseEntity.ok(Map.of("message", "Sent"));
     }
 
-    // ====== Cập nhật status (PENDING / IN_PROGRESS / DONE) ======
+    // ====== ADMIN: Lấy toàn bộ contact ======
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Contact>> getAllContacts() {
+        return ResponseEntity.ok(contactService.getAllContacts());
+    }
+
+    // (tuỳ chọn) ADMIN: Lọc theo status, nếu muốn dùng:
+    @GetMapping("/admin/by-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Contact>> getByStatus(
+            @RequestParam("status") Contact.Status status
+    ) {
+        return ResponseEntity.ok(contactService.getContactsByStatus(status));
+    }
+
+    // ====== ADMIN: Cập nhật status (PENDING / IN_PROGRESS / DONE) ======
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> updateStatus(
             @PathVariable Long id,
             @RequestParam("status") Contact.Status status
     ) {
         Contact updated = contactService.updateStatus(id, status);
 
-        // 👉 Chỉ trả đơn giản để tránh lỗi serialize Hibernate LAZY
+        // trả gọn, tránh vấn đề LAZY
         return ResponseEntity.ok(
                 Map.of(
                         "id", updated.getId(),
