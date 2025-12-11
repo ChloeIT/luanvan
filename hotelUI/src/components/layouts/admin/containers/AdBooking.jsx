@@ -1,3 +1,4 @@
+// src/components/layouts/admin/containers/AdBooking.jsx
 import Column from "antd/es/table/Column";
 import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,7 +9,6 @@ import { AdEditBooking } from "./booking/AdEditBooking";
 import { AdDeleteBooking } from "./booking/AdDeleteBooking";
 import { AdAddBooking } from "./booking/AdAddBooking";
 
-// ⚠️ Tuỳ cách bạn export services / store, chỉnh lại path nếu cần
 import { bookingServices } from "../../../../services";
 import { bookingAction } from "../../../../store";
 
@@ -21,58 +21,16 @@ export const AdBooking = () => {
   const [isModalAddVisible, setIsModalAddVisible] = useState(false);
   const [itemACtion, setItemACtion] = useState();
 
-  // 👉 Pagination state + JSX-only style (giống AdUser/AdHotel)
+  /* Pagination */
   const [page, setPage] = useState(1);
-  const pagerBase = {
-    backgroundColor: "#1677ff",
-    border: "1px solid #1677ff",
-    color: "#fff",
-    height: 28,
-    minWidth: 28,
-    padding: "0 10px",
-    lineHeight: "26px",
-    borderRadius: 999,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0 1px 0 rgba(0,0,0,.06)",
-  };
-  const pagerActive = {
-    backgroundColor: "#155bd6",
-    borderColor: "#155bd6",
-    color: "#fff",
-  };
-  const itemRender = (pageNum, type, original) => {
-    if (type === "page") {
-      const isActive = pageNum === page;
-      return React.cloneElement(original, {
-        style: { ...pagerBase, ...(isActive ? pagerActive : null) },
-        children: pageNum,
-      });
-    }
-    if (type === "prev" || type === "next") {
-      return React.cloneElement(original, { style: pagerBase });
-    }
-    return original;
-  };
 
-  /* =========================
-   *  FORMAT NGÀY THÁNG NĂM
-   * ========================= */
-  const formatDate = (value) => {
-    if (!value) return "-";
-    // value có thể là string ISO hoặc LocalDateTime -> dayjs đều đọc được
-    return dayjs(value).format("DD/MM/YYYY");
-  };
+  const formatDate = (v) => (v ? dayjs(v).format("DD/MM/YYYY") : "-");
 
-  /* =========================
-   *  FETCH BOOKINGS TỪ API
-   * ========================= */
+  /* Fetch bookings */
   const fetchBookings = useCallback(async () => {
     try {
-      const res = await bookingServices.getAll(); // hoặc bookingServices.getAllBooking()
-      const data = res?.data ?? res;
-      dispatch(bookingAction.setBookings(data));
+      const res = await bookingServices.getAll();
+      dispatch(bookingAction.setBookings(res?.data ?? res));
     } catch (err) {
       console.error("Error fetching bookings:", err);
     }
@@ -82,41 +40,28 @@ export const AdBooking = () => {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleEditBooking = (booking) => {
-    setIsModalEditVisible(true);
-    setItemACtion(booking);
-  };
-
-  const handleDeleteBooking = (booking) => {
-    setIsModalDeleteVisible(true);
-    setItemACtion(booking);
-  };
-
-  const handleAddBooking = () => {
-    setIsModalAddVisible(true);
-    setItemACtion(undefined);
-  };
-
-  // 👉 Payment pill style (đồng bộ tone với Roles)
-  const pillPaid = {
-    backgroundColor: "#E9F9D8",
-    color: "#237804",
-    border: "1px solid #95DE64",
-  };
-  const pillUnpaid = {
-    backgroundColor: "#FFF1D6",
-    color: "#AD4E00",
-    border: "1px solid #FFC069",
-  };
-  const basePill = {
-    display: "inline-block",
+  /* Payment pills */
+  const pillBase = {
     padding: "4px 12px",
-    borderRadius: 9999,
-    fontWeight: 700,
+    borderRadius: 999,
+    fontWeight: 600,
     fontSize: 12,
-    lineHeight: "20px",
-    boxShadow: "0 1px 0 rgba(0,0,0,.06)",
+    display: "inline-block",
     whiteSpace: "nowrap",
+  };
+
+  const pillPaid = {
+    ...pillBase,
+    backgroundColor: "#E9F9D8",
+    border: "1px solid #95DE64",
+    color: "#237804",
+  };
+
+  const pillUnpaid = {
+    ...pillBase,
+    backgroundColor: "#FFF1D6",
+    border: "1px solid #FFC069",
+    color: "#AD4E00",
   };
 
   return (
@@ -126,79 +71,81 @@ export const AdBooking = () => {
         isModalEditVisible={isModalEditVisible}
         setIsModalEditVisible={setIsModalEditVisible}
         itemACtion={itemACtion}
-        onUpdated={fetchBookings} // reload list sau khi edit
+        onUpdated={fetchBookings}
       />
       <AdDeleteBooking
         isModalDeleteVisible={isModalDeleteVisible}
         setIsModalDeleteVisible={setIsModalDeleteVisible}
         itemACtion={itemACtion}
-        onDeleted={fetchBookings} // reload list sau khi delete
+        onDeleted={fetchBookings}
       />
       <AdAddBooking
         isModalAddVisible={isModalAddVisible}
         setIsModalAddVisible={setIsModalAddVisible}
         itemACtion={itemACtion}
-        onCreated={fetchBookings} // reload list sau khi add
+        onCreated={fetchBookings}
       />
 
-      {/* Actions */}
+      {/* Header + Add */}
       <div className="mb-3 flex items-center justify-end">
-        <Button type="primary" onClick={handleAddBooking}>
+        <Button type="primary" onClick={() => setIsModalAddVisible(true)}>
           Add Booking
         </Button>
       </div>
 
-      {/* Table */}
+      {/* TABLE */}
       <Table
         dataSource={bookings}
         rowKey="id"
         className="themed-table themed-table--center"
+        size="middle"
+        scroll={{ x: 1050 }}  // responsive scroll
         pagination={{
           current: page,
           onChange: setPage,
           pageSize: 10,
           showSizeChanger: false,
-          itemRender,
         }}
       >
+        {/* Column: Check In */}
         <Column
           title="Check In"
           dataIndex="checkIn"
-          key="checkIn"
           align="center"
-          render={(v) => formatDate(v)}
-        />
-        <Column
-          title="Check Out"
-          dataIndex="checkOut"
-          key="checkOut"
-          align="center"
+          width={120}
           render={(v) => formatDate(v)}
         />
 
-        {/* ✅ Room column */}
-        {/* ROOM — màu xanh lam đậm, khác hẳn not-yet-paid */}
+        {/* Column: Check Out */}
+        <Column
+          title="Check Out"
+          dataIndex="checkOut"
+          align="center"
+          width={120}
+          render={(v) => formatDate(v)}
+        />
+
+        {/* Column: Room */}
         <Column
           title="Room"
           dataIndex="rooms"
-          key="rooms"
           align="center"
+          width={160}
+          responsive={["sm"]}
           render={(rooms = []) =>
-            rooms && rooms.length ? (
+            rooms.length ? (
               <div className="flex flex-col gap-1">
-                {rooms.map((room) => (
+                {rooms.map((r) => (
                   <span
-                    key={room.id}
+                    key={r.id}
                     className="px-3 py-1 rounded-full text-xs font-semibold"
                     style={{
-                      backgroundColor: "#E0F0FF",     // xanh nhạt
-                      border: "1px solid #4096FF",     // xanh đậm nổi bật
-                      color: "#0958D9",                // chữ xanh đậm
-                      boxShadow: "0 1px 0 rgba(0,0,0,.06)",
-                      whiteSpace: "nowrap",
+                      backgroundColor: "#E0F0FF",
+                      border: "1px solid #4096FF",
+                      color: "#0958D9",
                     }}
                   >
-                    {room.name || `Room #${room.id}`}
+                    {r.name}
                   </span>
                 ))}
               </div>
@@ -208,44 +155,35 @@ export const AdBooking = () => {
           }
         />
 
-
-
-        {/* ✅ Hotel column (từ rooms[].hotel.name, unique) */}
+        {/* Column: Hotel */}
         <Column
           title="Hotel"
-          key="hotel"
           align="center"
-          render={(_, booking) => {
-            const rooms = booking?.rooms || [];
-
-            const hotelNames = [
-              ...new Set(
-                rooms
-                  .map((r) => r?.hotel && r.hotel.name)
-                  .filter(Boolean)
-              ),
+          width={200}
+          responsive={["md"]}
+          render={(_, b) => {
+            const hotels = [
+              ...new Set((b.rooms || []).map((r) => r?.hotel?.name).filter(Boolean)),
             ];
 
-            if (!hotelNames.length) return "-";
-
-            const hotelPillStyle = {
-              display: "inline-block",
-              padding: "4px 12px",
-              borderRadius: 9999,
-              fontWeight: 700,
-              fontSize: 12,
-              lineHeight: "20px",
-              whiteSpace: "nowrap",
-              boxShadow: "0 1px 0 rgba(0,0,0,.06)",
-              backgroundColor: "#F3E8FF",   // 💜 tím pastel
-              border: "1px solid #B37FEB",  // 💜 viền tím đậm
-              color: "#531DAB",             // 💜 chữ tím rất đậm
-            };
+            if (!hotels.length) return "-";
 
             return (
               <div className="flex flex-col gap-1">
-                {hotelNames.map((name) => (
-                  <span key={name} style={hotelPillStyle}>
+                {hotels.map((name) => (
+                  <span
+                    key={name}
+                    style={{
+                      padding: "4px 12px",
+                      borderRadius: 999,
+                      fontWeight: 600,
+                      fontSize: 12,
+                      backgroundColor: "#F3E8FF",
+                      border: "1px solid #B37FEB",
+                      color: "#531DAB",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {name}
                   </span>
                 ))}
@@ -254,52 +192,52 @@ export const AdBooking = () => {
           }}
         />
 
-
+        {/* Column: Total Price */}
         <Column
           title="Total Price"
           dataIndex="totalPrice"
-          key="totalPrice"
           align="center"
-          render={(v) => <span style={{ fontWeight: 700 }}>{v}</span>}
+          width={110}
+          render={(v) => <strong>{v}</strong>}
         />
+
+        {/* Column: Payment */}
         <Column
           title="Payment"
           dataIndex="payment"
-          key="payment"
           align="center"
-          render={(paid) => (
-            <span style={{ ...basePill, ...(paid ? pillPaid : pillUnpaid) }}>
-              {paid ? "paid" : "not yet paid"}
-            </span>
-          )}
+          width={150}
+          render={(v) =>
+            v ? <span style={pillPaid}>paid</span> : <span style={pillUnpaid}>not yet paid</span>
+          }
         />
+
+        {/* Column: Actions */}
         <Column
           title="Action"
-          key="action"
           align="center"
-          fixed="right"
-          render={(_, booking) => (
-            <div
-              key={booking.id}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                alignItems: "center",
-              }}
-            >
-              <a
-                onClick={() => handleEditBooking(booking)}
+          width={140}
+          render={(_, b) => (
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={() => {
+                  setIsModalEditVisible(true);
+                  setItemACtion(b);
+                }}
                 className="px-3 py-1 rounded-md font-medium text-white bg-blue-500 hover:bg-blue-600"
               >
                 Edit
-              </a>
-              <a
-                onClick={() => handleDeleteBooking(booking)}
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsModalDeleteVisible(true);
+                  setItemACtion(b);
+                }}
                 className="px-3 py-1 rounded-md font-medium text-white bg-red-500 hover:bg-red-600"
               >
                 Delete
-              </a>
+              </button>
             </div>
           )}
         />

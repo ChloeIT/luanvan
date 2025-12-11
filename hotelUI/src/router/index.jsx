@@ -16,7 +16,7 @@ import {
   Review,
   Service,
   Favorite,
-  MyBookings,          // 👈 nhớ export MyBookings trong "@/pages"
+  MyBookings,
 } from "@/pages";
 
 import {
@@ -27,6 +27,8 @@ import {
   AdUser,
   BoardAdmin,
   DashBoard,
+  AdContact,
+  AdNewsletter,
 
   // MOD
   BoardMod,
@@ -111,6 +113,10 @@ export const router = [
       { path: "rooms", element: <AdRoom /> },
       { path: "hotels", element: <AdHotel /> },
       { path: "bookings", element: <AdBooking /> },
+
+      // 👇 mới: quản lý Contact & Newsletter
+      { path: "contacts", element: <AdContact /> },
+      { path: "newsletter", element: <AdNewsletter /> },
     ],
   },
 

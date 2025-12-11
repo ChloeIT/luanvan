@@ -321,6 +321,7 @@ export const AdRoom = () => {
         dataSource={dataSource}
         rowKey="id"
         className="themed-table themed-table--center"
+        scroll={{ x: 1100 }}
         pagination={{
           current: page,
           onChange: setPage,
@@ -333,6 +334,7 @@ export const AdRoom = () => {
           title="Image"
           dataIndex="image"
           key="image"
+          width={80}
           align="center"
           render={(image) => (
             <Avatar
@@ -342,13 +344,21 @@ export const AdRoom = () => {
           )}
         />
 
-        <Column title="Name" dataIndex="name" key="name" align="center" />
+        <Column
+          title="Name"
+          dataIndex="name"
+          key="name"
+          width={160}
+          align="center"
+        />
 
         {/* Cột Hotel – click để mở trang chi tiết hotel */}
         <Column
           title="Hotel"
           key="hotel"
+          width={220}
           align="center"
+          responsive={["md"]} // ẩn bớt trên màn nhỏ
           render={(_, room) => {
             let resolvedHotelId = null;
             let resolvedHotelName = "";
@@ -409,14 +419,18 @@ export const AdRoom = () => {
           title="Price"
           dataIndex="price"
           key="price"
+          width={110}
           align="center"
-          render={(v) => <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>}
+          render={(v) => (
+            <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>
+          )}
         />
 
-        {/* ==== NEW: DISCOUNT COLUMN ==== */}
+        {/* DISCOUNT COLUMN */}
         <Column
           title="Discount"
           key="discount"
+          width={150}
           align="center"
           render={(_, room) => {
             const { value, isActive } = getDiscountInfo(room);
@@ -440,13 +454,17 @@ export const AdRoom = () => {
           title="Capacity"
           dataIndex="capacity"
           key="capacity"
+          width={100}
           align="center"
         />
+
         <Column
           title="Type"
           dataIndex="type"
           key="type"
+          width={230}
           align="center"
+          responsive={["sm"]}
           render={(type) => (
             <div
               style={{
@@ -466,10 +484,12 @@ export const AdRoom = () => {
             </div>
           )}
         />
+
         <Column
           title="Availability"
           dataIndex="availability"
           key="availability"
+          width={140}
           align="center"
           render={(av) => (
             <span style={availabilityPill(Boolean(av))}>
@@ -477,21 +497,11 @@ export const AdRoom = () => {
             </span>
           )}
         />
-        {/* <Column
-          title="Created At"
-          dataIndex="create_at"
-          key="create_at"
-          align="center"
-        />
-        <Column
-          title="Updated At"
-          dataIndex="update_at"
-          key="update_at"
-          align="center"
-        /> */}
+
         <Column
           title="Action"
           key="action"
+          width={120}
           align="center"
           fixed="right"
           render={(_, room) => (

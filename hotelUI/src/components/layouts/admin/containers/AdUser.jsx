@@ -1,18 +1,22 @@
+// src/components/layouts/admin/AdUser.jsx
 import { Avatar, Button, Table } from "antd";
 import Column from "antd/es/table/Column";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { AdAddUser, AdDeleteUser, AdEditUser } from "./user";
 
+const IMAGE_ROOT = import.meta.env.VITE_IMAGE_URL || "";
+
 export const AdUser = () => {
   const { users } = useSelector((state) => state.user);
+
   const [isModalEditVisible, setIsModalEditVisible] = useState(false);
   const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
   const [isModalAddVisible, setIsModalAddVisible] = useState(false);
   const [itemACtion, setItemACtion] = useState();
 
-  // 👉 Pagination state để biết trang hiện tại (để tô active)
+  // Pagination state
   const [page, setPage] = useState(1);
 
   const handleEditUser = (user) => {
@@ -29,11 +33,7 @@ export const AdUser = () => {
     setIsModalAddVisible(true);
   };
 
-  useEffect(() => {
-    console.log(itemACtion);
-  }, [itemACtion]);
-
-  // 👉 Style nút phân trang (JSX-only, không cần CSS)
+  // Style nút phân trang
   const pagerBase = {
     backgroundColor: "#1677ff",
     border: "1px solid #1677ff",
@@ -63,11 +63,43 @@ export const AdUser = () => {
       });
     }
     if (type === "prev" || type === "next") {
-      return React.cloneElement(original, {
-        style: pagerBase,
-      });
+      return React.cloneElement(original, { style: pagerBase });
     }
     return original;
+  };
+
+  // Base pill cho role
+  const baseRolePill = {
+    display: "inline-block",
+    padding: "4px 12px",
+    borderRadius: 9999,
+    fontWeight: 700,
+    fontSize: 12,
+    lineHeight: "20px",
+    boxShadow: "0 1px 0 rgba(0,0,0,.06)",
+    whiteSpace: "nowrap",
+  };
+  const pillStyleByRole = (name) => {
+    switch (name) {
+      case "ROLE_ADMIN":
+        return {
+          backgroundColor: "#FFE8E6",
+          color: "#A8071A",
+          border: "1px solid #FF7875",
+        };
+      case "ROLE_MODERATOR":
+        return {
+          backgroundColor: "#FFF1D6",
+          color: "#AD4E00",
+          border: "1px solid #FFC069",
+        };
+      default:
+        return {
+          backgroundColor: "#E9F9D8",
+          color: "#237804",
+          border: "1px solid #95DE64",
+        };
+    }
   };
 
   return (
@@ -100,6 +132,8 @@ export const AdUser = () => {
         dataSource={users}
         rowKey="id"
         className="themed-table themed-table--center"
+        size="middle"
+        scroll={{ x: 1050 }} // cho phép kéo ngang trên màn nhỏ
         pagination={{
           current: page,
           onChange: setPage,
@@ -108,133 +142,127 @@ export const AdUser = () => {
           itemRender,
         }}
       >
+        {/* Avatar */}
         <Column
           title="Image"
           dataIndex="image"
           key="image"
           align="center"
-          render={(image) => (
-            <Avatar
-              src={
-                image
-                  ? `${import.meta.env.VITE_IMAGE_URL}/users/${image}`
-                  : undefined
-              }
-              alt={image ? `image ${image}` : "avatar"}
-            />
-          )}
+          width={80}
+          render={(image, user) => {
+            const src = image ? `${IMAGE_ROOT}/users/${image}` : null;
+            const initials =
+              user?.fullName?.trim()?.split(" ")?.map((w) => w[0])?.join("") ??
+              user?.username?.[0]?.toUpperCase() ??
+              "?";
+            return (
+              <Avatar src={src} alt={user?.username || "avatar"}>
+                {!src && initials}
+              </Avatar>
+            );
+          }}
         />
 
+        {/* Username */}
         <Column
           title="Username"
           dataIndex="username"
           key="username"
           align="center"
+          width={140}
         />
+
+        {/* Full name */}
         <Column
           title="Full Name"
           dataIndex="fullName"
           key="fullName"
           align="center"
+          width={180}
+          responsive={["sm"]}
         />
+
+        {/* Gender */}
         <Column
           title="Gender"
           dataIndex="gender"
           key="gender"
           align="center"
+          width={90}
+          responsive={["sm"]}
         />
+
+        {/* Phone */}
         <Column
           title="Phone"
           dataIndex="phone"
           key="phone"
           align="center"
+          width={140}
+          responsive={["sm"]}
         />
 
-        {/* Birth Date hiển thị dạng YYYY-MM-DD */}
+        {/* Birth Date – dạng YYYY-MM-DD */}
         <Column
           title="Birth Date"
           dataIndex="birthDate"
           key="birthDate"
           align="center"
+          width={130}
+          responsive={["md"]}
           render={(value) =>
             value ? dayjs(value).format("YYYY-MM-DD") : ""
           }
         />
 
+        {/* Roles */}
         <Column
           title="Roles"
           dataIndex="roles"
           key="roles"
           align="center"
-          render={(roles) => {
-            const pillStyleByRole = (name) => {
-              switch (name) {
-                case "ROLE_ADMIN":
-                  return {
-                    backgroundColor: "#FFE8E6",
-                    color: "#A8071A",
-                    border: "1px solid #FF7875",
-                  };
-                case "ROLE_MODERATOR":
-                  return {
-                    backgroundColor: "#FFF1D6",
-                    color: "#AD4E00",
-                    border: "1px solid #FFC069",
-                  };
-                default:
-                  return {
-                    backgroundColor: "#E9F9D8",
-                    color: "#237804",
-                    border: "1px solid #95DE64",
-                  };
-              }
-            };
-
-            const basePill = {
-              display: "inline-block",
-              padding: "4px 12px",
-              borderRadius: 9999,
-              fontWeight: 700,
-              fontSize: 12,
-              lineHeight: "20px",
-              boxShadow: "0 1px 0 rgba(0,0,0,.06)",
-              whiteSpace: "nowrap",
-            };
-
-            return (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                {roles?.map((role, i) => (
-                  <span
-                    key={i}
-                    style={{ ...basePill, ...pillStyleByRole(role.name) }}
-                  >
-                    {role.name}
-                  </span>
-                ))}
-              </div>
-            );
-          }}
+          width={170}
+          responsive={["md"]}
+          render={(roles) => (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              {roles?.map((role, i) => (
+                <span
+                  key={i}
+                  style={{
+                    ...baseRolePill,
+                    ...pillStyleByRole(role.name),
+                  }}
+                >
+                  {role.name}
+                </span>
+              ))}
+            </div>
+          )}
         />
 
+        {/* Address */}
         <Column
           title="Address"
           dataIndex="address"
           key="address"
           align="center"
+          width={220}
+          responsive={["md"]}
         />
 
+        {/* Action */}
         <Column
           title="Action"
           key="action"
           align="center"
-          fixed="right"
+          width={140}
           render={(_, user) => (
             <div
               key={user.id}
@@ -245,18 +273,18 @@ export const AdUser = () => {
                 alignItems: "center",
               }}
             >
-              <a
+              <button
                 onClick={() => handleEditUser(user)}
                 className="px-3 py-1 rounded-md font-medium text-white bg-blue-500 hover:bg-blue-600"
               >
                 Edit
-              </a>
-              <a
+              </button>
+              <button
                 onClick={() => handleDeleteUser(user)}
                 className="px-3 py-1 rounded-md font-medium text-white bg-red-500 hover:bg-red-600"
               >
                 Delete
-              </a>
+              </button>
             </div>
           )}
         />

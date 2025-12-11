@@ -63,7 +63,6 @@ export const Sidebar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobile = () => setMobileMenuOpen(false);
 
-    // lấy user + roles từ redux
     const { user } = useSelector((state) => state.auth || {});
     const roles = user?.roles || [];
 
