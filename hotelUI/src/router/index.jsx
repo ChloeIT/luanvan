@@ -78,12 +78,12 @@ export const router = [
       { path: "hotel", element: <Hotel /> },
       { path: "hotel/:id", element: <HotelDetail /> },
 
-      // Trang flow booking / checkout
+      // Flow booking / checkout
       { path: "booking", element: <Booking /> },
       { path: "booking/:id", element: <Booking /> },
       { path: "booking/:id/checkout", element: <CheckOut /> },
 
-      // Trang xem lại tất cả booking của user hiện tại
+      // My bookings
       { path: "my-bookings", element: <MyBookings /> },
 
       { path: "contact", element: <Contact /> },
@@ -92,7 +92,7 @@ export const router = [
       { path: "service", element: <Service /> },
       { path: "favorite", element: <Favorite /> },
 
-      // 🎉 Trang báo thành công Paypal
+      // Paypal success page
       { path: "success", element: <PaymentSuccess /> },
     ],
   },
@@ -114,7 +114,7 @@ export const router = [
       { path: "hotels", element: <AdHotel /> },
       { path: "bookings", element: <AdBooking /> },
 
-      // 👇 mới: quản lý Contact & Newsletter
+      // Contact & Newsletter
       { path: "contacts", element: <AdContact /> },
       { path: "newsletter", element: <AdNewsletter /> },
     ],

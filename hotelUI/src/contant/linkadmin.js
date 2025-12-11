@@ -1,12 +1,9 @@
 // src/contant/linkadmin.js
-
 import { VscLayoutMenubar } from "react-icons/vsc";
 import { LuUsers2 } from "react-icons/lu";
 import { LuHotel } from "react-icons/lu";
 import { MdOutlineBedroomParent } from "react-icons/md";
 import { BsCartFill } from "react-icons/bs";
-
-// ⭐ icon mới cho admin CONTACT + NEWSLETTER
 import { MdOutlineMail } from "react-icons/md";
 import { HiOutlineNewspaper } from "react-icons/hi";
 
@@ -46,14 +43,14 @@ export const routeAdmin = [
     name: "Rooms",
   },
 
-  // ⭐⭐ CONTACTS — mới thêm
+  // CONTACTS
   {
     path: "/admin/contacts",
     icon: MdOutlineMail,
     name: "Contacts",
   },
 
-  // ⭐⭐ NEWSLETTER — mới thêm
+  // NEWSLETTER
   {
     path: "/admin/newsletter",
     icon: HiOutlineNewspaper,

@@ -1,17 +1,23 @@
 // src/pages/Contact.jsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  FaMapMarkerAlt,
-  FaPhoneAlt,
   FaEnvelopeOpen,
   FaFacebookF,
   FaInstagram,
+  FaMapMarkerAlt,
+  FaPhoneAlt,
 } from "react-icons/fa";
-import axios from "axios";
-import { authServices } from "../services/auth";
+import { contactServices } from "../services/contact";
 
-const API_URL = import.meta.env.VITE_HOTEL_API;
+// Các topic dùng ở cả Contact page & AdContact
+const CONTACT_TOPICS = [
+  { value: "BOOKING", label: "Booking & Reservation" },
+  { value: "PAYMENT", label: "Payment & Refund" },
+  { value: "LOYALTY", label: "Loyalty Points" },
+  { value: "SUPPORT", label: "Technical Support" },
+  { value: "OTHER", label: "Other" },
+];
 
 export const Contact = () => {
   const { user } = useSelector((s) => s.auth || {});
@@ -44,7 +50,7 @@ export const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.email || !form.message) {
+    if (!form.name || !form.email || !form.message || !form.topic) {
       setAlertType("danger");
       setAlert("Please fill all required fields.");
       return;
@@ -54,19 +60,13 @@ export const Contact = () => {
       setLoading(true);
       setAlert("");
 
-      const headers = authServices.authHeader();
-
-      await axios.post(
-        `${API_URL}/api/contact`,
-        {
-          name: form.name,
-          email: form.email,
-          subject: form.subject,
-          topic: form.topic,
-          message: form.message,
-        },
-        { headers }
-      );
+      await contactServices.create({
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        topic: form.topic, // BOOKING / PAYMENT / ...
+        message: form.message,
+      });
 
       setAlertType("success");
       setAlert("Your message has been sent! We will respond within 24 hours.");
@@ -96,7 +96,7 @@ export const Contact = () => {
         borderRadius: "10px",
         fontSize: "0.9rem",
         marginBottom: "16px",
-        backgroundColor: "rgba(22,163,74,0.1)", // xanh lá nhạt
+        backgroundColor: "rgba(22,163,74,0.1)",
         color: "#166534",
         border: "1px solid rgba(22,163,74,0.4)",
         display: "flex",
@@ -111,7 +111,7 @@ export const Contact = () => {
         borderRadius: "10px",
         fontSize: "0.9rem",
         marginBottom: "16px",
-        backgroundColor: "rgba(220,38,38,0.06)", // đỏ nhạt
+        backgroundColor: "rgba(220,38,38,0.06)",
         color: "#b91c1c",
         border: "1px solid rgba(220,38,38,0.4)",
         display: "flex",
@@ -125,7 +125,7 @@ export const Contact = () => {
       borderRadius: "10px",
       fontSize: "0.9rem",
       marginBottom: "16px",
-      backgroundColor: "rgba(37,99,235,0.08)", // xanh dương nhạt
+      backgroundColor: "rgba(37,99,235,0.08)",
       color: "#1d4ed8",
       border: "1px solid rgba(37,99,235,0.4)",
       display: "flex",
@@ -202,11 +202,9 @@ export const Contact = () => {
               </span>
             </p>
           )}
-
-
         </div>
 
-        {/* 🔔 Banner thông báo ngay dưới heading, rất dễ thấy */}
+        {/* 🔔 Banner thông báo */}
         {alert && (
           <div className="row justify-content-center">
             <div className="col-lg-6 col-md-8">
@@ -385,13 +383,13 @@ export const Contact = () => {
                       <option value="" disabled>
                         Select a topic
                       </option>
-                      <option value="booking">Booking & Reservation</option>
-                      <option value="payment">Payment & Refund</option>
-                      <option value="loyalty">Loyalty Points</option>
-                      <option value="support">Technical Support</option>
-                      <option value="other">Other</option>
+                      {CONTACT_TOPICS.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
                     </select>
-                    <label htmlFor="topic">Topic</label>
+                    <label htmlFor="topic">Topic *</label>
                   </div>
                 </div>
 
@@ -440,9 +438,7 @@ export const Contact = () => {
         {/* Help block */}
         <div className="row mt-4">
           <div className="col-md-8 mx-auto text-center">
-            <p className="mb-2 fw-semibold">
-              Need help with an existing booking?
-            </p>
+            <p className="mb-2 fw-semibold">Need help with an existing booking?</p>
             <p className="small text-muted mb-3">
               Check your booking details or send us a message if you want to
               change dates, update guest information, or request special
