@@ -1,3 +1,4 @@
+// src/main/java/com/java/hotel/service/NewsletterService.java
 package com.java.hotel.service;
 
 import com.java.hotel.model.NewsletterSubscriber;
@@ -5,6 +6,7 @@ import com.java.hotel.repository.NewsletterSubscriberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,10 +22,7 @@ public class NewsletterService {
     }
 
     /**
-     * PUBLIC: Đăng ký newsletter
-     *  - validate email
-     *  - lưu DB nếu chưa tồn tại
-     *  - gửi email Welcome
+     * PUBLIC: Khách đăng ký newsletter ở Footer
      */
     public String subscribe(String rawEmail) {
         if (!StringUtils.hasText(rawEmail)) {
@@ -59,5 +58,50 @@ public class NewsletterService {
     // ===== ADMIN: xoá 1 subscriber =====
     public void deleteSubscriber(Long id) {
         repo.deleteById(id);
+    }
+
+    /**
+     * ADMIN: gửi email khuyến mãi
+     *
+     *  - Nếu ids null / rỗng  => gửi cho TẤT CẢ subscribers
+     *  - Nếu ids có giá trị   => gửi cho các subscriber này
+     *
+     * @return số subscriber đã gửi
+     */
+    public int sendPromotion(List<Long> ids, String subject, String content) {
+        if (!StringUtils.hasText(subject)) {
+            throw new IllegalArgumentException("Subject is required");
+        }
+        if (!StringUtils.hasText(content)) {
+            throw new IllegalArgumentException("Content is required");
+        }
+
+        List<NewsletterSubscriber> targets;
+
+        // không truyền ids => gửi cho tất cả
+        if (ids == null || ids.isEmpty()) {
+            targets = repo.findAllByOrderByCreatedAtDesc();
+        } else {
+            Iterable<NewsletterSubscriber> iterable = repo.findAllById(ids);
+            targets = new ArrayList<>();
+            iterable.forEach(targets::add);
+        }
+
+        if (targets.isEmpty()) {
+            return 0;
+        }
+
+        String cleanSubject = subject.trim();
+        String cleanContent = content.trim();
+
+        for (NewsletterSubscriber s : targets) {
+            String email = s.getEmail();
+            if (!StringUtils.hasText(email)) continue;
+
+            // gọi qua EmailService để gửi mail khuyến mãi
+            emailService.sendNewsletterPromotion(email, cleanSubject, cleanContent);
+        }
+
+        return targets.size();
     }
 }

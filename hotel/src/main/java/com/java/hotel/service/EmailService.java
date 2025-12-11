@@ -29,7 +29,9 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    // =====================================================
     // 1. EMAIL TEXT ĐƠN GIẢN
+    // =====================================================
     public void sendSimpleEmail(String to, String subject, String text) {
         if (to == null || to.isBlank()) return;
 
@@ -42,7 +44,9 @@ public class EmailService {
         mailSender.send(msg);
     }
 
+    // =====================================================
     // 2. EMAIL HTML CHUNG
+    // =====================================================
     public void sendHtmlEmail(String to, String subject, String htmlContent)
             throws MessagingException {
 
@@ -60,7 +64,9 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    // =====================================================
     // 3. MAIL CHO KHÁCH (BOOKING CONFIRMATION)
+    // =====================================================
     @Async
     public void sendBookingConfirmation(Booking booking) {
         if (booking == null) return;
@@ -140,7 +146,9 @@ public class EmailService {
         }
     }
 
+    // =====================================================
     // 4. MAIL CHO HOTEL OWNER / MOD KHI CÓ BOOKING MỚI
+    // =====================================================
     @Async
     public void sendNewBookingToOwner(Booking booking) {
         if (booking == null) return;
@@ -226,7 +234,9 @@ public class EmailService {
         }
     }
 
-    // 5. TEMPLATE CHO KHÁCH
+    // =====================================================
+    // 5. TEMPLATE HTML CHO KHÁCH
+    // =====================================================
     private String buildBookingConfirmationHtmlForGuest(
             String guestName,
             String hotelName,
@@ -238,32 +248,52 @@ public class EmailService {
             String paymentStatus,
             String detailUrl
     ) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="vi">
-            <head>
-              <meta charset="UTF-8" />
-              <title>SBHotel - Xác nhận đặt phòng</title>
-              ...
-            </head>
-            <body> ... (template như bạn đang dùng, giữ nguyên) ... </body>
-            </html>
-            """,
-                hotelName,
-                bookingCode,
-                guestName,
-                hotelName,
-                roomName,
-                checkIn,
-                checkOut,
-                totalPrice,
-                bookingStatusClass(paymentStatus),
-                paymentStatus,
-                detailUrl
-        );
+        return """
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                  <meta charset="UTF-8" />
+                  <title>SBHotel - Xác nhận đặt phòng</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; background-color:#f5f5f5; padding:24px;">
+                  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:24px;">
+                    <h2 style="color:#333333;margin-top:0;">Xin chào %s,</h2>
+                    <p>Cảm ơn bạn đã đặt phòng tại <strong>%s</strong>.</p>
+
+                    <p style="margin:16px 0 8px;">Thông tin đặt phòng:</p>
+                    <p><strong>Mã đặt phòng:</strong> %s</p>
+                    <p><strong>Phòng:</strong> %s</p>
+                    <p><strong>Check-in:</strong> %s</p>
+                    <p><strong>Check-out:</strong> %s</p>
+                    <p><strong>Tổng tiền:</strong> %s</p>
+                    <p><strong>Thanh toán:</strong> %s</p>
+
+                    <p style="margin-top:16px;">
+                      Bạn có thể xem chi tiết đơn đặt phòng tại:
+                      <a href="%s" target="_blank" rel="noopener">Xem chi tiết</a>
+                    </p>
+
+                    <p style="margin-top:16px;">Trân trọng,<br/>SB Hotel</p>
+                  </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        guestName,
+                        hotelName,
+                        bookingCode,
+                        roomName,
+                        checkIn,
+                        checkOut,
+                        totalPrice,
+                        paymentStatus,
+                        detailUrl
+                );
     }
 
-    // 6. TEMPLATE CHO OWNER
+    // =====================================================
+    // 6. TEMPLATE HTML CHO OWNER
+    // =====================================================
     private String buildNewBookingHtmlForOwner(
             String hotelName,
             String bookingCode,
@@ -276,32 +306,57 @@ public class EmailService {
             String paymentStatus,
             String detailUrl
     ) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="vi">
-            <head>
-              <meta charset="UTF-8" />
-              <title>SBHotel - Đặt phòng mới</title>
-              ...
-            </head>
-            <body> ... (template như bạn đang dùng, giữ nguyên) ... </body>
-            </html>
-            """,
-                hotelName,
-                bookingCode,
-                guestName,
-                (guestEmail != null ? guestEmail : "-"),
-                roomName,
-                checkIn,
-                checkOut,
-                totalPrice,
-                bookingStatusClass(paymentStatus),
-                paymentStatus,
-                detailUrl
-        );
+        return """
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head>
+                  <meta charset="UTF-8" />
+                  <title>SBHotel - Đặt phòng mới</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; background-color:#f5f5f5; padding:24px;">
+                  <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;padding:24px;">
+                    <h2 style="color:#333333;margin-top:0;">Khách mới đặt phòng tại %s</h2>
+
+                    <p style="margin:8px 0;">Mã đặt phòng: <strong>%s</strong></p>
+
+                    <p style="margin:16px 0 8px;">Thông tin khách:</p>
+                    <p><strong>Tên khách:</strong> %s</p>
+                    <p><strong>Email:</strong> %s</p>
+
+                    <p style="margin:16px 0 8px;">Thông tin đặt phòng:</p>
+                    <p><strong>Phòng:</strong> %s</p>
+                    <p><strong>Check-in:</strong> %s</p>
+                    <p><strong>Check-out:</strong> %s</p>
+                    <p><strong>Tổng tiền:</strong> %s</p>
+                    <p><strong>Thanh toán:</strong> %s</p>
+
+                    <p style="margin-top:16px;">
+                      Xem chi tiết booking tại:
+                      <a href="%s" target="_blank" rel="noopener">Trang quản lý booking</a>
+                    </p>
+
+                    <p style="margin-top:16px;">Trân trọng,<br/>SB Hotel System</p>
+                  </div>
+                </body>
+                </html>
+                """
+                .formatted(
+                        hotelName,
+                        bookingCode,
+                        guestName,
+                        (guestEmail != null ? guestEmail : "-"),
+                        roomName,
+                        checkIn,
+                        checkOut,
+                        totalPrice,
+                        paymentStatus,
+                        detailUrl
+                );
     }
 
-    // 7. CSS CLASS CHO TRẠNG THÁI THANH TOÁN
+    // =====================================================
+    // 7. CSS CLASS CHO TRẠNG THÁI THANH TOÁN (nếu cần dùng)
+    // =====================================================
     private String bookingStatusClass(String paymentStatus) {
         if ("ĐÃ THANH TOÁN".equalsIgnoreCase(paymentStatus)) {
             return "status-paid";
@@ -309,7 +364,9 @@ public class EmailService {
         return "status-unpaid";
     }
 
-    // 8. EMAIL CHO CONTACT (ADMIN + KHÁCH) – chạy async
+    // =====================================================
+    // 8. EMAIL CHO CONTACT (ADMIN + KHÁCH)
+    // =====================================================
     @Async
     public void sendContactEmails(Contact contact, String adminEmail) {
         if (contact == null) return;
@@ -378,5 +435,30 @@ public class EmailService {
 
         sendSimpleEmail(to, subject, body);
     }
-}
 
+    // =====================================================
+    // 10. EMAIL KHUYẾN MÃI CHO NEWSLETTER (ADMIN GỬI)
+    // =====================================================
+    @Async
+    public void sendNewsletterPromotion(String to, String subject, String content) {
+        if (to == null || to.isBlank()) return;
+
+        String safeSubject = (subject == null || subject.isBlank())
+                ? "SB Hotel Promotion"
+                : subject;
+
+        String safeContent = (content == null || content.isBlank())
+                ? """
+                   Xin chào,
+
+                   SB Hotel gửi đến bạn một số ưu đãi mới.
+                   Vui lòng truy cập website SB Hotel để xem chi tiết.
+
+                   Thân mến,
+                   SB Hotel
+                   """
+                : content;
+
+        sendSimpleEmail(to, safeSubject, safeContent);
+    }
+}

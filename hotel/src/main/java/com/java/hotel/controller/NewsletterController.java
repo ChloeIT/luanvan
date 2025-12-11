@@ -1,3 +1,4 @@
+// src/main/java/com/java/hotel/controller/NewsletterController.java
 package com.java.hotel.controller;
 
 import com.java.hotel.model.NewsletterSubscriber;
@@ -40,5 +41,22 @@ public class NewsletterController {
     public ResponseEntity<?> delete(@PathVariable Long id) {
         newsletterService.deleteSubscriber(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ===== ADMIN: gửi mail khuyến mãi tới subscribers =====
+    @PostMapping("/admin/send")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> sendPromotion(@RequestBody NewsletterRequest request) {
+        int count = newsletterService.sendPromotion(
+                request.getIds(),
+                request.getSubject(),
+                request.getContent()
+        );
+
+        if (count == 0) {
+            return ResponseEntity.badRequest().body("No subscribers to send.");
+        }
+
+        return ResponseEntity.ok("Newsletter sent to " + count + " subscriber(s).");
     }
 }
