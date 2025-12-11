@@ -10,12 +10,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class ContactService {
 
-    // Mail ADMIN nhận contact
+    // Mail ADMIN nhận contact (dùng ở chỗ gửi email – để TODO sau)
     private static final String ADMIN_EMAIL = "saoluune1207@gmail.com";
 
     private final ContactRepository contactRepository;
@@ -64,31 +65,71 @@ public class ContactService {
         return saved;
     }
 
-    /**
-     * ADMIN: Lấy toàn bộ contact (mới nhất lên trên).
-     */
+    /** ADMIN: Lấy toàn bộ contact (mới nhất lên trên). */
     @Transactional(readOnly = true)
     public List<Contact> getAllContacts() {
         return contactRepository.findAllByOrderByCreatedAtDesc();
     }
 
-    /**
-     * ADMIN: Lọc contact theo status.
-     */
+    /** ADMIN: Lọc contact theo status. */
     @Transactional(readOnly = true)
     public List<Contact> getContactsByStatus(Contact.Status status) {
         return contactRepository.findByStatus(status);
     }
 
     /**
-     * Cập nhật trạng thái contact (PENDING / IN_PROGRESS / DONE).
+     * USER: Lấy các contact do chính user hiện tại gửi (mới nhất lên trên).
+     * Dùng cho trang Profile → My support messages.
+     */
+    @Transactional(readOnly = true)
+    public List<Contact> getMyContacts() {
+        User currentUser = getCurrentUserOrNull();
+        if (currentUser == null) {
+            throw new RuntimeException("User must be authenticated to view their contacts.");
+        }
+        return contactRepository.findByUserOrderByCreatedAtDesc(currentUser);
+    }
+
+    /**
+     * ADMIN: Cập nhật trạng thái contact (PENDING / DONE) qua dropdown.
+     * DONE là trạng thái cuối, không cho đổi ngược lại PENDING.
      */
     @Transactional
     public Contact updateStatus(Long id, Contact.Status status) {
         Contact c = contactRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contact not found with id = " + id));
+
+        // Không cho đổi từ DONE về PENDING
+        if (c.getStatus() == Contact.Status.DONE && status == Contact.Status.PENDING) {
+            throw new RuntimeException("Cannot change DONE contact back to PENDING.");
+        }
+
         c.setStatus(status);
         return contactRepository.save(c);
+    }
+
+    /**
+     * ADMIN: Reply cho contact → lưu nội dung + set trạng thái DONE.
+     */
+    @Transactional
+    public Contact replyToContact(Long id, String reply) {
+        Contact c = contactRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contact not found with id = " + id));
+
+        c.setAdminReply(reply);
+        c.setStatus(Contact.Status.DONE);
+        c.setRepliedAt(LocalDateTime.now());
+
+        Contact saved = contactRepository.save(c);
+
+        // TODO: gửi email phản hồi cho khách sau này
+        // try {
+        //     emailService.sendContactReplyEmail(saved);
+        // } catch (Exception e) {
+        //     System.err.println("Failed to send contact reply email: " + e.getMessage());
+        // }
+
+        return saved;
     }
 
     // ===== Helpers =====

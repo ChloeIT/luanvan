@@ -18,11 +18,19 @@ public class ContactRequest {
     @Size(max = 150)
     private String subject;
 
+    /**
+     * Topic gốc từ form (booking, payment, loyalty, support, other, ...)
+     * FE có thể gửi dạng chữ thường, BE lưu lại string này.
+     */
     @Size(max = 50)
     private String topic;
 
     @NotBlank
     private String message;
+
+    // ✅ Dùng cho ADMIN khi reply (optional, FE chỉ cần gửi khi reply)
+    @Size(max = 2000)
+    private String reply;
 
     // ===== GETTER / SETTER =====
 
@@ -64,5 +72,13 @@ public class ContactRequest {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getReply() {
+        return reply;
+    }
+
+    public void setReply(String reply) {
+        this.reply = reply;
     }
 }

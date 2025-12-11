@@ -2,6 +2,7 @@ package com.java.hotel.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,9 +13,8 @@ public class Contact {
     // ENUM TRẠNG THÁI
     // =========================
     public enum Status {
-        PENDING,        // mới gửi – chờ xử lý
-        IN_PROGRESS,    // admin đang xử lý
-        DONE            // đã hoàn tất
+        PENDING,    // mới gửi – chờ xử lý
+        DONE        // đã hoàn tất (admin đã phản hồi)
     }
 
     // =========================
@@ -47,7 +47,7 @@ public class Contact {
     // Người gửi (nếu đăng nhập)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @JsonIgnore         // tránh lỗi bytebuddy khi serialize JSON
+    @JsonIgnore
     private User user;
 
     @Column(nullable = false, updatable = false)
@@ -55,6 +55,14 @@ public class Contact {
 
     @Column
     private LocalDateTime updatedAt;
+
+    // ✅ Phản hồi của admin
+    @Column(name = "admin_reply", columnDefinition = "TEXT")
+    private String adminReply;
+
+    // ✅ Thời điểm admin phản hồi
+    @Column(name = "replied_at")
+    private LocalDateTime repliedAt;
 
     // =========================
     // TIMESTAMP AUTO
@@ -141,5 +149,21 @@ public class Contact {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getAdminReply() {
+        return adminReply;
+    }
+
+    public void setAdminReply(String adminReply) {
+        this.adminReply = adminReply;
+    }
+
+    public LocalDateTime getRepliedAt() {
+        return repliedAt;
+    }
+
+    public void setRepliedAt(LocalDateTime repliedAt) {
+        this.repliedAt = repliedAt;
     }
 }
