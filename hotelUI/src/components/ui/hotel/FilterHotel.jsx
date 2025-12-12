@@ -14,6 +14,16 @@ const normalizeVN = (str = "") =>
     .toLowerCase()
     .trim();
 
+const clampInt = (v, min, max, fallback) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+};
+
+// ✅ map params (đúng y hệ filter của bạn)
+const PRICE_VALUES = new Set(["all", "lt1", "1to2", "gt2"]);
+const SORT_VALUES = new Set(["recommended", "priceLow", "priceHigh", "ratingHigh"]);
+
 export const FilterHotel = ({ hotels = [], setHotels }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -34,24 +44,50 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
     textAlignLast: "center",
   };
 
-  /* ===== Lấy keyword + guests + auto detect city ===== */
+  /* ===== Lấy params từ URL (q/guests/where/price/rating/sort) ===== */
   useEffect(() => {
     const q = searchParams.get("q") || "";
     setKeyword(q);
 
-    const guestsParam = Number(searchParams.get("guests"));
-    if (Number.isFinite(guestsParam) && guestsParam > 0) {
-      setGuests(guestsParam);
+    // guests
+    const guestsParam = clampInt(searchParams.get("guests"), 1, 99, 1);
+    setGuests(guestsParam);
+
+    // where (ưu tiên where; nếu không có thì auto detect từ q như bạn đang làm)
+    const whereParam = searchParams.get("where") || "";
+    if (whereParam) {
+      // match theo VIETNAM_CITIES để select hiển thị đúng label
+      const wNorm = normalizeVN(whereParam);
+      const matchedCity =
+        VIETNAM_CITIES.find((c) => {
+          const cNorm = normalizeVN(c);
+          return wNorm === cNorm || wNorm.includes(cNorm) || cNorm.includes(wNorm);
+        }) || whereParam;
+
+      setLocationFilter(matchedCity);
+    } else {
+      setLocationFilter(""); // reset trước rồi mới auto detect từ q
+      const qNorm = normalizeVN(q);
+      if (qNorm) {
+        const matchedCity = VIETNAM_CITIES.find((c) => {
+          const cNorm = normalizeVN(c);
+          return qNorm.includes(cNorm) || cNorm.includes(qNorm);
+        });
+        if (matchedCity) setLocationFilter(matchedCity);
+      }
     }
 
-    const qNorm = normalizeVN(q);
-    if (qNorm) {
-      const matchedCity = VIETNAM_CITIES.find((c) => {
-        const cNorm = normalizeVN(c);
-        return qNorm.includes(cNorm) || cNorm.includes(qNorm);
-      });
-      if (matchedCity) setLocationFilter(matchedCity);
-    }
+    // price
+    const priceParam = (searchParams.get("price") || "all").trim();
+    setPriceRange(PRICE_VALUES.has(priceParam) ? priceParam : "all");
+
+    // rating
+    const ratingParam = clampInt(searchParams.get("rating"), 0, 5, 0);
+    setSelectedRating(ratingParam);
+
+    // sort
+    const sortParam = (searchParams.get("sort") || "recommended").trim();
+    setSortBy(SORT_VALUES.has(sortParam) ? sortParam : "recommended");
   }, [searchParams]);
 
   /* ===== Lấy danh sách thành phố từ hotel ===== */
@@ -131,9 +167,7 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
 
     /* RATING */
     if (selectedRating > 0) {
-      filtered = filtered.filter(
-        (h) => Number(h.rating || 0) >= selectedRating
-      );
+      filtered = filtered.filter((h) => Number(h.rating || 0) >= selectedRating);
     }
 
     /* SORT */
@@ -182,10 +216,7 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
 
   /* Component 1 ô filter (label + select) */
   const FilterItem = ({ label, children, minWidth = 115 }) => (
-    <div
-      className="d-flex flex-column align-items-center"
-      style={{ minWidth }}
-    >
+    <div className="d-flex flex-column align-items-center" style={{ minWidth }}>
       <span
         style={{
           fontSize: 10,
@@ -205,49 +236,21 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
   return (
     <div className="container-xxl py-4">
       <div className="container">
-        {/* ===== HEADING: gạch – HOTEL – gạch giống DISCOUNT ===== */}
+        {/* ===== HEADING ===== */}
         <div className="text-center">
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "14px" }}
-          >
-            {/* 2 gạch bên trái */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "6px",
-                marginRight: "2px",
-              }}
-            >
+          <div className="heading-line mx-auto" style={{ "--heading-gap": "14px" }}>
+            <span style={{ display: "grid", justifyItems: "end", gap: "6px", marginRight: "2px" }}>
               <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+              <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
             </span>
 
-            <h6
-              className="heading-text text-3xl text-primary text-uppercase"
-              style={{ fontSize: "20px" }}
-            >
+            <h6 className="heading-text text-3xl text-primary text-uppercase" style={{ fontSize: "20px" }}>
               Hotel
             </h6>
 
-            {/* 2 gạch bên phải */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "6px",
-                marginLeft: "2px",
-              }}
-            >
+            <span style={{ display: "grid", justifyItems: "start", gap: "6px", marginLeft: "2px" }}>
               <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+              <span className="divider" style={{ "--w": "60px", "--alpha": 0.45 }} />
             </span>
           </div>
 
@@ -255,10 +258,7 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
             Your hotel, your way!
           </h1>
 
-          <p
-            className="text-muted"
-            style={{ fontSize: 13, marginBottom: 20 }}
-          >
+          <p className="text-muted" style={{ fontSize: 13, marginBottom: 20 }}>
             Showing <strong>{resultCount}</strong>{" "}
             {resultCount === 1 ? "result" : "results"}{" "}
             {keyword.trim() ? (
@@ -271,16 +271,11 @@ export const FilterHotel = ({ hotels = [], setHotels }) => {
           </p>
         </div>
 
-
-        {/* ===== FILTER BAR THU NHỎ ===== */}
+        {/* ===== FILTER BAR ===== */}
         <div className="d-flex justify-content-center">
           <div
             className="rounded-pill px-3 py-2 d-flex align-items-center flex-wrap shadow-sm"
-            style={{
-              background: "#fff",
-              maxWidth: 950,
-              gap: 18,
-            }}
+            style={{ background: "#fff", maxWidth: 950, gap: 18 }}
           >
             {/* ICON + Reset */}
             <div className="d-flex align-items-center" style={{ gap: 8 }}>

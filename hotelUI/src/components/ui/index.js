@@ -6,3 +6,4 @@ export * from "./Room";
 export * from "./compare";
 export * from "./search";
 export * from "./home";
+export * from "./chatbot";
