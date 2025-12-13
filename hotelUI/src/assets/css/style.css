@@ -183,24 +183,60 @@ body {
 .fw-semi-bold {
   font-weight: 700 !important;
 }
-
 /************************************************************
- * 7. FLOATING BUTTONS (BACK TO TOP / COMPARE)
+ * 7.x FLOATING COMMON (COMPARE + CHATBOT)
  ************************************************************/
-.back-to-top {
-  position: fixed;
-  display: none;
-  right: 45px;
-  bottom: 45px;
-  z-index: 99;
+.fab-circle{width:56px;height:56px;border-radius:9999px;display:grid;place-items:center;border:2px solid rgba(255,255,255,.85);background:var(--primary);color:#fff;box-shadow:0 10px 25px rgba(0,0,0,.18);cursor:pointer;transition:.18s}
+.fab-circle:hover{transform:translateY(-2px);filter:brightness(1.03);box-shadow:0 16px 34px rgba(0,0,0,.24),0 4px 10px rgba(0,0,0,.14)}
+.fab-circle:active{transform:translateY(0) scale(.98)}
+.fab-circle--chat{background:var(--secondary);color:#111}
+
+.fab-badge{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#ef4444;color:#fff;font-weight:800;font-size:12px;line-height:22px;text-align:center;border:2px solid rgba(255,255,255,.92)}
+
+.qr-wrap{display:flex;gap:8px;padding:10px 12px;flex-wrap:wrap;border-top:1px solid rgba(0,0,0,.06);background:#fafafa}
+.qr-pill{
+  border-radius:999px;
+  padding:6px 10px;          /* ↓ nhỏ padding */
+  border:1.5px solid rgba(134,184,23,.45);
+  background:#fff;
+  font-size:11.5px;          /* ↓ từ 12.5 → 11.5 */
+  cursor:pointer;
+  transition:.15s ease;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-weight:600;
 }
 
-.btn-compare {
-  position: fixed;
-  right: 45px;
-  bottom: 90px;
-  z-index: 9999;
+.qr-pill:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.1)}
+
+/* Pulse mạnh hơn + rõ */
+@keyframes chatPulseStrong {
+  0%   { transform: scale(0.85); opacity: .9; }
+  60%  { transform: scale(1.35); opacity: 0; }
+  100% { opacity: 0; }
 }
+
+/* Wiggle nhẹ – cute nhưng không nhức mắt (chỉ rung vài % đầu) */
+@keyframes chatWiggle {
+  0%   { transform: translateX(0) }
+  2%   { transform: translateX(-2px) }
+  4%   { transform: translateX(2px) }
+  6%   { transform: translateX(-1px) }
+  8%   { transform: translateX(1px) }
+  10%  { transform: translateX(0) }
+  100% { transform: translateX(0) }
+}
+
+/* bounce hover (giữ lại cute) */
+.fab-circle--chat:hover { animation: chatBounce .45s ease; }
+@keyframes chatBounce {
+  0% { transform: translateY(0) scale(1) }
+  30% { transform: translateY(-2px) scale(1.08) }
+  60% { transform: translateY(-1px) scale(.98) }
+  100% { transform: translateY(-2px) scale(1.02) }
+}
+
 
 /************************************************************
  * 8. SPINNER

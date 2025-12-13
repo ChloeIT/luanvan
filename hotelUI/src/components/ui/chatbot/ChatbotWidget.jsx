@@ -1,4 +1,3 @@
-// src/components/ui/chatbot/ChatbotWidget.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { FiMessageCircle, FiX, FiSend } from "react-icons/fi";
@@ -11,7 +10,7 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 export const ChatbotWidget = ({
     right = 45,
-    bottom = 90 + 56 + 12,
+    bottom = 45,
     size = 56,
     gap = 12,
     margin = 12,
@@ -24,25 +23,18 @@ export const ChatbotWidget = ({
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState("");
 
-    // ✅ state để chatEngine hiểu flow
     const [engineState, setEngineState] = useState(() => ({
         intent: null,
         city: null,
         pendingFilter: null,
     }));
 
-    // ✅ gợi ý mặc định (fallback) – bạn có thể đổi theo ý
-    const DEFAULT_QUICK = useMemo(
-        () => ["Tìm khách sạn ở Cần Thơ", "4-5 sao", "100$ – 200$", "Giá rẻ"],
-        []
-    );
-
     const [messages, setMessages] = useState(() => [
         {
             id: nowId(),
             from: "bot",
             text: "Xin chào 👋 Mình là SB Bot. Bạn muốn tìm khách sạn hay cần hỗ trợ đặt phòng?",
-            quickReplies: DEFAULT_QUICK,
+            quickReplies: ["Xem khách sạn", "Gần tôi", "Đổi thành phố"],
         },
     ]);
 
@@ -56,9 +48,8 @@ export const ChatbotWidget = ({
         height: maxPanelHeight,
     }));
 
-    // ✅ luôn dưới AntD Modal (Modal của bạn zIndex = MAX_Z - 1)
-    const Z_FAB = MAX_Z - 3; // 1997
-    const Z_POPUP = MAX_Z - 4; // 1996
+    const Z_FAB = MAX_Z - 3;
+    const Z_POPUP = MAX_Z - 4;
 
     // ✅ EXCLUSIVE: widget khác mở -> chat tự đóng
     useEffect(() => {
@@ -69,21 +60,14 @@ export const ChatbotWidget = ({
         return () => window.removeEventListener("ui:exclusive-open", onExclusive);
     }, []);
 
-    // ✅ IMPORTANT: lấy bot message gần nhất CÓ quickReplies (không rỗng)
-    const lastQuick = useMemo(() => {
-        const last = [...messages]
-            .reverse()
-            .find(
-                (m) =>
-                    m.from === "bot" &&
-                    Array.isArray(m.quickReplies) &&
-                    m.quickReplies.length > 0
-            );
-        return last?.quickReplies || [];
+    // ✅ Quick replies lấy từ bot message mới nhất
+    const quickReplies = useMemo(() => {
+        const lastBot = [...messages].reverse().find((m) => m.from === "bot");
+        return Array.isArray(lastBot?.quickReplies) ? lastBot.quickReplies : [];
     }, [messages]);
 
-    // ✅ không bao giờ trống gợi ý
-    const quickToShow = lastQuick.length ? lastQuick : DEFAULT_QUICK;
+    // ✅ chỉ show tối đa 3 pill cho gọn (bạn muốn 4 thì đổi 3 -> 4)
+    const qrToShow = useMemo(() => quickReplies.slice(0, 3), [quickReplies]);
 
     const runAction = (action) => {
         if (!action) return;
@@ -99,24 +83,73 @@ export const ChatbotWidget = ({
 
             const qs = sp.toString();
             navigate(qs ? `${pathname}?${qs}` : pathname);
+            return;
+        }
+
+        // (Tuỳ chọn) nếu bạn có GEOLOCATE trong chatEngine
+        if (action.type === "GEOLOCATE") {
+            if (!navigator.geolocation) {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: nowId(),
+                        from: "bot",
+                        text: "Trình duyệt không hỗ trợ GPS 😅 Bạn chọn thành phố giúp mình nhé.",
+                        quickReplies: ["Cần Thơ", "Hồ Chí Minh", "Hà Nội", "Đà Nẵng"],
+                    },
+                ]);
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                () => {
+                    // Bạn có thể nối reverse geocoding sau.
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: nowId(),
+                            from: "bot",
+                            text:
+                                "📍 Mình lấy được vị trí rồi. Bạn muốn xem khách sạn ở thành phố nào gần bạn?\n(Chưa cấu hình map để tự suy ra thành phố.)",
+                            quickReplies: ["Cần Thơ", "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Đổi thành phố"],
+                        },
+                    ]);
+                },
+                () => {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: nowId(),
+                            from: "bot",
+                            text: "Không lấy được vị trí 😅 Bạn chọn thành phố giúp mình nhé.",
+                            quickReplies: ["Cần Thơ", "Hồ Chí Minh", "Hà Nội", "Đà Nẵng"],
+                        },
+                    ]);
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
         }
     };
 
     const send = (text) => {
-        const content = (text ?? input).trim();
+        const content = String(text ?? input ?? "").trim();
         if (!content) return;
 
-        const res = chatEngine(content, engineState);
+        const res = chatEngine(content, engineState) || {};
 
         setMessages((prev) => [
             ...prev,
             { id: nowId(), from: "user", text: content },
-            { id: nowId(), from: "bot", text: res.text, quickReplies: res.quickReplies },
+            {
+                id: nowId(),
+                from: "bot",
+                text: res.text || "...",
+                quickReplies: Array.isArray(res.quickReplies) ? res.quickReplies : [],
+            },
         ]);
 
         if (res?.nextState) setEngineState(res.nextState);
         runAction(res?.action);
-
         setInput("");
     };
 
@@ -130,10 +163,7 @@ export const ChatbotWidget = ({
         const width = Math.min(maxPanelWidth, vw - margin * 2);
         const height = Math.min(maxPanelHeight, vh - margin * 2);
 
-        // ✅ đáy khung chat ngang hàng với nút chat
         let top = rect.bottom - height;
-
-        // ✅ popup nằm bên trái nút
         let left = rect.left - gap - width;
         if (left < margin) left = rect.right + gap;
 
@@ -169,10 +199,6 @@ export const ChatbotWidget = ({
         });
     }, [messages, open]);
 
-    const R = 16;
-    const shadow = "0 18px 50px rgba(0,0,0,0.18)";
-    const border = "1px solid rgba(0,0,0,0.08)";
-
     const toggleOpen = () => {
         setOpen((v) => {
             const next = !v;
@@ -192,23 +218,35 @@ export const ChatbotWidget = ({
             onClick={toggleOpen}
             aria-label="Open chatbot"
             title="SB Bot"
+            className={`fab-circle fab-circle--chat ${open ? "is-open" : ""}`}
             style={{
                 position: "fixed",
                 right,
                 bottom,
                 width: size,
                 height: size,
-                borderRadius: 999,
-                border: "2px solid rgba(255,255,255,0.85)",
-                background: "var(--primary, #86B817)",
-                color: "#fff",
-                display: "grid",
-                placeItems: "center",
-                boxShadow: "0 10px 25px rgba(0,0,0,0.18)",
                 zIndex: Z_FAB,
-                cursor: "pointer",
+                overflow: "visible",
+                animation: !open ? "chatWiggle 3.2s infinite" : "none",
             }}
         >
+            {!open && (
+                <span
+                    aria-hidden
+                    style={{
+                        position: "absolute",
+                        inset: -10,
+                        borderRadius: 9999,
+                        background:
+                            "radial-gradient(circle, rgba(254,136,0,0.45) 0%, rgba(254,136,0,0.15) 55%, rgba(254,136,0,0) 70%)",
+                        animation: "chatPulseStrong 1.4s infinite",
+                        filter: "blur(1px)",
+                        zIndex: -1,
+                        pointerEvents: "none",
+                    }}
+                />
+            )}
+
             {open ? <FiX size={22} /> : <FiMessageCircle size={22} />}
         </button>
     );
@@ -222,10 +260,10 @@ export const ChatbotWidget = ({
                 width: panelPos.width,
                 height: panelPos.height,
                 background: "#fff",
-                borderRadius: R,
+                borderRadius: 16,
                 overflow: "hidden",
-                boxShadow: shadow,
-                border,
+                boxShadow: "0 18px 50px rgba(0,0,0,0.18)",
+                border: "1px solid rgba(0,0,0,0.08)",
                 zIndex: Z_POPUP,
                 display: "flex",
                 flexDirection: "column",
@@ -282,6 +320,8 @@ export const ChatbotWidget = ({
             >
                 {messages.map((m) => {
                     const isUser = m.from === "user";
+                    const isHint = !isUser && String(m.text || "").includes("😅");
+
                     return (
                         <div
                             key={m.id}
@@ -303,12 +343,18 @@ export const ChatbotWidget = ({
                                         ? "0 8px 16px rgba(134,184,23,0.20)"
                                         : "0 8px 16px rgba(0,0,0,0.06)",
                                     whiteSpace: "pre-wrap",
-                                    fontSize: 13.5,
+                                    fontSize: isHint ? 12 : 13.5,
+                                    opacity: isHint ? 0.88 : 1,
                                     lineHeight: 1.35,
                                 }}
                                 dangerouslySetInnerHTML={
                                     !isUser
-                                        ? { __html: m.text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>") }
+                                        ? {
+                                            __html: String(m.text || "").replace(
+                                                /\*\*(.*?)\*\*/g,
+                                                "<b>$1</b>"
+                                            ),
+                                        }
                                         : undefined
                                 }
                             >
@@ -317,38 +363,48 @@ export const ChatbotWidget = ({
                         </div>
                     );
                 })}
-
-                {/* ✅ Quick replies luôn hiện (giữ từ lần gần nhất hoặc fallback menu) */}
-                {quickToShow.length > 0 && (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 8,
-                            marginTop: 6,
-                        }}
-                    >
-                        {quickToShow.map((q) => (
-                            <button
-                                key={q}
-                                onClick={() => send(q)}
-                                style={{
-                                    borderRadius: 999,
-                                    padding: "7px 10px",
-                                    border: "1px solid rgba(134,184,23,0.32)",
-                                    background: "rgba(255,255,255,0.92)",
-                                    color: "#1f2a12",
-                                    fontSize: 12.5,
-                                    cursor: "pointer",
-                                    boxShadow: "0 6px 14px rgba(0,0,0,0.05)",
-                                }}
-                            >
-                                {q}
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
+
+            {/* Quick replies */}
+            {qrToShow.length > 0 && (
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 6,
+                        padding: "6px 8px",
+                        background: "#fff",
+                        borderTop: "1px solid rgba(0,0,0,0.06)",
+                    }}
+                >
+                    {qrToShow.map((label) => (
+                        <button
+                            key={label}
+                            onClick={() => send(label)}
+                            title={label}
+                            style={{
+                                fontSize: 11,
+                                padding: "3px 6px",
+                                lineHeight: 1.05,
+                                borderRadius: 999,
+                                border: "1px solid rgba(134,184,23,0.6)",
+                                background: "#fff",
+                                color: "#1f2937",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 3,
+                                whiteSpace: "nowrap",
+                                flex: 1,
+                                justifyContent: "center",
+                            }}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Input */}
             <div
@@ -364,7 +420,12 @@ export const ChatbotWidget = ({
                 <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && send()}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            send();
+                        }
+                    }}
                     placeholder="Nhập tin nhắn..."
                     style={{
                         flex: 1,

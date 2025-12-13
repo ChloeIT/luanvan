@@ -70,9 +70,11 @@ export const MainLayout = () => {
         <Outlet />
       </div>
 
-      <ChatbotWidget right={45} bottom={90 + 56 + 12} size={56} />
-      <CompareButton />
+      {/* ✅ Chatbot dưới */}
+      <ChatbotWidget right={45} bottom={45} size={56} />
 
+      {/* ✅ Compare tự nằm trên (bottom=110) */}
+      <CompareButton />
 
       <Footer />
     </div>

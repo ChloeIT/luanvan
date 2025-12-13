@@ -110,59 +110,40 @@ export const CompareButton = () => {
 
   const close = () => setIsOpen(false);
 
-  // ✅ khi isOpen thay đổi -> phát event “modal-open” để cái khác (chat) xử lý nếu muốn
+  // ✅ khi isOpen thay đổi -> phát event “modal-open”
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent("ui:modal-open", { detail: { name: "compare", open: isOpen } })
+      new CustomEvent("ui:modal-open", {
+        detail: { name: "compare", open: isOpen },
+      })
     );
   }, [isOpen]);
 
   const fab =
     !isOpen && (
-      <button
-        type="button"
-        onClick={open}
-        aria-label="Mở so sánh phòng"
-        title="So sánh phòng"
-        className="compare-fab"
+      <div
+        className="btn-compare"
         style={{
           position: "fixed",
           right: 45,
-          bottom: 90,
+          bottom: 110, // 👈 nằm trên chatbot
           zIndex: MAX_Z,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "10px 14px",
-          borderRadius: 999,
-          border: "none",
-          boxShadow: "0 6px 18px rgba(0,0,0,.18)",
-          background: "#86B817",
-          color: "#fff",
-          cursor: "pointer",
         }}
       >
-        <FaBalanceScale size={20} aria-hidden />
-        {count > 0 && (
-          <span
-            style={{
-              marginLeft: 2,
-              minWidth: 24,
-              height: 24,
-              padding: "0 6px",
-              borderRadius: 999,
-              background: "rgba(0,0,0,.25)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: 12,
-              lineHeight: "24px",
-              textAlign: "center",
-            }}
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            onClick={open}
+            aria-label="Mở so sánh phòng"
+            title="Compare rooms"
+            className="fab-circle"
           >
-            {count}
-          </span>
-        )}
-      </button>
+            <FaBalanceScale size={20} aria-hidden />
+          </button>
+
+          {count > 0 && <span className="fab-badge">{count}</span>}
+        </div>
+      </div>
     );
 
   return (
@@ -172,7 +153,7 @@ export const CompareButton = () => {
         : fab}
 
       <Modal
-        title="So sánh phòng"
+        title="Compare rooms"
         open={isOpen}
         onCancel={close}
         width={1200}
@@ -194,7 +175,7 @@ export const CompareButton = () => {
         }}
         footer={[
           <Button key="close" onClick={close}>
-            Đóng
+            Close
           </Button>,
         ]}
       >

@@ -10,17 +10,15 @@ export const MainHotel = () => {
   const { hotels } = useSelector((state) => state.hotel);
   const { rooms } = useSelector((state) => state.room);
 
-  // list hotel sau khi FILTER
+  // list hotel sau khi FILTER (render)
   const [data, setData] = useState([]);
-  // số thẻ đang hiển thị
   const [visibleCount, setVisibleCount] = useState(4);
 
-  /* ===== 1. Tính minPrice, maxPrice, maxCapacity cho từng hotel từ Redux.rooms ===== */
+  /* ===== 1) Tính minPrice, maxPrice, maxCapacity cho từng hotel từ rooms ===== */
   const statsByHotel = useMemo(() => {
     if (!Array.isArray(rooms)) return {};
 
     const map = {};
-
     rooms.forEach((r) => {
       const hotelId = r?.hotel?.id ?? r?.hotelId ?? r?.hotel_id;
       const rawPrice = r?.finalPrice ?? r?.final_price ?? r?.price;
@@ -38,22 +36,13 @@ export const MainHotel = () => {
         return;
       }
 
-      // update min / max price
       if (Number.isFinite(price)) {
-        if (map[hotelId].min == null || price < map[hotelId].min) {
-          map[hotelId].min = price;
-        }
-        if (map[hotelId].max == null || price > map[hotelId].max) {
-          map[hotelId].max = price;
-        }
+        if (map[hotelId].min == null || price < map[hotelId].min) map[hotelId].min = price;
+        if (map[hotelId].max == null || price > map[hotelId].max) map[hotelId].max = price;
       }
 
-      // update maxCapacity
       if (Number.isFinite(capacity)) {
-        if (
-          map[hotelId].maxCapacity == null ||
-          capacity > map[hotelId].maxCapacity
-        ) {
+        if (map[hotelId].maxCapacity == null || capacity > map[hotelId].maxCapacity) {
           map[hotelId].maxCapacity = capacity;
         }
       }
@@ -62,7 +51,7 @@ export const MainHotel = () => {
     return map;
   }, [rooms]);
 
-  /* ===== 2. Gắn stats vào mỗi hotel ===== */
+  /* ===== 2) Gắn stats vào mỗi hotel ===== */
   const hotelsWithPrice = useMemo(() => {
     if (!Array.isArray(hotels)) return [];
     return hotels.map((h) => {
@@ -76,61 +65,54 @@ export const MainHotel = () => {
     });
   }, [hotels, statsByHotel]);
 
-  /* ===== 3. Ban đầu hiển thị tất cả hotel (reset visibleCount = 4) ===== */
+  /* ===== 3) Reset list khi data gốc đổi ===== */
   useEffect(() => {
     setData(hotelsWithPrice);
     setVisibleCount(4);
   }, [hotelsWithPrice]);
 
-  /* ===== 4. Nếu filter làm số lượng kết quả < visibleCount → thu lại ===== */
+  /* ===== 4) Clamp visibleCount ===== */
   useEffect(() => {
     setVisibleCount((prev) => {
-      if (!Array.isArray(data)) return 4;
-      const len = data.length;
+      const len = Array.isArray(data) ? data.length : 0;
       if (len === 0) return 0;
-      // giữ số đang xem nhưng không vượt quá length, tối thiểu 4
       return Math.min(Math.max(4, prev), len);
     });
   }, [data]);
 
-  /* ===== HANDLER "Show more" ===== */
   const handleShowMore = () => {
     setVisibleCount((prev) => {
-      if (!Array.isArray(data)) return prev;
-      const next = prev + 4; // mỗi lần thêm 4
-      return next > data.length ? data.length : next;
+      const len = Array.isArray(data) ? data.length : 0;
+      const next = prev + 4;
+      return next > len ? len : next;
     });
   };
 
   return (
     <>
-      {/* Discount section – thu nhỏ một chút */}
       <div className="mt-2 mb-1">
         <Discount />
       </div>
 
-      {/* Filter section */}
       <div className="mt-0 mb-2">
-        <FilterHotel hotels={hotelsWithPrice} setHotels={setData} />
+        {/* ✅ QUAN TRỌNG: truyền allHotels đúng prop name */}
+        <FilterHotel allHotels={hotelsWithPrice} setHotels={setData} />
       </div>
 
-      {/* List hotel + Show more */}
       <div className="container-xxl pt-2 pb-4">
         <div className="container">
           <div className="row g-4 mt-1">
-            {(!data || data.length === 0) ? (
+            {!data || data.length === 0 ? (
               <p className="text-center text-muted w-100 mt-3" style={{ fontSize: "15px" }}>
                 No hotels match your search.
               </p>
             ) : (
-              // CHỈ HIỂN THỊ TỚI visibleCount
-              data.slice(0, visibleCount).map((hotel, index) => (
-                <HotelCard hotel={hotel} key={index} />
+              data.slice(0, visibleCount).map((hotel) => (
+                <HotelCard hotel={hotel} key={hotel.id ?? `${hotel.name}-${Math.random()}`} />
               ))
             )}
           </div>
 
-          {/* Nút Show more */}
           {data && data.length > visibleCount && (
             <div className="text-center mt-4">
               <button
@@ -157,7 +139,6 @@ export const MainHotel = () => {
               </button>
             </div>
           )}
-
         </div>
       </div>
     </>
