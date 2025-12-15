@@ -49,14 +49,25 @@ export const Service = () => {
   const services = [
     {
       icon: <AiOutlineGlobal size={40} color="white" />,
-      title: "Loyalty program",
+      title: (
+        <span
+          style={{
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "0.4px",
+          }}
+        >
+          Loyalty program
+        </span>
+      ),
       desc: (
         <>
           <p>Thank you for choosing SB Hotel!</p>
           <p>
-            Our loyalty program rewards you with BRONZE, SILVER and GOLD tiers
-            based on your total points, giving you more benefits the more you
-            stay with us.
+            Our loyalty program rewards you with{" "}
+            <strong>BRONZE</strong>, <strong>SILVER</strong> and{" "}
+            <strong>GOLD</strong> tiers based on your total points,
+            giving you more benefits the more you stay with us.
           </p>
         </>
       ),
@@ -64,7 +75,17 @@ export const Service = () => {
     },
     {
       icon: <FaHotel size={40} color="white" />,
-      title: "Accumulate points",
+      title: (
+        <span
+          style={{
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "0.4px",
+          }}
+        >
+          Accumulate points
+        </span>
+      ),
       desc: (
         <>
           <p>
@@ -72,8 +93,9 @@ export const Service = () => {
             from the room rate.
           </p>
           <p>
-            Under 10 points: <b>Bronze</b> · 10–99: <b>Silver</b> · From 100:{" "}
-            <b>Gold</b> with special privileges and discounts.
+            Under 10 points: <strong>Bronze</strong> · 10–99:{" "}
+            <strong>Silver</strong> · From 100:{" "}
+            <strong>Gold</strong> with special privileges and discounts.
           </p>
         </>
       ),
@@ -81,7 +103,17 @@ export const Service = () => {
     },
     {
       icon: <IoPersonSharp size={40} color="white" />,
-      title: "24/7 Customer Support",
+      title: (
+        <span
+          style={{
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "0.4px",
+          }}
+        >
+          24/7 Customer Support
+        </span>
+      ),
       desc: (
         <>
           <p>
@@ -95,7 +127,17 @@ export const Service = () => {
     },
     {
       icon: <IoSettingsSharp size={40} color="white" />,
-      title: "Promotions and offers",
+      title: (
+        <span
+          style={{
+            fontWeight: 900,
+            fontSize: 20,
+            letterSpacing: "0.4px",
+          }}
+        >
+          Promotions and offers
+        </span>
+      ),
       desc: (
         <p>
           Enjoy brilliant promotions and surprisingly good prices, with extra
@@ -104,6 +146,7 @@ export const Service = () => {
       ),
       delay: "0.7s",
     },
+
   ];
 
   return (
@@ -115,11 +158,17 @@ export const Service = () => {
             <div className="col-lg-8">
               <div className="h-full rounded-3xl bg-amber-100/90 border border-amber-200/70 p-4 p-md-4 text-center shadow-sm">
                 <h3
-                  className="mb-2 fw-semibold text-primary text-uppercase"
-                  style={{ fontSize: "20px" }}
+                  className="mb-2 text-primary text-uppercase"
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    letterSpacing: "0.6px",
+                    textShadow: "0 1px 0 rgba(0,0,0,0.08)", // 👈 nhẹ, sang
+                  }}
                 >
                   Your Loyalty Program
                 </h3>
+
                 <p className="mb-1" style={{ fontSize: "14px" }}>
                   Hello{" "}
                   <span className="fw-bold">

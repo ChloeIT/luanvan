@@ -69,8 +69,16 @@ export const Booking = () => {
                 <FaMapLocationDot size={40} color="#fff" />
               </div>
 
-              <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
-                Choose A Destination
+              <h5 className="mt-3 mb-1">
+                <span
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 20,
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  Choose A Destination
+                </span>
               </h5>
 
               {/* ✅ gạch xanh giống Service */}
@@ -96,8 +104,16 @@ export const Booking = () => {
                 <GiPayMoney size={40} color="#fff" />
               </div>
 
-              <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
-                Pay Online
+              <h5 className="mt-3 mb-1">
+                <span
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 20,
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  Pay Online
+                </span>
               </h5>
 
               {/* ✅ gạch xanh giống Service */}
@@ -123,8 +139,16 @@ export const Booking = () => {
                 <MdOutlineFlightTakeoff size={40} color="#fff" />
               </div>
 
-              <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
-                Fly Today
+              <h5 className="mt-3 mb-1">
+                <span
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 20,
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  Fly Today
+                </span>
               </h5>
 
               {/* ✅ gạch xanh giống Service */}
