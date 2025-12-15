@@ -16,169 +16,124 @@ export const Booking = () => {
     const chosenId = id ?? localStorage.getItem("idBooking");
     if (id) localStorage.setItem("idBooking", id);
     if (!chosenId) return;
+
     const found = rooms.find((room) => String(room.id) === String(chosenId));
     setRoomBooking(found);
   }, [id, rooms]);
-
-  // Style dùng lại cho cặp gạch – thu nhỏ giống Contact
-  const pairStyle = {
-    "--pair-gap": "3px",
-    "--pair-mt": "10px",
-    "--pair-mb": "10px",
-  };
 
   return (
     <div className="container-xxl py-4">
       <div className="container">
         {/* ===== Heading ===== */}
-        <div className="text-center pb-3">
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "10px" }}
-          >
-            {/* 2 gạch bên trái – căn lề phải */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "4px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+        <div className="text-center">
+          <div className="sb-heading sb-heading--md mx-auto">
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
             <h6
-              className="heading-text text-primary text-uppercase"
-              style={{ fontSize: "18px" }}
+              className="sb-heading__label"
+              style={{
+                fontSize: "26px",
+                fontWeight: 900,
+                letterSpacing: "0.18em",
+              }}
             >
               Process
             </h6>
 
-            {/* 2 gạch bên phải */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "4px",
-                marginLeft: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
-          <h1 className="mb-4" style={{ fontSize: "28px" }}>
+          <h1 className="mb-0" style={{ fontSize: "28px" }}>
             3 Easy Steps
           </h1>
         </div>
 
-        {/* ===== 3 ô – equal-height (compact) ===== */}
-        <div className="row gy-4 gx-3 justify-content-center align-items-stretch">
-          {/* Box 1 */}
-          <div
-            className="col-lg-4 col-sm-6 text-center pt-3 d-flex"
-            data-wow-delay="0.1s"
-          >
-            <div className="position-relative border border-primary pt-5 pb-3 px-3 w-100 h-100 d-flex flex-column">
+        {/* ✅ Đẩy 3 ô xuống để không đè heading */}
+        <div
+          className="row gy-4 gx-3 justify-content-center align-items-stretch"
+          style={{ marginTop: 36 }} // bạn có thể chỉnh 28 / 32 / 36
+        >
+          {/* Step 1 */}
+          <div className="col-lg-4 col-sm-6 d-flex">
+            <div className="position-relative border border-primary pt-5 pb-4 px-3 w-100 text-center d-flex flex-column">
               <div
                 className="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle position-absolute top-0 start-50 translate-middle shadow"
-                style={{ width: "80px", height: "80px" }}
+                style={{ width: 80, height: 80 }}
               >
-                <FaMapLocationDot size={40} color="white" />
+                <FaMapLocationDot size={40} color="#fff" />
               </div>
 
               <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
                 Choose A Destination
               </h5>
-              <div className="divider-pair" style={pairStyle}>
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "25%", "--h": "2px" }}
-                />
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "50%", "--h": "2px" }}
-                />
+
+              {/* ✅ gạch xanh giống Service */}
+              <div className="sb-pair">
+                <span className="sb-pair__line sb-pair__line--top" />
+                <span className="sb-pair__line sb-pair__line--bot" />
               </div>
 
-              <p className="mb-0 small">
+              <p style={{ fontSize: "16px" }} className="mb-0">
                 Explore a rich and diverse list of destinations everywhere.
                 Choose a destination that suits your needs and preferences.
               </p>
             </div>
           </div>
 
-          {/* Box 2 */}
-          <div
-            className="col-lg-4 col-sm-6 text-center pt-3 d-flex"
-            data-wow-delay="0.3s"
-          >
-            <div className="position-relative border border-primary pt-5 pb-3 px-3 w-100 h-100 d-flex flex-column">
+          {/* Step 2 */}
+          <div className="col-lg-4 col-sm-6 d-flex">
+            <div className="position-relative border border-primary pt-5 pb-4 px-3 w-100 text-center d-flex flex-column">
               <div
                 className="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle position-absolute top-0 start-50 translate-middle shadow"
-                style={{ width: "80px", height: "80px" }}
+                style={{ width: 80, height: 80 }}
               >
-                <GiPayMoney size={40} color="white" />
+                <GiPayMoney size={40} color="#fff" />
               </div>
 
               <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
                 Pay Online
               </h5>
-              <div className="divider-pair" style={pairStyle}>
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "25%", "--h": "2px" }}
-                />
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "50%", "--h": "2px" }}
-                />
+
+              {/* ✅ gạch xanh giống Service */}
+              <div className="sb-pair">
+                <span className="sb-pair__line sb-pair__line--top" />
+                <span className="sb-pair__line sb-pair__line--bot" />
               </div>
 
-              <p className="mb-0 small">
+              <p style={{ fontSize: "16px" }} className="mb-0">
                 Pay quickly and securely with trusted online payment methods.
                 Save time and effort with a convenient payment process.
               </p>
             </div>
           </div>
 
-          {/* Box 3 */}
-          <div
-            className="col-lg-4 col-sm-6 text-center pt-3 d-flex"
-            data-wow-delay="0.5s"
-          >
-            <div className="position-relative border border-primary pt-5 pb-3 px-3 w-100 h-100 d-flex flex-column">
+          {/* Step 3 */}
+          <div className="col-lg-4 col-sm-6 d-flex">
+            <div className="position-relative border border-primary pt-5 pb-4 px-3 w-100 text-center d-flex flex-column">
               <div
                 className="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle position-absolute top-0 start-50 translate-middle shadow"
-                style={{ width: "80px", height: "80px" }}
+                style={{ width: 80, height: 80 }}
               >
-                <MdOutlineFlightTakeoff size={40} color="white" />
+                <MdOutlineFlightTakeoff size={40} color="#fff" />
               </div>
 
               <h5 className="mt-3 mb-1" style={{ fontSize: "18px" }}>
                 Fly Today
               </h5>
-              <div className="divider-pair" style={pairStyle}>
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "25%", "--h": "2px" }}
-                />
-                <span
-                  className="divider divider--muted"
-                  style={{ "--w": "50%", "--h": "2px" }}
-                />
+
+              {/* ✅ gạch xanh giống Service */}
+              <div className="sb-pair">
+                <span className="sb-pair__line sb-pair__line--top" />
+                <span className="sb-pair__line sb-pair__line--bot" />
               </div>
 
-              <p className="mb-0 small">
+              <p style={{ fontSize: "16px" }} className="mb-0">
                 Prepare for your trip and fly today. Ready to enjoy new and
                 unforgettable experiences everywhere.
               </p>
@@ -186,8 +141,9 @@ export const Booking = () => {
           </div>
         </div>
 
+        {/* ===== Booking Detail ===== */}
         {roomBooking && (
-          <div style={{ marginTop: "48px" }}>
+          <div className="mt-5">
             <BookingItem item={roomBooking} />
           </div>
         )}

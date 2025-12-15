@@ -135,50 +135,48 @@ export const Contact = () => {
     };
   };
 
+  // ✅ Inline “title styles” (không thêm CSS)
+  const sectionTitleStyle = {
+    fontSize: 20,
+    fontWeight: 900,
+    letterSpacing: "0.02em",
+    marginBottom: 6,
+  };
+
+  const subTitleStyle = {
+    fontSize: 16,
+    fontWeight: 800,
+    marginBottom: 6,
+  };
+
   return (
     <div className="container-fluid py-4">
       <div className="container">
-        {/* Heading */}
-        <div className="text-center">
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "10px" }}
-          >
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "4px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+        {/* ===== Heading ===== */}
+        <div className="text-center mb-3">
+          <div className="sb-heading sb-heading--md mx-auto">
+            {/* left lines */}
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
+            {/* LABEL */}
             <h6
-              className="heading-text text-primary text-uppercase"
-              style={{ fontSize: "18px" }}
-            >
-              We are here to help you!
-            </h6>
-
-            <span
+              className="sb-heading__label"
               style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "4px",
-                marginLeft: "2px",
+                fontSize: "26px",
+                fontWeight: 900,
+                letterSpacing: "0.18em",
               }}
             >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+              CONTACT
+            </h6>
+
+            {/* right lines */}
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
@@ -235,7 +233,11 @@ export const Contact = () => {
           {/* Left info */}
           <div className="col-lg-4 col-md-6 d-flex">
             <div className="d-flex flex-column h-100 w-100">
-              <h5 className="mb-2">Get In Touch</h5>
+              {/* ✅ bigger + bolder */}
+              <h5 className="mb-2" style={sectionTitleStyle}>
+                Get In Touch
+              </h5>
+
               <p className="mb-3 small">
                 We're here to assist you every step of the way. Let's start a
                 conversation and make your stay memorable.
@@ -250,7 +252,9 @@ export const Contact = () => {
                   <FaMapMarkerAlt className="text-white" />
                 </div>
                 <div className="ms-3">
-                  <h6 className="text-primary mb-1">Office</h6>
+                  <h6 className="text-primary mb-1" style={{ fontWeight: 800 }}>
+                    Office
+                  </h6>
                   <p className="mb-0 small">
                     999 Đại Lộ Hòa Bình - Cần Thơ - Việt Nam
                   </p>
@@ -266,7 +270,9 @@ export const Contact = () => {
                   <FaPhoneAlt className="text-white" />
                 </div>
                 <div className="ms-3">
-                  <h6 className="text-primary mb-1">Mobile</h6>
+                  <h6 className="text-primary mb-1" style={{ fontWeight: 800 }}>
+                    Mobile
+                  </h6>
                   <p className="mb-0 small">0999 68 68 68</p>
                 </div>
               </div>
@@ -280,14 +286,20 @@ export const Contact = () => {
                   <FaEnvelopeOpen className="text-white" />
                 </div>
                 <div className="ms-3">
-                  <h6 className="text-primary mb-1">Email</h6>
+                  <h6 className="text-primary mb-1" style={{ fontWeight: 800 }}>
+                    Email
+                  </h6>
                   <p className="mb-0 small">searchbookinghotel@gmail.com</p>
                 </div>
               </div>
 
               <hr className="my-3" />
 
-              <h6 className="mb-1">Opening Hours</h6>
+              {/* ✅ bigger + bolder */}
+              <h6 className="mb-1" style={subTitleStyle}>
+                Opening Hours
+              </h6>
+
               <ul className="list-unstyled mb-2 small">
                 <li>Mon – Fri: 08:00 – 21:00</li>
                 <li>Sat – Sun: 09:00 – 20:00</li>
@@ -300,7 +312,11 @@ export const Contact = () => {
 
               {/* social */}
               <div className="mt-auto">
-                <h6 className="mb-2">Connect with us</h6>
+                {/* ✅ bigger + bolder */}
+                <h6 className="mb-2" style={subTitleStyle}>
+                  Connect with us
+                </h6>
+
                 <div className="d-flex gap-3 mb-3">
                   <FaFacebookF
                     size={20}

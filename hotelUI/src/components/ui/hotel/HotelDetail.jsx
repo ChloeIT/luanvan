@@ -1,94 +1,147 @@
 // src/components/ui/hotel/HotelDetail.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
 import { RoomCard } from "@/components/ui/Room/RoomCard";
 import { CompareButton } from "@/components/ui/compare/CompareButton";
 
+// Icons
 import { FaStar } from "react-icons/fa6";
 import { IoLocation } from "react-icons/io5";
-import { FaConciergeBell, FaHeadset, FaInfoCircle } from "react-icons/fa";
+import { FaConciergeBell } from "react-icons/fa";
 
-// 🔹 Nearby tách riêng
-import { HotelNearby } from "./HotelNearby";
+// Nearby
+import { HotelNearby } from "./nearby";
 
+/* ===================== Config ===================== */
 const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || "";
 const RAW_API_URL = (import.meta.env.VITE_HOTEL_API || "").replace(/\/+$/, "");
 const ROOM_API_BASE = RAW_API_URL ? `${RAW_API_URL}/api/room` : "/api/room";
+const HERO_H = 420;
 
-export function HotelDetail({
-  rooms: roomsProp,
-  hotel: hotelProp,
-  showHeader = true,
-}) {
+/* ===================== Helpers ===================== */
+const toId = (v) => (v == null ? "" : String(v));
+
+const buildAvailableUrl = (hotelId, checkInISO, checkOutISO) => {
+  const checkIn = encodeURIComponent(checkInISO);
+  const checkOut = encodeURIComponent(checkOutISO);
+  return `${ROOM_API_BASE}/hotel/${hotelId}/available?checkIn=${checkIn}&checkOut=${checkOut}`;
+};
+
+const getTodayRangeISO = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+  return { startISO: start.toISOString(), endISO: end.toISOString() };
+};
+
+/* ===================== UI styles ===================== */
+const pillRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  marginTop: 18,
+  flexWrap: "wrap", // mobile tự xuống dòng
+};
+
+const pillStyle = {
+  display: "flex",
+  alignItems: "flex-start",      // ✅ icon top khi text xuống dòng
+  gap: 10,
+  padding: "12px 16px",
+  borderRadius: 18,
+  background: "#F8FFD8",
+  border: "1px solid rgba(134,184,23,0.35)",
+  boxShadow: "0 6px 14px rgba(0,0,0,.06)",
+  fontSize: 15,
+  fontWeight: 650,
+  color: "#1f2937",
+
+  width: "100%",                 // ✅ pill dài hết cột
+  maxWidth: "100%",              // ✅ không bị giới hạn
+};
+
+
+const iconWrapStyle = {
+  width: 26,
+  height: 26,
+  borderRadius: 999,
+  display: "grid",
+  placeItems: "center",
+  background: "rgba(134,184,23,0.16)",
+  color: "#86B817",
+  flex: "0 0 auto",
+};
+
+export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = true }) {
   const { hotels } = useSelector((s) => s.hotel);
   const { rooms: allRooms } = useSelector((s) => s.room);
   const { myFavorite } = useSelector((s) => s.favorite);
   const { id: routeId } = useParams();
 
-  const iconColor = "#FFC30B";
-  const HERO_H = 420;
-
-  /* ========= XÁC ĐỊNH HOTEL HIỆN TẠI ========= */
+  /* ========= CURRENT HOTEL ========= */
   const hotel = useMemo(() => {
     if (hotelProp) return hotelProp;
-    if (routeId) return hotels.find((h) => String(h.id) === String(routeId));
-    return undefined;
+    if (!routeId) return undefined;
+    return hotels.find((h) => toId(h?.id) === toId(routeId));
   }, [hotelProp, routeId, hotels]);
 
-  /* ========= LẤY DANH SÁCH PHÒNG ========= */
+  /* ========= ROOMS LIST ========= */
   const rooms = useMemo(() => {
-    if (roomsProp && roomsProp.length) return roomsProp;
+    if (Array.isArray(roomsProp) && roomsProp.length) return roomsProp;
+    if (!hotel || !Array.isArray(allRooms)) return [];
 
-    if (hotel && allRooms) {
-      return allRooms.filter((r) => {
-        const roomHotelId = r?.hotel?.id ?? r?.hotelId ?? r?.hotel_id ?? null;
-        return roomHotelId != null && String(roomHotelId) === String(hotel.id);
-      });
-    }
-    return [];
+    const hid = toId(hotel.id);
+    return allRooms.filter((r) => {
+      const roomHotelId = r?.hotel?.id ?? r?.hotelId ?? r?.hotel_id ?? null;
+      return roomHotelId != null && toId(roomHotelId) === hid;
+    });
   }, [roomsProp, hotel, allRooms]);
 
-  /* ========= DANH SÁCH PHÒNG TRỐNG TRONG NGÀY ========= */
+  /* ========= AVAILABLE TODAY ========= */
   const [availableTodayIds, setAvailableTodayIds] = useState(null);
 
   useEffect(() => {
-    if (!hotel) return;
+    if (!hotel?.id) return;
 
-    const now = new Date();
-    const start = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0
-    );
-    const end = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() + 1,
-      0,
-      0,
-      0
-    );
+    const { startISO, endISO } = getTodayRangeISO();
+    const url = buildAvailableUrl(hotel.id, startISO, endISO);
 
-    const url = `${ROOM_API_BASE}/hotel/${hotel.id}/available?checkIn=${start.toISOString()}&checkOut=${end.toISOString()}`;
+    let cancelled = false;
 
     fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+      .then((res) => res.ok && res.json())
       .then((data) => {
-        const ids = Array.isArray(data) ? data.map((r) => r.id) : [];
+        if (cancelled) return;
+        const ids = Array.isArray(data) ? data.map((r) => r?.id).filter(Boolean) : [];
         setAvailableTodayIds(ids);
       })
-      .catch(() => {
-        // nếu lỗi API thì để null -> không khoá booking
-        setAvailableTodayIds(null);
-      });
+      .catch(() => !cancelled && setAvailableTodayIds(null));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hotel?.id]);
+
+  /* ========= HIGHLIGHTS: 3 REAL INFO ========= */
+  const highlights = useMemo(() => {
+    if (!hotel) return [];
+
+    return [
+      {
+        icon: <FaStar />,
+        text: `${hotel.rating ?? "—"} Rating & Reviews`,
+      },
+      {
+        icon: <IoLocation />,
+        text: hotel.address || "Address updating…",
+      },
+      {
+        icon: <FaConciergeBell />,
+        text: hotel.amenities || "Amenities updating…",
+      },
+    ];
   }, [hotel]);
 
   return (
@@ -98,95 +151,93 @@ export function HotelDetail({
         <div className="container-xxl py-5">
           <div className="container">
             <div className="row g-5 align-items-stretch">
-              {/* Ảnh khách sạn */}
-              <div className="col-lg-6 d-flex" style={{ minHeight: HERO_H }}>
-                <div className="position-relative h-100 w-100">
+              {/* Image */}
+              <div className="col-lg-5 d-flex" style={{ minHeight: HERO_H }}>
+                <div
+                  className="w-100"
+                  style={{
+                    height: "100%",
+                    borderRadius: 14,
+                    overflow: "hidden",
+                    boxShadow: "0 10px 26px rgba(0,0,0,.12)",
+                  }}
+                >
                   <img
                     src={`${IMAGE_URL}/hotels/${hotel.image}`}
                     alt={hotel.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      borderRadius: 12,
-                    }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
               </div>
 
-              {/* Nội dung */}
-              <div className="col-lg-6 d-flex" style={{ minHeight: HERO_H }}>
-                <div className="h-100 w-100 d-flex flex-column justify-content-center">
-                  {/* Welcome + gạch */}
-                  <div className="d-flex align-items-center" style={{ gap: 12 }}>
-                    <h1 className="m-0" style={{ fontWeight: 900 }}>
-                      Welcome to
-                    </h1>
-                    <span style={{ display: "grid", gap: 6 }}>
-                      <span className="divider" style={{ "--w": "150px" }} />
-                      <span
-                        className="divider"
-                        style={{ "--w": "100px", "--alpha": 0.6 }}
-                      />
+              {/* Content */}
+              <div className="col-lg-7 d-flex" style={{ minHeight: HERO_H }}>
+                <div className="w-100 d-flex flex-column justify-content-center ps-2">
+                  {/* Heading */}
+                  <div className="sb-heading sb-heading--md mb-1">
+                    <h6
+                      className="sb-heading__label"
+                      style={{ fontSize: 18, fontWeight: 800, letterSpacing: "0.22em" }}
+                    >
+                      WELCOME TO
+                    </h6>
+                    <span className="sb-heading__lines sb-heading__lines--right">
+                      <span className="sb-heading__line sb-heading__line--long" />
+                      <span className="sb-heading__line sb-heading__line--short" />
                     </span>
                   </div>
 
-                  {/* Tên khách sạn */}
                   <h1
-                    className="text-primary mb-4"
-                    style={{ fontWeight: 900 }}
+                    className="text-primary"
+                    style={{ fontSize: 36, fontWeight: 950, lineHeight: 1.12 }}
                   >
                     {hotel.name}
                   </h1>
 
-                  {/* Rating */}
-                  <p
-                    className="d-flex align-items-center"
-                    style={{ fontSize: "1.05rem", fontWeight: 600 }}
+                  {/* ✅ 3 pill – 1 hàng ngang */}
+                  {/* ===== Hotel Info (3 lines – vertical stack) ===== */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column", // ✅ xếp dọc
+                      gap: 14,
+                      marginTop: 18,
+                      maxWidth: 620, // giống ảnh
+                    }}
                   >
-                    <FaStar style={{ color: iconColor, marginRight: 8 }} />
-                    {hotel.rating}
-                  </p>
+                    {/* Rating */}
+                    <div style={pillStyle}>
+                      <span style={iconWrapStyle}>
+                        <FaStar />
+                      </span>
+                      <span>
+                        {hotel?.rating != null
+                          ? `${hotel.rating} Rating & Reviews`
+                          : "Rating & Reviews"}
+                      </span>
+                    </div>
 
-                  {/* Địa chỉ */}
-                  <p
-                    className="d-flex align-items-center"
-                    style={{ fontSize: "1.05rem", fontWeight: 600 }}
-                  >
-                    <IoLocation style={{ color: iconColor, marginRight: 8 }} />
-                    {hotel.address}
-                  </p>
+                    {/* Address */}
+                    <div style={pillStyle}>
+                      <span style={iconWrapStyle}>
+                        <IoLocation />
+                      </span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {hotel?.address || "Address updating…"}
+                      </span>
+                    </div>
 
-                  {/* Tiện nghi */}
-                  {hotel.amenities && (
-                    <p
-                      className="d-flex align-items-center"
-                      style={{ fontSize: "1.05rem", fontWeight: 600 }}
-                    >
-                      <FaConciergeBell
-                        style={{ color: iconColor, marginRight: 8 }}
-                      />
-                      {hotel.amenities}
-                    </p>
-                  )}
+                    {/* Amenities */}
+                    <div style={pillStyle}>
+                      <span style={iconWrapStyle}>
+                        <FaConciergeBell />
+                      </span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {hotel?.amenities || "Amenities updating…"}
+                      </span>
+                    </div>
+                  </div>
 
-                  <p
-                    className="d-flex align-items-center"
-                    style={{ fontSize: "1.05rem", fontWeight: 600 }}
-                  >
-                    <FaHeadset style={{ color: iconColor, marginRight: 8 }} />
-                    24/7 Service
-                  </p>
-
-                  <p
-                    className="d-flex align-items-center"
-                    style={{ fontSize: "1.05rem", fontWeight: 600 }}
-                  >
-                    <FaInfoCircle
-                      style={{ color: iconColor, marginRight: 8 }}
-                    />
-                    Provide enough information
-                  </p>
                 </div>
               </div>
             </div>
@@ -194,76 +245,63 @@ export function HotelDetail({
         </div>
       )}
 
-      {/* ========= NEARBY (component riêng) ========= */}
+      {/* ========= NEARBY ========= */}
       {hotel && <HotelNearby hotel={hotel} />}
 
-      {/* ========= ROOMS SECTION TITLE ========= */}
-      <div className="container-xxl pt-2 pb-3">
+      {/* ========= ROOMS ========= */}
+      <div className="container-xxl pb-5 pt-4">
         <div className="container">
-          <div className="text-center wow fadeInUp" data-wow-delay="0.05s">
-            <div
-              className="heading-line mx-auto"
-              style={{ "--heading-gap": "14px" }}
-            >
-              {/* gạch trái */}
-              <span
-                style={{
-                  display: "grid",
-                  justifyItems: "end",
-                  gap: "6px",
-                  marginRight: "2px",
-                }}
-              >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+
+          {/* ===== Heading ===== */}
+          <div className="text-center mb-4">
+            <div className="sb-heading sb-heading--md mx-auto">
+              {/* lines left */}
+              <span className="sb-heading__lines sb-heading__lines--left">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
 
-              <h6 className="heading-text text-3xl text-primary text-uppercase">
-                Rooms
-              </h6>
-
-              {/* gạch phải */}
-              <span
+              {/* LABEL */}
+              <h6
+                className="sb-heading__label"
                 style={{
-                  display: "grid",
-                  justifyItems: "start",
-                  gap: "6px",
-                  marginLeft: "2px",
+                  fontSize: "26px",
+                  fontWeight: 900,
+                  letterSpacing: "0.18em",
+                  color: "#86B817",
                 }}
               >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+                ROOM
+              </h6>
+
+              {/* lines right */}
+              <span className="sb-heading__lines sb-heading__lines--right">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
             </div>
 
-            <h1 className="mb-0">Our Rooms</h1>
+            <h1
+              className="mb-0"
+              style={{
+                fontSize: "28px",
+                fontWeight: 800,
+              }}
+            >
+              Our Rooms
+            </h1>
           </div>
-        </div>
-      </div>
 
-      {/* ========= ROOMS GRID ========= */}
-      <div className="container-xxl pb-5 pt-4">
-        <div className="container">
-          <div className="rooms-grid">
-            {rooms.map((room, idx) => {
-              const isFavorite =
-                myFavorite?.rooms?.some((fav) => fav.id === room.id) || false;
+          {/* ===== Rooms Grid ===== */}
+          <div className="rooms-grid" style={{ marginTop: 36 }} >
+            {rooms.map((room) => {
+              const isFavorite = myFavorite?.rooms?.some((fav) => fav.id === room.id);
               const isAvailableToday =
                 availableTodayIds === null ||
                 availableTodayIds.includes(room.id);
 
               return (
-                <div
-                  className="room-cell wow fadeInUp"
-                  data-wow-delay={`${0.1 + idx * 0.05}s`}
-                  key={room.id}
-                >
+                <div className="room-cell" key={room.id}>
                   <RoomCard
                     room={room}
                     isFavorite={isFavorite}
@@ -274,13 +312,8 @@ export function HotelDetail({
                 </div>
               );
             })}
-
-            {rooms.length === 0 && (
-              <p className="text-center text-muted mt-3">
-                This hotel currently has no rooms.
-              </p>
-            )}
           </div>
+
         </div>
       </div>
 

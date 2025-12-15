@@ -70,12 +70,41 @@ export const Header = () => {
       <div className="site-header">
         <div className="container-fluid p-0">
           <nav className="navbar navbar-expand-xl px-4 px-lg-5 py-3 site-header-bar">
-            {/* Logo */}
             <Link to="/" className="navbar-brand p-0">
-              <h1 className="m-0" style={{ color: "#86B817" }}>
-                SB Hotels
+              <h1
+                className="m-0"
+                style={{
+                  fontSize: "34px",
+                  fontWeight: 900,
+                  letterSpacing: "0.04em",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "2px",
+                  transition: "transform .25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {/* SB – nổi bật */}
+                <span style={{ color: "#86B817" }}>SB</span>
+
+                {/* Hotels – sáng hơn, rõ trên nền tối */}
+                <span
+                  style={{
+                    color: "#EAF5C3",      // 👈 sáng hơn hẳn
+                    fontWeight: 800,
+                  }}
+                >
+                  Hotels
+                </span>
               </h1>
             </Link>
+
 
             {/* Toggle mobile */}
             <Button
@@ -141,12 +170,25 @@ export const Header = () => {
       <div className="container-fluid hero-header" id="background">
         <div className="container hero-title-wrapper">
           <div className="row justify-content-center">
-            <div className="col-lg-10 text-center text-white fw-bold hero-title">
-              {title}
+            <div className="col-lg-10 text-center text-white hero-title">
+              <span
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: "56px",
+                  fontWeight: 900,                 // 👈 đậm rõ
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  textShadow: "0 8px 30px rgba(0,0,0,.55)", // 👈 nổi trên ảnh
+                  display: "inline-block",
+                }}
+              >
+                {title}
+              </span>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 };

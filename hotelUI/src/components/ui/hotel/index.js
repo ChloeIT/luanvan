@@ -3,4 +3,4 @@ export * from "./Discount";
 export * from "./FilterHotel";
 export * from "./HotelCard";
 export * from "./HotelDetail";
-export * from "./HotelNearby";
+export * from "./nearby";

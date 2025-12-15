@@ -286,8 +286,37 @@ export const FilterHotel = ({ allHotels = [], setHotels }) => {
     <div className="container-xxl py-4">
       <div className="container">
         <div className="text-center">
+          {/* ===== SB Heading (green lines like Service) ===== */}
+          <div className="sb-heading sb-heading--md mx-auto" style={{ marginBottom: 8 }}>
+            {/* left lines */}
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
+            </span>
+
+            {/* LABEL */}
+            <h6
+              className="sb-heading__label"
+              style={{
+                fontSize: "28px",
+                fontWeight: 900,
+                letterSpacing: "0.18em",
+              }}
+            >
+              HOTELS
+            </h6>
+
+            {/* right lines */}
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
+            </span>
+          </div>
+
+          {/* Showing line */}
           <p className="text-muted" style={{ fontSize: 13, marginBottom: 18 }}>
-            Showing <strong>{resultCount}</strong> {resultCount === 1 ? "result" : "results"}{" "}
+            Showing <strong>{resultCount}</strong>{" "}
+            {resultCount === 1 ? "result" : "results"}{" "}
             {keyword.trim() ? (
               <>
                 for <strong>“{keyword}”</strong>
@@ -297,6 +326,7 @@ export const FilterHotel = ({ allHotels = [], setHotels }) => {
             )}
           </p>
         </div>
+
 
         <div className="d-flex justify-content-center">
           {/* ✅ desktop: giữ 1 hàng, mobile: cho wrap */}

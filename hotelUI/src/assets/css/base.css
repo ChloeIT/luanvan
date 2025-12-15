@@ -1,0 +1,41 @@
+/* src/assets/css/base.css */
+
+/* ================== RESET CƠ BẢN ================== */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg, #FAFF96) !important; /* ✅ khóa nền */
+  color: var(--text, #1b1b1b);
+}
+
+/* ================== GLOBAL APPLY (theme) ================== */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: background .25s ease, color .25s ease;
+}
+
+/* Typography helpers */
+.fw-medium { font-weight: 600 !important; }
+.fw-semi-bold { font-weight: 700 !important; }
+
+/* Helpers */
+.primarycolor { color: var(--primary) !important; }
+.pricecolor { color: grey; }
+
+.themed-card {
+  background: var(--card-yellow) !important;
+  color: var(--text) !important;
+}
+.themed-surface {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+.themed-surface-2 {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}

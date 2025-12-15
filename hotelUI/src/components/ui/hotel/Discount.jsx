@@ -47,44 +47,31 @@ export const Discount = () => {
     <div className="container-xxl py-4 destination">
       <div className="container">
 
-        {/* ===== HEADING Compact ===== */}
+        {/* ===== HEADING (SB style) ===== */}
         <div className="text-center">
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "10px" }}
-          >
-            {/* Left divider */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "4px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span className="divider" style={{ "--w": "50px", "--alpha": 0.45 }} />
+          <div className="sb-heading sb-heading--md mx-auto">
+            {/* left lines */}
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
-            {/* Title */}
+            {/* LABEL */}
             <h6
-              className="heading-text text-primary text-uppercase"
-              style={{ fontSize: "18px" }}
-            >
-              Discount
-            </h6>
-
-            {/* Right divider */}
-            <span
+              className="sb-heading__label"
               style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "4px",
-                marginLeft: "2px",
+                fontSize: "26px",
+                fontWeight: 900,
+                letterSpacing: "0.18em",
               }}
             >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span className="divider" style={{ "--w": "50px", "--alpha": 0.45 }} />
+              DISCOUNT
+            </h6>
+
+            {/* right lines */}
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
@@ -92,6 +79,7 @@ export const Discount = () => {
             Save big today!
           </h1>
         </div>
+
 
         {/* ===== SWIPER Compact ===== */}
         <Swiper

@@ -1,0 +1,17 @@
+:root {
+  --primary: #86B817;
+  --secondary: #FE8800;
+  --light: #F5F5F5;
+  --dark: #14141F;
+  --card-yellow: #FDFF7C;
+
+  /* ✅ đổi về vàng cũ */
+  --bg: #FAFF96;
+
+  --surface: #ffffff;
+  --surface-2: #f3f5e8;
+  --text: #1b1b1b;
+  --muted: #5c6b57;
+
+  /* ...giữ nguyên phần table vars của bạn... */
+}

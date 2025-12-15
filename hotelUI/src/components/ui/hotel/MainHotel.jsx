@@ -118,27 +118,48 @@ export const MainHotel = () => {
               <button
                 type="button"
                 onClick={handleShowMore}
-                className="btn rounded-pill px-4 py-2"
+                className="btn d-inline-flex align-items-center gap-2"
                 style={{
-                  color: "var(--primary)",
-                  border: "2px solid var(--primary)",
-                  backgroundColor: "transparent",
-                  fontWeight: 600,
-                  transition: "all 0.25s",
+                  borderRadius: 999,
+                  padding: "10px 22px",
+                  fontSize: 15,
+                  fontWeight: 800,
+                  color: "#fff",
+                  background: "linear-gradient(135deg, #86B817, #9ad13b)",
+                  border: "none",
+                  boxShadow: "0 10px 22px rgba(134,184,23,0.35)",
+                  transition: "all .25s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--primary)";
-                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 14px 28px rgba(134,184,23,0.45)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "var(--primary)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow =
+                    "0 10px 22px rgba(134,184,23,0.35)";
                 }}
               >
-                Show more hotels
+                <span>Show more hotels</span>
+                <span style={{ fontSize: 18 }}>↓</span>
+                <span
+                  className="ms-1"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.18)",
+                    border: "1px solid rgba(255,255,255,0.28)",
+                  }}
+                >
+                  +{Math.min(4, (data?.length || 0) - visibleCount)}
+                </span>
               </button>
             </div>
           )}
+
         </div>
       </div>
     </>

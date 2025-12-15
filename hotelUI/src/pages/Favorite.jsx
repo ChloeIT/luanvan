@@ -27,54 +27,36 @@ export const Favorite = () => {
       <div className="container">
 
         {/* ===== Heading ===== */}
-        <div className="text-center mb-5">   {/* 👈 tăng khoảng cách xuống dưới */}
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "10px" }}
-          >
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "4px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+        <div className="text-center mb-5">
+          <div className="sb-heading sb-heading--md mx-auto">
+            {/* lines left */}
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
+            {/* LABEL */}
             <h6
-              className="heading-text text-primary text-uppercase"
-              style={{ fontSize: "18px" }}
+              className="sb-heading__label"
+              style={{
+                fontSize: "26px",      // 👈 to
+                fontWeight: 900,       // 👈 đậm
+                letterSpacing: "0.18em"
+              }}
             >
               My Favorite
             </h6>
 
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "4px",
-                marginLeft: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+            {/* lines right */}
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
           <h1 className="mb-0" style={{ fontSize: "28px" }}>
             {`Where your "favorites" come to life`}
           </h1>
-
-          {/* ❌ ĐÃ XÓA MÔ TẢ */}
         </div>
 
         {/* ===== LIST FAVORITE ===== */}

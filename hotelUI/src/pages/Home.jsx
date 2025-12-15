@@ -43,7 +43,7 @@ export const Home = () => {
   const [showAllPopular, setShowAllPopular] = useState(false);
   const MAX_POPULAR_DISPLAY = 4;
 
-  /* ===== FETCH ROOMS NẾU CHƯA CÓ (phòng khi render Home độc lập) ===== */
+  /* ===== FETCH ROOMS NẾU CHƯA CÓ ===== */
   useEffect(() => {
     if (!rooms || rooms.length === 0) {
       dispatch(fetchAllRoom());
@@ -63,12 +63,8 @@ export const Home = () => {
   /* ===== ROOMS CÓ DISCOUNT > 0 ===== */
   const discountedRooms = useMemo(() => {
     if (!Array.isArray(rooms)) return [];
-
     return rooms
-      .map((r) => ({
-        ...r,
-        discountPercent: getDiscountValue(r),
-      }))
+      .map((r) => ({ ...r, discountPercent: getDiscountValue(r) }))
       .filter((r) => r.discountPercent > 0)
       .sort((a, b) => b.discountPercent - a.discountPercent);
   }, [rooms]);
@@ -82,104 +78,94 @@ export const Home = () => {
 
   return (
     <>
-      {/* ✅ HERO SEARCH BAR – đè lên banner từ Header */}
+      {/* ✅ HERO SEARCH BAR */}
       <HeroContent />
 
-      {/* ===== ABOUT (thu nhỏ) ===== */}
+      {/* ===== ABOUT ===== */}
       <div className="container-xxl py-4">
         <div className="container">
-          <div className="row g-5 align-items-stretch">
+          <div className="row g-5 align-items-center">
             {/* LEFT: Image */}
-            <div
-              className="col-lg-6 wow fadeInUp d-flex"
-              data-wow-delay="0.1s"
-            >
+            <div className="col-lg-6">
               <div
-                className="position-relative w-100"
-                style={{ maxHeight: 480, marginRight: "-28px" }}
+                style={{
+                  width: "100%",
+                  height: 520,                 // ✅ card có chiều cao cố định đẹp
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  boxShadow: "0 10px 26px rgba(0,0,0,.14)",
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  background: "#fff",
+                }}
               >
                 <Image
                   src={about}
                   alt="About Image"
                   preview={false}
                   style={{
-                    width: "110%",
-                    height: 440,
+                    width: "100%",
+                    height: "100%",            // ✅ cho ảnh ăn full card
+                    objectFit: "cover",        // ✅ không còn khoảng trắng
                     display: "block",
-                    objectFit: "cover",
-                    borderRadius: "6px",
-                    overflow: "hidden",
                   }}
                 />
               </div>
             </div>
 
+
             {/* RIGHT: Content */}
-            <div
-              className="col-lg-6 wow fadeInUp d-flex"
-              data-wow-delay="0.3s"
-            >
-              <div
-                className="w-100 h-100 d-flex flex-column justify-content-center"
-                style={{ minHeight: 340 }}
-              >
-                <div
-                  className="heading-line"
-                  style={{ "--heading-gap": "10px" }}
-                >
-                  <h6 className="heading-text text-2xl text-primary text-uppercase">
-                    About Us
-                  </h6>
-                  <span
+            <div className="col-lg-6">
+              <div style={{ maxWidth: 560, margin: "0 auto" }}>
+                {/* Heading */}
+                <div className="sb-heading sb-heading--md" style={{ marginBottom: 10 }}>
+
+                  <h6
+                    className="sb-heading__label"
                     style={{
-                      display: "grid",
-                      justifyItems: "start",
-                      gap: "6px",
-                      marginLeft: "2px",
+                      fontSize: 26,
+                      fontWeight: 900,
+                      letterSpacing: "0.18em",
                     }}
                   >
-                    <span className="divider" style={{ "--w": "140px" }} />
-                    <span
-                      className="divider"
-                      style={{ "--w": "90px", "--alpha": 0.6 }}
-                    />
+                    ABOUT US
+                  </h6>
+
+                  <span className="sb-heading__lines sb-heading__lines--right">
+                    <span className="sb-heading__line sb-heading__line--long" />
+                    <span className="sb-heading__line sb-heading__line--short" />
                   </span>
                 </div>
 
-                <h1 className="mb-3">
-                  Welcome to{" "}
-                  <span className="text-primary">SB Hotel</span>
+                <h1 className="mb-2" style={{ fontSize: 30, lineHeight: 1.2 }}>
+                  Welcome to <span className="text-primary">SB Hotel</span>
                 </h1>
 
                 {user ? (
-                  <p className="mb-2">
+                  <p className="mb-2" style={{ fontSize: 16 }}>
                     Hello,{" "}
-                    <span
-                      style={{ fontWeight: 900, color: "var(--primary)" }}
-                    >
+                    <span style={{ fontWeight: 900, color: "var(--primary)" }}>
                       {user?.fullName}
                     </span>
                     .
                   </p>
                 ) : (
-                  <p className="mb-2">
-                    <Link to="/login">
-                      Please log in to see your information.
-                    </Link>
+                  <p className="mb-2" style={{ fontSize: 16 }}>
+                    <Link to="/login">Please log in to see your information.</Link>
                   </p>
                 )}
 
-                <p className="mb-3">
+                <p className="mb-2" style={{ fontSize: 16 }}>
                   Welcome to our hotel search and booking page!
                 </p>
-                <p className="mb-3">
-                  Searching and booking hotels has never been easier.
-                  With a convenient booking system and extensive hotel
-                  database, we’ll help you find the ideal destination
-                  for all your trips.
+
+                <p className="mb-3" style={{ fontSize: 16, lineHeight: 1.7 }}>
+                  Searching and booking hotels has never been easier. With a
+                  convenient booking system and extensive hotel database, we’ll help
+                  you find the ideal destination for all your trips.
                 </p>
 
-                <div className="row gy-2 gx-4 mb-0">
+                {/* ✅ list 2 cột đều + spacing đẹp */}
+                <div className="row g-2">
                   {[
                     "24/7 Service",
                     "Handpicked Hotels",
@@ -188,66 +174,58 @@ export const Home = () => {
                     "Promotions and offers",
                     "Upgrade membership",
                   ].map((item, i) => (
-                    <div className="col-sm-6" key={i}>
-                      <p className="mb-1 d-flex align-items-start fw-bold">
-                        <FaArrowRight
-                          className="mx-2"
-                          style={{ color: "var(--primary)" }}
-                        />
-                        {item}
-                      </p>
+                    <div className="col-md-6" key={i}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "10px 12px",
+                          borderRadius: 14,
+                          background: "rgba(255,255,255,0.55)",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <FaArrowRight style={{ color: "var(--primary)", marginTop: 3 }} />
+                        <span style={{ fontSize: 15, lineHeight: 1.35 }}>{item}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+            {/* /RIGHT */}
           </div>
         </div>
       </div>
 
-      {/* ===== DISCOUNT (thu nhỏ giống các trang khác) ===== */}
+
+      {/* ===== DISCOUNT ===== */}
       <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <div
-              className="heading-line mx-auto"
-              style={{ "--heading-gap": "14px" }}
-            >
-              <span
-                style={{
-                  display: "grid",
-                  justifyItems: "end",
-                  gap: "6px",
-                  marginRight: "2px",
-                }}
-              >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+            {/* ✅ Heading (sb-heading giống Service) */}
+            <div className="sb-heading sb-heading--md mx-auto" style={{ marginBottom: 6 }}>
+              <span className="sb-heading__lines sb-heading__lines--left">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
 
               <h6
-                className="heading-text text-primary text-uppercase"
-                style={{ fontSize: "20px" }}
-              >
-                Discount
-              </h6>
-
-              <span
+                className="sb-heading__label"
                 style={{
-                  display: "grid",
-                  justifyItems: "start",
-                  gap: "6px",
-                  marginLeft: "2px",
+                  fontSize: "26px",
+                  fontWeight: 900,
+                  letterSpacing: "0.18em",
                 }}
               >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+                DISCOUNT
+              </h6>
+
+              <span className="sb-heading__lines sb-heading__lines--right">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
             </div>
 
@@ -281,10 +259,7 @@ export const Home = () => {
               className="home-discount-swiper"
             >
               {discountedRooms.map((room, idx) => (
-                <SwiperSlide
-                  key={`${room.id}-${idx}`}
-                  className="!h-auto"
-                >
+                <SwiperSlide key={`${room.id}-${idx}`} className="!h-auto">
                   <RoomCard
                     room={room}
                     hotelId={room.hotel?.id ?? room.hotel_id ?? null}
@@ -299,49 +274,31 @@ export const Home = () => {
         </div>
       </div>
 
-      {/* ===== HOTEL (POPULAR) – thu nhỏ + nút Show more ===== */}
+      {/* ===== HOTEL (POPULAR) ===== */}
       <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            <div
-              className="heading-line mx-auto"
-              style={{ "--heading-gap": "14px" }}
-            >
-              <span
-                style={{
-                  display: "grid",
-                  justifyItems: "end",
-                  gap: "6px",
-                  marginRight: "2px",
-                }}
-              >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+            {/* ✅ Heading (sb-heading giống Service) */}
+            <div className="sb-heading sb-heading--md mx-auto" style={{ marginBottom: 6 }}>
+              <span className="sb-heading__lines sb-heading__lines--left">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
 
               <h6
-                className="heading-text text-primary text-uppercase"
-                style={{ fontSize: "20px" }}
-              >
-                Hotel
-              </h6>
-
-              <span
+                className="sb-heading__label"
                 style={{
-                  display: "grid",
-                  justifyItems: "start",
-                  gap: "6px",
-                  marginLeft: "2px",
+                  fontSize: "26px",
+                  fontWeight: 900,
+                  letterSpacing: "0.18em",
                 }}
               >
-                <span className="divider" style={{ "--w": "120px" }} />
-                <span
-                  className="divider"
-                  style={{ "--w": "60px", "--alpha": 0.45 }}
-                />
+                HOTEL
+              </h6>
+
+              <span className="sb-heading__lines sb-heading__lines--right">
+                <span className="sb-heading__line sb-heading__line--long" />
+                <span className="sb-heading__line sb-heading__line--short" />
               </span>
             </div>
 
@@ -366,12 +323,51 @@ export const Home = () => {
                 <div className="text-center mt-4">
                   <button
                     type="button"
-                    className="btn btn-outline-primary rounded-pill px-4"
                     onClick={() => setShowAllPopular((prev) => !prev)}
+                    className="btn d-inline-flex align-items-center gap-2"
+                    style={{
+                      borderRadius: 999,
+                      padding: "10px 22px",
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: showAllPopular ? "#1f2937" : "#fff",
+                      background: showAllPopular
+                        ? "rgba(134,184,23,0.12)"
+                        : "linear-gradient(135deg, #86B817, #9ad13b)",
+                      border: showAllPopular
+                        ? "1px solid rgba(134,184,23,0.45)"
+                        : "none",
+                      boxShadow: showAllPopular
+                        ? "none"
+                        : "0 10px 22px rgba(134,184,23,0.35)",
+                      transition: "all .25s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 14px 28px rgba(134,184,23,0.45)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = showAllPopular
+                        ? "none"
+                        : "0 10px 22px rgba(134,184,23,0.35)";
+                    }}
                   >
-                    {showAllPopular ? "Show less" : "Show more"}
+                    {showAllPopular ? (
+                      <>
+                        <span>Show less</span>
+                        <span style={{ fontSize: 18 }}>↑</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Show more hotels</span>
+                        <span style={{ fontSize: 18 }}>↓</span>
+                      </>
+                    )}
                   </button>
                 </div>
+
               )}
             </>
           )}

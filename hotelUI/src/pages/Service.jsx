@@ -161,53 +161,37 @@ export const Service = () => {
 
         {/* ====== TIÊU ĐỀ ====== */}
         <div className="text-center">
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "10px" }}
-          >
-            {/* 2 gạch bên trái */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "4px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+          <div className="sb-heading sb-heading--md mx-auto">
+            {/* lines left */}
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
             <h6
-              className="heading-text text-primary text-uppercase"
-              style={{ fontSize: "18px" }}
+              className="sb-heading__label"
+              style={{
+                fontSize: "26px",      // 👈 TO hơn
+                fontWeight: 900,       // 👈 ĐẬM
+                letterSpacing: "0.18em"
+              }}
             >
               Services
             </h6>
 
-            {/* 2 gạch bên phải */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "4px",
-                marginLeft: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "100px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "50px", "--alpha": 0.45 }}
-              />
+
+            {/* lines right */}
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
+
           <h1 className="mb-4" style={{ fontSize: "28px" }}>
             Our Services
           </h1>
         </div>
+
 
         {/* ====== 4 Ô DỊCH VỤ ====== */}
         <div className="row gy-4 gx-3 justify-content-center align-items-stretch">
@@ -231,17 +215,11 @@ export const Service = () => {
                 >
                   {s.title}
                 </h5>
-
-                <div className="divider-pair" style={pairStyle}>
-                  <span
-                    className="divider divider--muted"
-                    style={{ "--w": "25%", "--h": "2px" }}
-                  />
-                  <span
-                    className="divider divider--muted"
-                    style={{ "--w": "50%", "--h": "2px" }}
-                  />
+                <div className="sb-pair">
+                  <span className="sb-pair__line sb-pair__line--top" />
+                  <span className="sb-pair__line sb-pair__line--bot" />
                 </div>
+
 
                 <div className="flex-grow-1" style={{ fontSize: "14px" }}>
                   {s.desc}

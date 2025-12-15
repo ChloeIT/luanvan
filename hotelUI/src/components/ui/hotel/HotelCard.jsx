@@ -8,8 +8,6 @@ import { Link } from "react-router-dom";
 const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || "";
 
 /* ================== HELPERS ================== */
-
-// Copy với fallback (HTTPS dùng Clipboard API, còn lại dùng execCommand)
 const copyText = async (text) => {
   if (!text) return false;
   try {
@@ -32,7 +30,6 @@ const copyText = async (text) => {
   }
 };
 
-// Ưu tiên lat/lng; nếu không có thì dùng địa chỉ text
 const buildDirectionsUrl = (hotel) => {
   const hasLL = hotel?.lat != null && hotel?.lng != null;
   const destination = hasLL
@@ -43,77 +40,43 @@ const buildDirectionsUrl = (hotel) => {
 
   if (!destination) return null;
 
-  // origin để Google tự lấy vị trí hiện tại (My Location)
   return `https://www.google.com/maps/dir/?api=1&origin=My%20Location&destination=${destination}&travelmode=driving`;
 };
 
-// Link tới trang đánh giá Google của KS
 const buildGoogleReviewsUrl = (hotel) => {
   const placeId = hotel?.placeId || hotel?.googlePlaceId || hotel?.place_id;
+  if (placeId) return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
 
-  // Ưu tiên Place ID (chính xác nhất)
-  if (placeId) {
-    return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
-    // Hoặc: `https://www.google.com/maps/search/?api=1&query_place_id=${placeId}`;
-  }
-
-  // Fallback: theo TÊN + ĐỊA CHỈ
   const q = [hotel?.name, hotel?.address].filter(Boolean).join(" ");
-  if (q) {
+  if (q)
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       q
     )}`;
-  }
 
-  // Fallback cuối: theo lat/lng
-  if (hotel?.lat != null && hotel?.lng != null) {
-    return `https://www.google.com/maps/search/?api=1&query=${hotel.lat},${hotel.lng
-      }`;
-  }
+  if (hotel?.lat != null && hotel?.lng != null)
+    return `https://www.google.com/maps/search/?api=1&query=${hotel.lat},${hotel.lng}`;
 
   return null;
 };
 
 /* ================== COMPONENT ================== */
-
 export const HotelCard = ({ hotel }) => {
   const [copied, setCopied] = useState(false);
-
   if (!hotel) return null;
 
   const directionsUrl = buildDirectionsUrl(hotel);
   const reviewsUrl = buildGoogleReviewsUrl(hotel);
 
-  const handleOpenReviews = (e) => {
-    if (!reviewsUrl) return;
+  const open = (url, e) => {
+    if (!url) return;
     e.preventDefault();
     e.stopPropagation();
-    window.open(reviewsUrl, "_blank", "noopener");
+    window.open(url, "_blank", "noopener");
   };
 
-  const handleReviewsKeyDown = (e) => {
-    if (!reviewsUrl) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-      window.open(reviewsUrl, "_blank", "noopener");
-    }
-  };
-
-  const handleOpenDirections = (e) => {
-    if (!directionsUrl) return;
-    e.preventDefault();
-    e.stopPropagation();
-    window.open(directionsUrl, "_blank", "noopener");
-  };
-
-  const handleDirectionsKeyDown = (e) => {
-    if (!directionsUrl) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-      window.open(directionsUrl, "_blank", "noopener");
-    }
+  const onKeyOpen = (url, e) => {
+    if (!url) return;
+    if (e.key === "Enter" || e.key === " ") open(url, e);
   };
 
   const handleCopyPhone = async (e) => {
@@ -127,78 +90,56 @@ export const HotelCard = ({ hotel }) => {
   };
 
   const handleCopyPhoneKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      handleCopyPhone(e);
-    }
+    if (e.key === "Enter" || e.key === " ") handleCopyPhone(e);
   };
 
   return (
     <div className="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
-      <div className="team-item hotel-card">
-        <div className="image-box">
+      <div className="team-item hotel-card hotel-card--v3">
+        {/* IMAGE (không chứa pill rating nữa) */}
+        <div className="hotel-imgbox">
           <Image
-            className="hotel-image"
             preview={false}
+            className="hotel-img"
             src={`${IMAGE_URL}/hotels/${hotel.image}`}
             alt={hotel.name || "Hotel"}
-            // ❌ KHÔNG dùng imgStyle nữa
-            // ✅ Nếu muốn ép kích thước, dùng style hoặc CSS
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: 12,
-              display: "block",
-              overflow: "hidden",
-            }}
           />
         </div>
 
-        <Link to={`/hotel/${hotel.id}`}>
-          {/* Rating badge (click → mở đánh giá Google) */}
-          <div className="position-relative d-flex justify-content-center mt-4">
-            <div
-              className={`btn btn-primary rounded-pill py-10 px-15 group ${reviewsUrl ? "rating-clickable" : ""
-                }`}
-              onClick={handleOpenReviews}
-              onKeyDown={handleReviewsKeyDown}
-              role={reviewsUrl ? "button" : undefined}
-              tabIndex={reviewsUrl ? 0 : -1}
-              title={reviewsUrl ? "See reviews" : undefined}
-              aria-label={
-                reviewsUrl
-                  ? `See reviews of ${hotel?.name ?? "hotel"}`
-                  : undefined
-              }
-            >
-              <div className="d-flex justify-content-center mt-2">
-                <FaStar className="text-yellow-300 group-hover:text-white" />
-                <p className="ml-1 text-yellow-300 group-hover:text-white mb-0">
-                  {hotel.rating}
-                </p>
+        {/* BODY (click vào detail) */}
+        <Link to={`/hotel/${hotel.id}`} className="hotel-linkwrap">
+          <div className="hotel-card-body hotel-card-body--v3">
+            {/* ⭐ Rating pill: nằm phía trên tên */}
+            <div className="hotel-rating-wrap">
+              <div
+                className={`hotel-rating-pill ${reviewsUrl ? "is-clickable" : "is-disabled"}`}
+                onClick={(e) => open(reviewsUrl, e)}
+                onKeyDown={(e) => onKeyOpen(reviewsUrl, e)}
+                role={reviewsUrl ? "button" : undefined}
+                tabIndex={reviewsUrl ? 0 : -1}
+                aria-label={
+                  reviewsUrl ? `See reviews of ${hotel?.name ?? "hotel"}` : undefined
+                }
+                title={reviewsUrl ? "See reviews" : undefined}
+              >
+                <FaStar className="hotel-rating-pill__icon" />
+                <span className="hotel-rating-pill__text">{hotel.rating}</span>
               </div>
             </div>
-          </div>
 
-          <div className="hotel-card-body">
-            <h5 className="hotel-name primarycolor mb-0">{hotel.name}</h5>
+            {/* ✅ Tên to + đậm */}
+            <h5 className="hotel-name primarycolor mb-0 hotel-name--strong">
+              {hotel.name}
+            </h5>
 
-            {/* ĐỊA CHỈ: click mở Google Maps */}
+            {/* ĐỊA CHỈ: click mở Maps */}
             <div
-              className={`hotel-address ${directionsUrl ? "clickable" : ""
-                }`.trim()}
-              onClick={handleOpenDirections}
-              onKeyDown={handleDirectionsKeyDown}
+              className={`hotel-address ${directionsUrl ? "clickable" : ""}`.trim()}
+              onClick={(e) => open(directionsUrl, e)}
+              onKeyDown={(e) => onKeyOpen(directionsUrl, e)}
               role={directionsUrl ? "button" : undefined}
               tabIndex={directionsUrl ? 0 : -1}
-              title={
-                directionsUrl ? "Open Google Maps for directions" : undefined
-              }
-              aria-label={
-                directionsUrl
-                  ? `Directions to ${hotel?.name ?? "hotel"}`
-                  : undefined
-              }
+              title={directionsUrl ? "Open Google Maps for directions" : undefined}
             >
               <IoLocation size={16} className="me-2 flex-shrink-0" />
               <span className="text">{hotel.address}</span>
@@ -212,24 +153,10 @@ export const HotelCard = ({ hotel }) => {
               role="button"
               tabIndex={0}
               title="Nhấn để sao chép số điện thoại"
-              aria-label={`Copy phone number of ${hotel?.name ?? "hotel"}`}
             >
               <FaPhoneAlt size={16} className="me-2 flex-shrink-0" />
-              <span className="text">
-                {copied ? "Copied" : hotel.phone}
-              </span>
+              <span className="text">{copied ? "Copied" : hotel.phone}</span>
             </div>
-          </div>
-
-          {/* (giữ nguyên block compare nếu bạn còn dùng CSS cũ) */}
-          <div
-            className="add-to-compare absolute cursor-pointer"
-            data-hotel-id="{{ $hotel->hotel_id }}"
-            data-hotel-name="{{ $hotel->hotel_name }}"
-            data-hotel-rating="{{ $hotel->rating}}"
-            data-hotel-image="{{ $hotel->hotel_image }}"
-          >
-            <i className="fas fa-plus-circle"></i>
           </div>
         </Link>
       </div>
