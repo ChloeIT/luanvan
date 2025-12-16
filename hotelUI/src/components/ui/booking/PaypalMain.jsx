@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// src/pages/PaypalMain.jsx
+import React from "react";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -6,26 +7,9 @@ import { bookingServices, roomServices } from "../../../services";
 
 export const PaypalMain = ({ order }) => {
   const { user } = useSelector((state) => state.auth);
-  const { rooms } = useSelector((state) => state.room);
-  const [room, setRoom] = useState(null);
   const navigate = useNavigate();
 
   const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-
-  // Tìm room tương ứng với order.roomId
-  useEffect(() => {
-    if (!order || !rooms || rooms.length === 0) return;
-
-    const found = rooms.find(
-      (item) => String(item.id) === String(order.roomId)
-    );
-
-    if (found) {
-      setRoom({ ...found, availability: false });
-    } else {
-      console.warn("Không tìm thấy room với id =", order.roomId);
-    }
-  }, [order, rooms]);
 
   const initialOptions = {
     "client-id": PAYPAL_CLIENT_ID,
@@ -33,9 +17,15 @@ export const PaypalMain = ({ order }) => {
     intent: "capture",
   };
 
-  // Tạo order trên PayPal
+  const items = Array.isArray(order?.items) ? order.items : [];
+  const totalPrice = Number(order?.totalPrice || 0);
+
+  // ✅ Convert "YYYY-MM-DD" -> "YYYY-MM-DDT00:00:00" for BE LocalDateTime
+  const toLocalDateTime = (d) => (d ? `${d}T00:00:00` : null);
+
+  // Create PayPal order
   const onCreateOrder = (data, actions) => {
-    const amount = Number(order?.totalPrice || 0).toFixed(2);
+    const amount = (Number.isFinite(totalPrice) ? totalPrice : 0).toFixed(2);
 
     return actions.order.create({
       purchase_units: [
@@ -55,51 +45,51 @@ export const PaypalMain = ({ order }) => {
     });
   };
 
-  // Sau khi PayPal capture thành công
+  // After PayPal capture success
   const onApproveOrder = async (data, actions) => {
     const details = await actions.order.capture();
     console.log("✅ PayPal capture success:", details);
 
-    if (!order || !room) {
-      console.error("Thiếu dữ liệu để tạo booking:", { order, room });
+    if (!items.length) {
+      console.error("❌ Missing checkout items. Cannot create bookings.", order);
       return;
     }
 
-    // Payload đúng với BookingRequest bên BE
-    const newBooking = {
-      checkIn: order.checkIn,
-      checkOut: order.checkOut,
-      totalPrice: Number(order.totalPrice),
-      payment: true,
-      roomIds: [room.id],
-    };
-
     try {
-      console.log("👉 Payload gửi /api/booking/create:", newBooking);
+      // ✅ 1 booking per room (supports different dates per room)
+      const createJobs = items.map((it) => {
+        const payload = {
+          checkIn: toLocalDateTime(it.checkIn),
+          checkOut: toLocalDateTime(it.checkOut),
+          totalPrice: Number(it.totalPrice || 0),
+          payment: true,
+          roomIds: [it.roomId],
+        };
 
-      // Có 2 khả năng:
-      // 1) bookingServices.create -> AxiosResponse => { data: Booking, ... }
-      // 2) bookingServices.create -> Booking trực tiếp
-      const res = await bookingServices.create(newBooking);
-      console.log("📦 Response từ BE:", res);
+        console.log("📤 Create booking payload:", payload);
+        return bookingServices.create(payload);
+      });
 
-      const booking = res?.data ?? res; // ưu tiên res.data, nếu không có thì dùng res
-      const bookingId = booking?.id;
+      const results = await Promise.all(createJobs);
 
-      console.log("✅ Booking created, ID =", bookingId);
+      const bookingIds = results
+        .map((res) => res?.data ?? res)
+        .map((b) => b?.id)
+        .filter((id) => id != null);
 
-      if (bookingId != null) {
-        localStorage.setItem("lastBookingId", String(bookingId));
-      }
+      console.log("✅ Bookings created:", bookingIds);
 
-      // Cập nhật room (nếu BE chưa tự xử lý)
-      await roomServices.edit(room.id, { ...room, availability: false });
+      // Update room availability (if BE already does it, you can remove this)
+      const roomUpdateJobs = items.map((it) =>
+        roomServices.edit(it.roomId, { availability: false })
+      );
+      await Promise.allSettled(roomUpdateJobs);
 
-      // Điều hướng sang trang success, truyền bookingId qua state
-      navigate("/success", { state: { bookingId } });
+      localStorage.setItem("lastBookingIds", JSON.stringify(bookingIds));
+      navigate("/success", { state: { bookingIds } });
     } catch (error) {
-      console.error("❌ Error adding booking:", error);
-      console.log("💬 BE trả về:", error?.response?.data);
+      console.error("❌ Error creating bookings:", error);
+      console.log("💬 BE response:", error?.response?.data);
     }
   };
 

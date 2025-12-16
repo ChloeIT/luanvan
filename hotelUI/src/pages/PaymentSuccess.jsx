@@ -1,5 +1,5 @@
 // src/pages/PaymentSuccess.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaCheckCircle } from "react-icons/fa";
 import { useSelector } from "react-redux";
@@ -15,10 +15,10 @@ export const PaymentSuccess = () => {
 
     // 3) booking mới nhất từ Redux
     const { bookings } = useSelector((s) => s.booking || {});
-    const latestBookingId =
-        Array.isArray(bookings) && bookings.length > 0
-            ? bookings[bookings.length - 1].id
-            : null;
+    const latestBookingId = useMemo(() => {
+        if (!Array.isArray(bookings) || bookings.length === 0) return null;
+        return bookings[bookings.length - 1]?.id ?? null;
+    }, [bookings]);
 
     // Thứ tự ưu tiên: state → localStorage → Redux
     const bookingId = bookingIdFromState || bookingIdFromStorage || latestBookingId;
@@ -34,7 +34,7 @@ export const PaymentSuccess = () => {
     const primaryBtnStyle = {
         backgroundColor: "var(--primary, #86B817)",
         borderColor: "var(--primary, #86B817)",
-        fontWeight: 600,
+        fontWeight: 700,
         color: "#fff",
         borderRadius: "12px",
         boxShadow: "0 4px 12px rgba(0,0,0,.1)",
@@ -44,7 +44,7 @@ export const PaymentSuccess = () => {
     };
 
     const outlineBtnStyle = {
-        fontWeight: 600,
+        fontWeight: 700,
         borderRadius: "12px",
         border: "2px solid #000",
         color: "#000",
@@ -58,47 +58,44 @@ export const PaymentSuccess = () => {
         <div className="container-xxl py-5">
             <div className="container d-flex justify-content-center">
                 <div className="w-100" style={{ maxWidth: 720 }}>
-                    {/* Header nhỏ phía trên card */}
+                    {/* ====== HEADING (giống Service) ====== */}
                     <div className="text-center mb-4">
-                        <div
-                            className="heading-line mx-auto"
-                            style={{ "--heading-gap": "12px" }}
-                        >
-                            <span
-                                style={{
-                                    display: "grid",
-                                    justifyItems: "end",
-                                    gap: "4px",
-                                    marginRight: "2px",
-                                }}
-                            >
-                                <span className="divider" style={{ "--w": "90px" }} />
-                                <span
-                                    className="divider"
-                                    style={{ "--w": "50px", "--alpha": 0.4 }}
-                                />
+                        <div className="sb-heading sb-heading--md mx-auto">
+                            {/* lines left */}
+                            <span className="sb-heading__lines sb-heading__lines--left">
+                                <span className="sb-heading__line sb-heading__line--long" />
+                                <span className="sb-heading__line sb-heading__line--short" />
                             </span>
-                            <h6 className="heading-text text-primary text-uppercase">
-                                Booking status
-                            </h6>
-                            <span
+
+                            <h6
+                                className="sb-heading__label"
                                 style={{
-                                    display: "grid",
-                                    justifyItems: "start",
-                                    gap: "4px",
-                                    marginLeft: "2px",
+                                    fontSize: "22px",
+                                    fontWeight: 900,
+                                    letterSpacing: "0.18em",
+                                    color: "var(--primary, #86B817)",
                                 }}
                             >
-                                <span className="divider" style={{ "--w": "90px" }} />
-                                <span
-                                    className="divider"
-                                    style={{ "--w": "50px", "--alpha": 0.4 }}
-                                />
+                                Booking Status
+                            </h6>
+
+                            {/* lines right */}
+                            <span className="sb-heading__lines sb-heading__lines--right">
+                                <span className="sb-heading__line sb-heading__line--long" />
+                                <span className="sb-heading__line sb-heading__line--short" />
                             </span>
                         </div>
-                        <h2 className="mb-1" style={{ fontWeight: 800 }}>
+
+                        <h1
+                            className="mb-1"
+                            style={{
+                                fontSize: "30px",
+                                fontWeight: 800,
+                                letterSpacing: ".3px",
+                            }}
+                        >
                             Payment Successful
-                        </h2>
+                        </h1>
                     </div>
 
                     {/* CARD chính */}
@@ -130,18 +127,19 @@ export const PaymentSuccess = () => {
                                     className="mb-2"
                                     style={{
                                         color: "var(--primary, #86B817)",
-                                        fontWeight: 800,
-                                        letterSpacing: ".5px",
+                                        fontWeight: 900,
+                                        letterSpacing: ".4px",
                                     }}
                                 >
                                     Thank you for your payment!
                                 </h3>
+
                                 <p className="mb-2">
                                     Your booking has been paid successfully. We&apos;ve sent a
                                     confirmation email with your booking details.
                                 </p>
 
-                                {/* Booking ID – pill đẹp hơn, canh giữa */}
+                                {/* Booking ID – pill */}
                                 {bookingId ? (
                                     <div className="mt-3 d-flex justify-content-center justify-content-md-start">
                                         <div
@@ -155,10 +153,12 @@ export const PaymentSuccess = () => {
                                                 boxShadow: "0 4px 10px rgba(0,0,0,.09)",
                                                 border: "1px solid rgba(0,0,0,.05)",
                                                 fontSize: "0.85rem",
-                                                fontWeight: 500,
+                                                fontWeight: 600,
                                             }}
                                         >
-                                            <span style={{ color: "#666" }}>Booking ID</span>
+                                            <span style={{ color: "#666", fontWeight: 700 }}>
+                                                Booking ID
+                                            </span>
                                             <span
                                                 style={{
                                                     height: 18,
@@ -168,7 +168,7 @@ export const PaymentSuccess = () => {
                                             />
                                             <span
                                                 style={{
-                                                    fontWeight: 700,
+                                                    fontWeight: 900,
                                                     letterSpacing: "0.03em",
                                                     color: "#e67e22",
                                                 }}
@@ -196,9 +196,7 @@ export const PaymentSuccess = () => {
                                 onMouseEnter={(e) =>
                                     (e.currentTarget.style.filter = "brightness(0.9)")
                                 }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.filter = "none")
-                                }
+                                onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
                             >
                                 View my bookings
                             </Link>

@@ -301,3 +301,88 @@
 
 .sb-pair__line--top{ width:42%; }
 .sb-pair__line--bot{ width:72%; }
+
+/************************************************************
+ * FILTER BAR (Hotels) – Responsive pills
+ ************************************************************/
+.filterbar {
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+/* Desktop: pill dài 1 hàng */
+@media (min-width: 992px) {
+  .filterbar {
+    border-radius: 999px;
+    padding: 10px 14px;
+  }
+  .filterbar__grid {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+  .filterbar__item {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    border-radius: 0;
+  }
+}
+
+/* Mobile/Tablet: grid 2 cột, mỗi filter là mini-pill */
+@media (max-width: 991.98px) {
+  .filterbar {
+    border-radius: 22px;
+    padding: 12px;
+  }
+  .filterbar__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .filterbar__item {
+    border-radius: 999px;
+    padding: 8px 10px;
+    border: 1.5px solid rgba(134,184,23,.28);
+    background: #fff;
+  }
+  .filterbar__top {
+    grid-column: 1 / -1; /* icon + reset full width */
+  }
+}
+
+/* Label + field */
+.filterbar__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.filterbar__field select,
+.filterbar__field input {
+  width: 100%;
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  padding: 0 !important;
+}
+
+/* Icon circle (reuse style like your filter icon idea) */
+.filterbar__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,195,11,.15);
+}

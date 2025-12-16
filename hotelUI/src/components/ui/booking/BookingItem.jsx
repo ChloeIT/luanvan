@@ -1,331 +1,331 @@
-// src/components/ui/booking/BookingItem.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { differenceInCalendarDays } from "date-fns";
-import { formatDateTime } from "./../../../utils/dateService";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import React, { useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { bookingAction } from "../../../store/booking";
 
-export const BookingItem = ({ item }) => {
-  const today = new Date();
-  const todayFormatted = formatDateTime(today);
-  const todayDate = today.toISOString().split("T")[0];
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const tomorrowDate = tomorrow.toISOString().split("T")[0];
-
-  const [checkIn, setCheckIn] = useState(todayDate);
-  const [checkOut, setCheckOut] = useState(tomorrowDate);
-  const [totalPrice, setTotalPrice] = useState(0);
-
+export const BookingItem = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
-  const { hotels } = useSelector((state) => state.hotel);
 
-  // Tìm hotel chứa room hiện tại
-  const foundHotel = useMemo(() => {
-    return hotels.find(
-      (hotel) =>
-        Array.isArray(hotel.rooms) &&
-        hotel.rooms.some((r) => String(r.id) === String(item.id))
-    );
-  }, [hotels, item]);
+  const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || "";
 
-  const hotelName =
-    item?.hotelName || item?.hotel?.name || foundHotel?.name || "Unknown";
-  const hotelAddress =
-    item?.hotel?.address || foundHotel?.address || "Unknown";
+  const cart = useSelector((s) => s.booking?.cart || []);
+  const selectedIds = useSelector((s) => s.booking?.selectedIds || []);
 
-  const [data, setData] = useState({
-    checkIn: todayFormatted,
-    checkOut: todayFormatted,
-    totalPrice: 0,
-    image: item.image,
-    name: item.name,
-  });
+  const isSelected = (roomId) =>
+    selectedIds.some((id) => String(id) === String(roomId));
 
-  useEffect(() => {
-    const numberOfDays =
-      checkIn && checkOut
-        ? differenceInCalendarDays(new Date(checkOut), new Date(checkIn))
-        : 0;
+  const selectedItems = useMemo(
+    () => cart.filter((x) => isSelected(x.roomId)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cart, selectedIds]
+  );
 
-    const calculatedTotalPrice = item.price * Math.max(0, numberOfDays);
-    setTotalPrice(calculatedTotalPrice);
+  const totalSelected = useMemo(
+    () => selectedItems.reduce((sum, it) => sum + (it.totalPrice || 0), 0),
+    [selectedItems]
+  );
 
-    setData((prev) => ({
-      ...prev,
-      roomId: item?.id,
-      checkIn: formatDateTime(new Date(checkIn)),
-      checkOut: formatDateTime(new Date(checkOut)),
-      totalPrice: calculatedTotalPrice,
-      image: item.image,
-      name: item.name,
-      hotelName,
-      hotelAddress,
-    }));
-  }, [checkIn, checkOut, item, hotelName, hotelAddress]);
+  const totalSelectedNights = useMemo(
+    () => selectedItems.reduce((sum, it) => sum + (it.nights || 0), 0),
+    [selectedItems]
+  );
 
-  const bookThisPlace = () => {
-    localStorage.setItem("bookData", JSON.stringify(data));
-    navigate("checkout");
+  const minCheckout = (checkIn) => {
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
   };
 
-  // nights để hiển thị badge
-  const nights = Math.max(
-    0,
-    differenceInCalendarDays(new Date(checkOut), new Date(checkIn))
+  const hasInvalidRange = useMemo(
+    () => selectedItems.some((it) => (it.nights || 0) <= 0),
+    [selectedItems]
   );
-  const isRangeValid = nights > 0;
 
-  // style input dịu màu (inline)
+  const onProceed = () => {
+    if (!selectedItems.length || hasInvalidRange) return;
+
+    const draft = {
+      items: selectedItems,
+      totalPrice: totalSelected,
+      totalNights: totalSelectedNights,
+    };
+    localStorage.setItem("bookData", JSON.stringify(draft));
+    navigate("/checkout");
+  };
+
+  /* ================= Empty cart ================= */
+  if (!cart.length) {
+    return (
+      <div className="container-xxl py-4">
+        <div className="container">
+          <div className="alert alert-warning m-0">
+            Your booking cart is empty. Please add rooms from a hotel page.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const inputStyle = {
     width: "100%",
     background: "#F9FAFB",
     color: "#111827",
     border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: "8px 10px",
-    lineHeight: 1.2,
-    outline: "none",
-    WebkitAppearance: "auto",
-    appearance: "auto",
-    fontSize: "14px",
+    borderRadius: 10,
+    padding: "6px 9px",
+    fontSize: 13,
+  };
+
+  const pillStyle = {
+    background: "#FFFBEB",
+    color: "#a16207",
+    border: "1px solid #fde68a",
+    padding: "3px 10px",
+    fontSize: 12,
   };
 
   return (
-    <div className="my-4">
-      {/* ===== Heading: giống Process / 3 Easy Steps ===== */}
-      <div className="text-center mt-4 mb-4">
-        <div className="sb-heading sb-heading--md mx-auto">
-          {/* left lines */}
-          <span className="sb-heading__lines sb-heading__lines--left">
-            <span className="sb-heading__line sb-heading__line--long" />
-            <span className="sb-heading__line sb-heading__line--short" />
-          </span>
+    <div className="container-xxl py-4">
+      <div className="container" style={{ maxWidth: 1080 }}>
+        {/* ===== List items ===== */}
+        <div className="d-grid" style={{ gap: 12 }}>
+          {cart.map((it) => {
+            const checked = isSelected(it.roomId);
+            const validRange = (it.nights || 0) > 0;
 
-          {/* LABEL */}
-          <h6
-            className="sb-heading__label"
-            style={{
-              fontSize: "26px",
-              fontWeight: 900,
-              letterSpacing: "0.18em",
-            }}
-          >
-            Booking
-          </h6>
+            // Safe hotelId resolution
+            const hotelId =
+              it.hotelId ??
+              it.room?.hotelId ??
+              it.room?.hotel?.id ??
+              it.room?.hotel?.hotelId ??
+              null;
 
-          {/* right lines */}
-          <span className="sb-heading__lines sb-heading__lines--right">
-            <span className="sb-heading__line sb-heading__line--long" />
-            <span className="sb-heading__line sb-heading__line--short" />
-          </span>
-        </div>
-
-        <h1 className="mb-4" style={{ fontSize: "28px" }}>
-          Room Information
-        </h1>
-      </div>
-
-      {/* ===== Hình + Thông tin ===== */}
-      <div className="container-xxl px-3 md:px-4">
-        <div
-          className="flex flex-col md:flex-row justify-center gap-5 w-full"
-          style={{ alignItems: "stretch", minHeight: "280px" }}
-        >
-          {/* === ẢNH PHÒNG === */}
-          <div
-            className="flex mb-3 md:mb-0"
-            style={{ flexBasis: "34%", maxWidth: "34%", flexShrink: 0 }}
-          >
-            <div
-              style={{
-                flex: 1,
-                borderRadius: "16px",
-                overflow: "hidden",
-                boxShadow: "0 5px 16px rgba(0,0,0,0.16)",
-              }}
-            >
-              <img
-                src={`${IMAGE_URL}/rooms/${item.image}`}
-                alt={item.name}
+            return (
+              <div
+                key={it.roomId}
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
+                  background: "var(--card-yellow)",
+                  border: "1px solid rgba(0,0,0,.06)",
+                  borderRadius: 16,
+                  padding: 12,
+                  boxShadow: "0 6px 16px rgba(0,0,0,.08)",
                 }}
-              />
-            </div>
-          </div>
-
-          {/* === THÔNG TIN PHÒNG (compact) === */}
-          <div
-            className="flex items-center justify-center rounded-2xl p-6"
-            style={{
-              flexBasis: "66%",
-              maxWidth: "66%",
-              background: "var(--card-yellow)",
-            }}
-          >
-            <div
-              className="font-medium"
-              style={{
-                width: "100%",
-                fontSize: "15px",
-                lineHeight: 1.8,
-                display: "grid",
-                gridTemplateColumns: "150px 1fr",
-                alignItems: "center",
-                rowGap: "8px",
-                columnGap: "8px",
-              }}
-            >
-              <span className="text-[#FFC30B] text-left text-base">
-                Hotel name:
-              </span>
-              <span className="text-primary text-xl font-extrabold text-left">
-                {hotelName}
-              </span>
-
-              <span className="text-[#FFC30B] text-left text-base">
-                Room name:
-              </span>
-              <span className="text-gray-700 text-left">{item.name}</span>
-
-              <span className="text-[#FFC30B] text-left text-base">
-                Address:
-              </span>
-              <span className="text-gray-700 text-left">{hotelAddress}</span>
-
-              <span className="text-[#FFC30B] text-left text-base">
-                Capacity:
-              </span>
-              <span className="text-gray-700 text-left">
-                {item.capacity} people
-              </span>
-
-              <span className="text-[#FFC30B] text-left text-base">
-                Price:
-              </span>
-              <span className="text-gray-700 text-left">
-                {item.price} $ / night
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== Ô thanh toán ===== */}
-        <div className="mt-5" style={{ colorScheme: "light" }}>
-          <div className="bg-white shadow rounded-2xl p-4 md:p-5">
-            {/* HÀNG 1: Ngày vào/ra */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Check in */}
-              <label
-                className="flex flex-col gap-1 border rounded-xl p-3"
-                style={{ borderColor: "#e5e7eb" }}
               >
-                <span className="text-sm" style={{ color: "#6b7280" }}>
-                  Check in
-                </span>
-                <input
-                  type="date"
-                  required
-                  value={checkIn}
-                  min={todayDate}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setCheckIn(v);
-                    const next = new Date(v);
-                    next.setDate(next.getDate() + 1);
-                    const nextStr = next.toISOString().split("T")[0];
-                    if (!checkOut || checkOut <= v) setCheckOut(nextStr);
-                  }}
-                  style={inputStyle}
-                />
-              </label>
-
-              {/* Check out */}
-              <label
-                className="flex flex-col gap-1 border rounded-xl p-3"
-                style={{ borderColor: "#e5e7eb" }}
-              >
-                <span className="text-sm" style={{ color: "#6b7280" }}>
-                  Check out
-                </span>
-                <input
-                  type="date"
-                  required
-                  value={checkOut}
-                  min={(() => {
-                    const d = new Date(checkIn || todayDate);
-                    d.setDate(d.getDate() + 1);
-                    return d.toISOString().split("T")[0];
-                  })()}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  style={inputStyle}
-                />
-              </label>
-            </div>
-
-            {/* HÀNG 2: Tóm tắt giá */}
-            <div className="mt-3 md:mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div className="text-gray-700">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span
-                    className="inline-flex items-center rounded-full px-3 py-1 text-sm"
-                    style={{
-                      background: "#FFFBEB",
-                      color: "#a16207",
-                      border: "1px solid #fde68a",
-                    }}
-                  >
-                    {isRangeValid ? `${nights} night${nights > 1 ? "s" : ""}` : "—"}
-                  </span>
-                  <span className="text-sm">
-                    Price: <b>{item.price}$ / night</b>
-                  </span>
-                  {isRangeValid && (
-                    <span className="text-sm text-gray-500">
-                      ({nights} × {item.price}$)
+                {/* ===== Checkbox + Remove ===== */}
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <label className="d-inline-flex align-items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        dispatch(bookingAction.toggleSelect(it.roomId))
+                      }
+                    />
+                    <span style={{ fontWeight: 800, color: "var(--primary)" }}>
+                      Select
                     </span>
-                  )}
-                </div>
-                {!isRangeValid && (
-                  <p className="mt-1 text-sm" style={{ color: "#dc2626" }}>
-                    Check-out phải sau check-in ít nhất 1 ngày.
-                  </p>
-                )}
-              </div>
+                  </label>
 
-              <div className="text-right">
-                <div className="text-sm text-gray-500">Total price</div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {totalPrice}$
+                  <button
+                    className="btn btn-outline-danger"
+                    style={{
+                      borderRadius: 9999,
+                      padding: "5px 10px",
+                      fontSize: 12,
+                    }}
+                    onClick={() =>
+                      dispatch(bookingAction.removeFromCart(it.roomId))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="row g-2">
+                  {/* ===== Image ===== */}
+                  <div className="col-md-4">
+                    <img
+                      src={`${IMAGE_URL}/rooms/${it.image}`}
+                      alt={it.name}
+                      style={{
+                        width: "100%",
+                        height: 160,
+                        objectFit: "cover",
+                        borderRadius: 12,
+                      }}
+                    />
+                  </div>
+
+                  {/* ===== Info ===== */}
+                  <div className="col-md-8">
+                    <div
+                      style={{
+                        background: "rgba(255,255,255,.75)",
+                        borderRadius: 14,
+                        padding: 12,
+                        height: "100%",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "100px 1fr",
+                          gap: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        {/* Hotel */}
+                        <span style={{ color: "#FFC30B", fontWeight: 800 }}>
+                          Hotel:
+                        </span>
+
+                        {hotelId ? (
+                          <Link
+                            to={`/hotel/${hotelId}`}
+                            style={{
+                              fontWeight: 900,
+                              color: "var(--primary)",
+                              textDecoration: "none",
+                            }}
+                            onClick={() =>
+                              window.scrollTo({ top: 0, behavior: "smooth" })
+                            }
+                            title="Go to hotel details"
+                          >
+                            {it.hotelName}
+                            <span
+                              style={{
+                                marginLeft: 6,
+                                fontSize: 12,
+                                opacity: 0.7,
+                              }}
+                            >
+                              ↗
+                            </span>
+                          </Link>
+                        ) : (
+                          <span
+                            style={{
+                              fontWeight: 900,
+                              color: "var(--primary)",
+                            }}
+                          >
+                            {it.hotelName || "Unknown"}
+                          </span>
+                        )}
+
+                        {/* Room */}
+                        <span style={{ color: "#FFC30B", fontWeight: 800 }}>
+                          Room:
+                        </span>
+                        <span style={{ fontWeight: 700 }}>{it.name}</span>
+
+                        {/* Price */}
+                        <span style={{ color: "#FFC30B", fontWeight: 800 }}>
+                          Price:
+                        </span>
+                        <span style={{ fontWeight: 800 }}>
+                          {it.price}$ / night
+                        </span>
+                      </div>
+
+                      {/* ===== Dates ===== */}
+                      <div className="row g-2 mt-2">
+                        <div className="col-md-6">
+                          <input
+                            type="date"
+                            value={it.checkIn}
+                            min={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => {
+                              const newIn = e.target.value;
+                              const newOut =
+                                !it.checkOut || it.checkOut <= newIn
+                                  ? minCheckout(newIn)
+                                  : it.checkOut;
+
+                              dispatch(
+                                bookingAction.updateCartDates({
+                                  roomId: it.roomId,
+                                  checkIn: newIn,
+                                  checkOut: newOut,
+                                })
+                              );
+                            }}
+                            style={inputStyle}
+                          />
+                        </div>
+
+                        <div className="col-md-6">
+                          <input
+                            type="date"
+                            value={it.checkOut}
+                            min={minCheckout(it.checkIn)}
+                            onChange={(e) =>
+                              dispatch(
+                                bookingAction.updateCartDates({
+                                  roomId: it.roomId,
+                                  checkIn: it.checkIn,
+                                  checkOut: e.target.value,
+                                })
+                              )
+                            }
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+
+                      {!validRange && (
+                        <div
+                          style={{
+                            color: "#dc2626",
+                            fontSize: 12,
+                            marginTop: 4,
+                          }}
+                        >
+                          Check-out must be at least 1 day after check-in.
+                        </div>
+                      )}
+
+                      {/* ===== Summary ===== */}
+                      <div className="mt-2 d-flex gap-2 align-items-center">
+                        <span className="rounded-pill" style={pillStyle}>
+                          {validRange
+                            ? `${it.nights} night${it.nights > 1 ? "s" : ""
+                            }`
+                            : "—"}
+                        </span>
+                        <span>
+                          Total: <b>{it.totalPrice}$</b>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* HÀNG 3: CTA */}
-            <div className="mt-4 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={bookThisPlace}
-                className="btn btn-primary"
-                style={{
-                  borderRadius: 9999,
-                  padding: "8px 18px",
-                  boxShadow: "0 5px 16px rgba(0,0,0,.12)",
-                  fontSize: "15px",
-                }}
-              >
-                Book this place
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
-        {/* ===== /Ô thanh toán ===== */}
+
+        {/* ===== Footer ===== */}
+        <div className="mt-3 d-flex justify-content-between align-items-center">
+          <div>
+            <b>
+              {selectedItems.length} room
+              {selectedItems.length > 1 ? "s" : ""} — {totalSelected}$
+            </b>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={onProceed}
+            disabled={!selectedItems.length || hasInvalidRange}
+            style={{ borderRadius: 9999 }}
+          >
+            Proceed to checkout
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { favoriteServices } from "@/services/favorite";
 import { favoriteAction } from "@/store";
+import { bookingAction } from "@/store/booking"; // ✅ thêm
 
 /* ================= helpers ================= */
 const readCompare = () => {
@@ -30,7 +31,6 @@ const toNum = (v) =>
 const getHotelIdFromRoom = (room) =>
   toNum(room?.hotel_id ?? room?.hotelId ?? room?.hotel?.id);
 
-/** Lấy tên KS từ props → redux → room (fallback rỗng) */
 const resolveHotelName = (room, hotels, hotelNameProp) => {
   if (hotelNameProp) return hotelNameProp;
   if (room?.hotel?.name) return room.hotel.name;
@@ -54,7 +54,6 @@ export const RoomCard = ({
   variant = "default",
   inCompare,
   isAvailableToday = true,
-  /** 👉 nếu true thì pill tên hotel là Link tới /hotel/:id (dùng ở DISCOUNT) */
   linkToHotel = false,
 }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
@@ -63,14 +62,12 @@ export const RoomCard = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  /* ----- variant sizing ----- */
   const cardVariant = inCompare ? "compact" : variant;
   const isCompact = cardVariant === "compact";
   const ACTION_ICON = isCompact ? 24 : 28;
   const HEART_FS = isCompact ? "1.25rem" : "1.45rem";
   const BTN_SIZE = isCompact ? "small" : "middle";
 
-  /* ----- hotel name / id ----- */
   const resolvedHotelId = useMemo(
     () => hotelIdProp ?? getHotelIdFromRoom(room),
     [hotelIdProp, room]
@@ -81,14 +78,11 @@ export const RoomCard = ({
     [room, hotels, hotelNameProp]
   );
 
-  /* ----- DISCOUNT: chuẩn hoá field ----- */
   const rawDiscount =
     room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
-
   const discountPercent = Number(rawDiscount) || 0;
-  const showDiscount = discountPercent > 0; // chỉ check >0
+  const showDiscount = discountPercent > 0;
 
-  /* ----- compare state ----- */
   const [isInCompare, setIsInCompare] = useState(() =>
     readCompare().some((r) => r.id === room.id)
   );
@@ -111,7 +105,6 @@ export const RoomCard = ({
     };
   }, [room.id]);
 
-  /* ----- actions ----- */
   const addToCompare = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -154,20 +147,29 @@ export const RoomCard = ({
     }
   };
 
-  const onBook = (e) => {
+  // ✅ ADD TO CART (thay vì navigate /booking/:id)
+  const onAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (room.availability && isAvailableToday) {
-      navigate(`/booking/${room.id}`);
-    }
+
+    if (!room?.availability || !isAvailableToday) return;
+
+    dispatch(
+      bookingAction.addToCart({
+        room,
+        hotelName, // cho BookingItem hiển thị nhanh
+        // hotelAddress: ... (nếu bạn có field address ở đây thì truyền thêm)
+      })
+    );
+
+    // ✅ đi tới cart page (BookingItem)
+    navigate("/booking");
   };
 
-  const canBook = !!room.availability && !!isAvailableToday;
+  const canAdd = !!room.availability && !!isAvailableToday;
 
-  /* ================= Render ================= */
   return (
     <div className={`room-card ${isCompact ? "room-card--compact" : ""}`}>
-      {/* Ảnh + badge discount */}
       <div className="image-box" style={{ position: "relative" }}>
         {showDiscount && (
           <div className="room-discount-badge">-{discountPercent}%</div>
@@ -182,7 +184,6 @@ export const RoomCard = ({
         />
       </div>
 
-      {/* Pills trên ảnh */}
       {hotelName && (
         linkToHotel && resolvedHotelId ? (
           <Link
@@ -200,7 +201,6 @@ export const RoomCard = ({
 
       <div className="room-pill pill-middle">{room.type}</div>
 
-      {/* Body */}
       <div className="room-card-body">
         <div className="text-center" style={{ padding: "8px 12px 4px" }}>
           <h5 className="primarycolor mb-1 room-title">
@@ -208,7 +208,6 @@ export const RoomCard = ({
           </h5>
         </div>
 
-        {/* Info lines */}
         <div className="room-info d-flex flex-column align-items-center">
           <div className="d-flex justify-content-center">
             <p className="mb-1 d-flex align-items-center room-info-line">
@@ -224,15 +223,10 @@ export const RoomCard = ({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="room-actions d-flex justify-content-center align-items-center text-primary">
           <span
             role="button"
-            title={
-              isFavorite
-                ? "Remove room from favorites"
-                : "Add room to favorites"
-            }
+            title={isFavorite ? "Remove room from favorites" : "Add room to favorites"}
             className="me-2"
             style={{ fontSize: HEART_FS, lineHeight: 1, cursor: "pointer" }}
             onClick={onToggleFavorite}
@@ -244,10 +238,10 @@ export const RoomCard = ({
           <Button
             className="mx-1"
             size={BTN_SIZE}
-            onClick={onBook}
-            disabled={!canBook}
+            onClick={onAddToCart}
+            disabled={!canAdd}
           >
-            {canBook ? "Book now" : "Booked"}
+            {canAdd ? "Add to cart" : "Booked"}
           </Button>
 
           {isInCompare ? (

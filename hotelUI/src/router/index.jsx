@@ -49,13 +49,11 @@ import { PaymentSuccess } from "@/pages/PaymentSuccess";
 function RequireRole({ allowedRoles, children }) {
   const { user } = useSelector((state) => state.auth);
 
-  // chưa đăng nhập -> về login
   if (!user) return <Navigate to="/login" replace />;
 
   const roles = Array.isArray(user.roles) ? user.roles : [];
   const hasRole = roles.some((r) => allowedRoles.includes(r));
 
-  // không đủ quyền -> đá về home
   if (!hasRole) return <Navigate to="/" replace />;
 
   return children;
@@ -65,9 +63,6 @@ function RequireRole({ allowedRoles, children }) {
 // 📌 ROUTER DEFINITIONS
 // ================================================
 export const router = [
-  // ===============================
-  // 🌐 PUBLIC PAGES (MainLayout)
-  // ===============================
   {
     path: "/",
     element: <MainLayout />,
@@ -78,9 +73,18 @@ export const router = [
       { path: "hotel", element: <Hotel /> },
       { path: "hotel/:id", element: <HotelDetail /> },
 
-      // Flow booking / checkout
+      // ==========================
+      // ✅ Booking cart + Checkout
+      // ==========================
+      // Cart page (nhiều room): /booking
       { path: "booking", element: <Booking /> },
+      // (giữ lại route cũ nếu bạn vẫn còn navigate /booking/:id)
       { path: "booking/:id", element: <Booking /> },
+
+      // ✅ NEW: Checkout độc lập (checkout theo selected rooms)
+      { path: "checkout", element: <CheckOut /> },
+
+      // (giữ lại route cũ để không phá flow cũ)
       { path: "booking/:id/checkout", element: <CheckOut /> },
 
       // My bookings
@@ -114,7 +118,6 @@ export const router = [
       { path: "hotels", element: <AdHotel /> },
       { path: "bookings", element: <AdBooking /> },
 
-      // Contact & Newsletter
       { path: "contacts", element: <AdContact /> },
       { path: "newsletter", element: <AdNewsletter /> },
     ],

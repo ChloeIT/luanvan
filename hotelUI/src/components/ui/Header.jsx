@@ -1,5 +1,5 @@
 // src/components/layouts/Header.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { linkpage } from "../../contant/link";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { TiThMenuOutline } from "react-icons/ti";
@@ -21,14 +21,13 @@ export const Header = () => {
   useEffect(() => {
     const path = location.pathname;
 
-    // các trang không nằm trong linkpage nhưng vẫn muốn có title
     if (path === "/my-bookings") {
       setTitle("My bookings");
       return;
     }
 
     if (path === "/profile") {
-      setTitle("Profile");          // 👈 sẽ hiện “Profile” trên hình
+      setTitle("Profile");
       return;
     }
 
@@ -36,41 +35,93 @@ export const Header = () => {
     setTitle(found?.name ?? "");
   }, [location.pathname]);
 
+  // ✅ Auto-close mobile menu whenever route changes
+  useEffect(() => {
+    if (openToggle) setOpenToggle(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const closeMobileMenu = () => setOpenToggle(false);
+
   // ========== Dropdown items ==========
   const roles = Array.isArray(user?.roles) ? user.roles : [];
 
-  const items = [
-    { key: "profile", label: <Link to="/profile">Profile</Link> },
-    { key: "my-bookings", label: <Link to="/my-bookings">My bookings</Link> },
+  const items = useMemo(() => {
+    const base = [
+      {
+        key: "profile",
+        label: (
+          <Link to="/profile" onClick={closeMobileMenu}>
+            Profile
+          </Link>
+        ),
+      },
+      {
+        key: "my-bookings",
+        label: (
+          <Link to="/my-bookings" onClick={closeMobileMenu}>
+            My bookings
+          </Link>
+        ),
+      },
+    ];
 
-    ...(roles.includes("ROLE_ADMIN")
-      ? [{ key: "admin", label: <Link to="/admin">Admin Panel</Link> }]
-      : []),
-    ...(roles.includes("ROLE_MODERATOR")
-      ? [{ key: "moderator", label: <Link to="/moderator">Mod Panel</Link> }]
-      : []),
-    {
-      key: "logout",
-      label: (
-        <span
-          onClick={() => {
-            dispatch(authAction.setUser(null));
-            authServices.logout();
-          }}
-        >
-          Logout
-        </span>
-      ),
-    },
-  ];
+    const admin =
+      roles.includes("ROLE_ADMIN")
+        ? [
+          {
+            key: "admin",
+            label: (
+              <Link to="/admin" onClick={closeMobileMenu}>
+                Admin Panel
+              </Link>
+            ),
+          },
+        ]
+        : [];
+
+    const mod =
+      roles.includes("ROLE_MODERATOR")
+        ? [
+          {
+            key: "moderator",
+            label: (
+              <Link to="/moderator" onClick={closeMobileMenu}>
+                Mod Panel
+              </Link>
+            ),
+          },
+        ]
+        : [];
+
+    const logout = [
+      {
+        key: "logout",
+        label: (
+          <span
+            onClick={() => {
+              closeMobileMenu();
+              dispatch(authAction.setUser(null));
+              authServices.logout();
+            }}
+            style={{ cursor: "pointer" }}
+          >
+            Logout
+          </span>
+        ),
+      },
+    ];
+
+    return [...base, ...admin, ...mod, ...logout];
+  }, [roles, dispatch]);
 
   return (
     <div className="position-relative p-0">
-      {/* ===== HEADER FIXED, NỀN TỐI MỜ ===== */}
+      {/* ===== HEADER FIXED ===== */}
       <div className="site-header">
         <div className="container-fluid p-0">
           <nav className="navbar navbar-expand-xl px-4 px-lg-5 py-3 site-header-bar">
-            <Link to="/" className="navbar-brand p-0">
+            <Link to="/" className="navbar-brand p-0" onClick={closeMobileMenu}>
               <h1
                 className="m-0"
                 style={{
@@ -90,43 +141,31 @@ export const Header = () => {
                   e.currentTarget.style.transform = "scale(1)";
                 }}
               >
-                {/* SB – nổi bật */}
                 <span style={{ color: "#86B817" }}>SB</span>
-
-                {/* Hotels – sáng hơn, rõ trên nền tối */}
-                <span
-                  style={{
-                    color: "#EAF5C3",      // 👈 sáng hơn hẳn
-                    fontWeight: 800,
-                  }}
-                >
-                  Hotels
-                </span>
+                <span style={{ color: "#EAF5C3", fontWeight: 800 }}>Hotels</span>
               </h1>
             </Link>
-
 
             {/* Toggle mobile */}
             <Button
               className="navbar-toggler border-0"
               type="button"
               onClick={() => setOpenToggle((p) => !p)}
+              aria-label="Toggle navigation"
             >
               <TiThMenuOutline color="white" />
             </Button>
 
-            <div
-              className={`collapse navbar-collapse ${openToggle ? "show text-end" : ""}`}
-            >
+            <div className={`collapse navbar-collapse ${openToggle ? "show text-end" : ""}`}>
               {/* MENU LINKS */}
               <div className="navbar-nav ms-auto py-0">
                 {linkpage.map((item) => (
                   <NavLink
                     key={item.name}
                     to={item.to}
+                    onClick={closeMobileMenu} // ✅ click là đóng menu
                     className={({ isActive }) =>
-                      `nav-item nav-link header-link ${isActive ? "active" : ""
-                      }`
+                      `nav-item nav-link header-link ${isActive ? "active" : ""}`
                     }
                   >
                     {item.name}
@@ -135,17 +174,18 @@ export const Header = () => {
               </div>
 
               {/* SEARCH */}
-              <div className="ms-3">
+              <div className={`ms-3 ${openToggle ? "mt-3" : ""}`}>
                 <SearchInput />
               </div>
+
               {/* USER / LOGIN */}
-              <div
-                className={`ms-4 d-flex align-items-center ${openToggle ? "mt-3" : ""
-                  }`}
-              >
+              <div className={`ms-4 d-flex align-items-center ${openToggle ? "mt-3" : ""}`}>
                 {user ? (
                   <Dropdown menu={{ items }} placement="bottomRight">
-                    <a onClick={(e) => e.preventDefault()}>
+                    <a
+                      onClick={(e) => e.preventDefault()}
+                      style={{ textDecoration: "none" }}
+                    >
                       <Space>
                         <span className="header-user">{user.username}</span>
                       </Space>
@@ -155,12 +195,12 @@ export const Header = () => {
                   <Link
                     to="/login"
                     className="btn btn-success rounded-pill px-4"
+                    onClick={closeMobileMenu}
                   >
                     Login
                   </Link>
                 )}
               </div>
-
             </div>
           </nav>
         </div>
@@ -175,10 +215,10 @@ export const Header = () => {
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontSize: "56px",
-                  fontWeight: 900,                 // 👈 đậm rõ
+                  fontWeight: 900,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  textShadow: "0 8px 30px rgba(0,0,0,.55)", // 👈 nổi trên ảnh
+                  textShadow: "0 8px 30px rgba(0,0,0,.55)",
                   display: "inline-block",
                 }}
               >
@@ -188,7 +228,6 @@ export const Header = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };

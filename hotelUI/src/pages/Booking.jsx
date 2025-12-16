@@ -1,25 +1,24 @@
 // src/pages/Booking.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { FaMapLocationDot } from "react-icons/fa6";
 import { GiPayMoney } from "react-icons/gi";
 import { MdOutlineFlightTakeoff } from "react-icons/md";
-import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { message as antdMessage } from "antd";
+
 import { BookingItem } from "../components/ui/booking/BookingItem";
+import { bookingAction } from "../store/booking";
 
 export const Booking = () => {
-  const { id } = useParams();
-  const [roomBooking, setRoomBooking] = useState();
-  const { rooms } = useSelector((state) => state.room);
+  const dispatch = useDispatch();
+  const bookingMessage = useSelector((s) => s.booking?.message || "");
 
+  // ✅ show warning ở component cha (1 lần), rồi clear
   useEffect(() => {
-    const chosenId = id ?? localStorage.getItem("idBooking");
-    if (id) localStorage.setItem("idBooking", id);
-    if (!chosenId) return;
-
-    const found = rooms.find((room) => String(room.id) === String(chosenId));
-    setRoomBooking(found);
-  }, [id, rooms]);
+    if (!bookingMessage) return;
+    antdMessage.warning(bookingMessage);
+    dispatch(bookingAction.clearMessage());
+  }, [bookingMessage, dispatch]);
 
   return (
     <div className="container-xxl py-4">
@@ -54,10 +53,10 @@ export const Booking = () => {
           </h1>
         </div>
 
-        {/* ✅ Đẩy 3 ô xuống để không đè heading */}
+        {/* ✅ Steps */}
         <div
           className="row gy-4 gx-3 justify-content-center align-items-stretch"
-          style={{ marginTop: 36 }} // bạn có thể chỉnh 28 / 32 / 36
+          style={{ marginTop: 36 }}
         >
           {/* Step 1 */}
           <div className="col-lg-4 col-sm-6 d-flex">
@@ -70,18 +69,11 @@ export const Booking = () => {
               </div>
 
               <h5 className="mt-3 mb-1">
-                <span
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 20,
-                    letterSpacing: "0.4px",
-                  }}
-                >
+                <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: "0.4px" }}>
                   Choose A Destination
                 </span>
               </h5>
 
-              {/* ✅ gạch xanh giống Service */}
               <div className="sb-pair">
                 <span className="sb-pair__line sb-pair__line--top" />
                 <span className="sb-pair__line sb-pair__line--bot" />
@@ -105,18 +97,11 @@ export const Booking = () => {
               </div>
 
               <h5 className="mt-3 mb-1">
-                <span
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 20,
-                    letterSpacing: "0.4px",
-                  }}
-                >
+                <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: "0.4px" }}>
                   Pay Online
                 </span>
               </h5>
 
-              {/* ✅ gạch xanh giống Service */}
               <div className="sb-pair">
                 <span className="sb-pair__line sb-pair__line--top" />
                 <span className="sb-pair__line sb-pair__line--bot" />
@@ -140,18 +125,11 @@ export const Booking = () => {
               </div>
 
               <h5 className="mt-3 mb-1">
-                <span
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 20,
-                    letterSpacing: "0.4px",
-                  }}
-                >
+                <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: "0.4px" }}>
                   Fly Today
                 </span>
               </h5>
 
-              {/* ✅ gạch xanh giống Service */}
               <div className="sb-pair">
                 <span className="sb-pair__line sb-pair__line--top" />
                 <span className="sb-pair__line sb-pair__line--bot" />
@@ -165,12 +143,10 @@ export const Booking = () => {
           </div>
         </div>
 
-        {/* ===== Booking Detail ===== */}
-        {roomBooking && (
-          <div className="mt-5">
-            <BookingItem item={roomBooking} />
-          </div>
-        )}
+        {/* ✅ Booking cart component */}
+        <div className="mt-5">
+          <BookingItem />
+        </div>
       </div>
     </div>
   );
