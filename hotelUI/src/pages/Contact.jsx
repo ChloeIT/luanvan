@@ -1,6 +1,7 @@
 // src/pages/Contact.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import {
   FaEnvelopeOpen,
   FaFacebookF,
@@ -43,16 +44,42 @@ export const Contact = () => {
     }));
   }, [user]);
 
+  const emailRegex = useMemo(
+    () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    []
+  );
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    setForm((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const validate = () => {
+    const name = (form.name || "").trim();
+    const email = (form.email || "").trim();
+    const message = (form.message || "").trim();
+    const topic = (form.topic || "").trim();
+
+    if (!name || !email || !message || !topic) {
+      return "Please fill all required fields.";
+    }
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address.";
+    }
+    if (message.length < 10) {
+      return "Your message is too short. Please provide more details (at least 10 characters).";
+    }
+    return "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
 
-    if (!form.name || !form.email || !form.message || !form.topic) {
+    const err = validate();
+    if (err) {
       setAlertType("danger");
-      setAlert("Please fill all required fields.");
+      setAlert(err);
       return;
     }
 
@@ -61,11 +88,11 @@ export const Contact = () => {
       setAlert("");
 
       await contactServices.create({
-        name: form.name,
-        email: form.email,
-        subject: form.subject,
-        topic: form.topic, // BOOKING / PAYMENT / ...
-        message: form.message,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        topic: form.topic,
+        message: form.message.trim(),
       });
 
       setAlertType("success");
@@ -78,8 +105,8 @@ export const Contact = () => {
         topic: "",
         message: "",
       }));
-    } catch (err) {
-      console.error("Send contact failed:", err);
+    } catch (err2) {
+      console.error("Send contact failed:", err2);
       setAlertType("danger");
       setAlert("Something went wrong. Please try again.");
     } finally {
@@ -90,52 +117,42 @@ export const Contact = () => {
   // Style custom cho banner thông báo
   const buildAlertStyle = () => {
     if (!alert) return {};
-    if (alertType === "success") {
-      return {
-        padding: "8px 12px",
-        borderRadius: "10px",
-        fontSize: "0.9rem",
-        marginBottom: "16px",
-        backgroundColor: "rgba(22,163,74,0.1)",
-        color: "#166534",
-        border: "1px solid rgba(22,163,74,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "8px",
-      };
-    }
-    if (alertType === "danger") {
-      return {
-        padding: "8px 12px",
-        borderRadius: "10px",
-        fontSize: "0.9rem",
-        marginBottom: "16px",
-        backgroundColor: "rgba(220,38,38,0.06)",
-        color: "#b91c1c",
-        border: "1px solid rgba(220,38,38,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "8px",
-      };
-    }
-    return {
+    const base = {
       padding: "8px 12px",
       borderRadius: "10px",
       fontSize: "0.9rem",
       marginBottom: "16px",
-      backgroundColor: "rgba(37,99,235,0.08)",
-      color: "#1d4ed8",
-      border: "1px solid rgba(37,99,235,0.4)",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       gap: "8px",
     };
+
+    if (alertType === "success") {
+      return {
+        ...base,
+        backgroundColor: "rgba(22,163,74,0.10)",
+        color: "#166534",
+        border: "1px solid rgba(22,163,74,0.35)",
+      };
+    }
+    if (alertType === "danger") {
+      return {
+        ...base,
+        backgroundColor: "rgba(220,38,38,0.06)",
+        color: "#b91c1c",
+        border: "1px solid rgba(220,38,38,0.35)",
+      };
+    }
+    return {
+      ...base,
+      backgroundColor: "rgba(37,99,235,0.08)",
+      color: "#1d4ed8",
+      border: "1px solid rgba(37,99,235,0.35)",
+    };
   };
 
-  // ✅ Inline “title styles” (không thêm CSS)
+  // Inline “title styles” (không thêm CSS)
   const sectionTitleStyle = {
     fontSize: 20,
     fontWeight: 900,
@@ -155,13 +172,11 @@ export const Contact = () => {
         {/* ===== Heading ===== */}
         <div className="text-center mb-3">
           <div className="sb-heading sb-heading--md mx-auto">
-            {/* left lines */}
             <span className="sb-heading__lines sb-heading__lines--left">
               <span className="sb-heading__line sb-heading__line--long" />
               <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
-            {/* LABEL */}
             <h6
               className="sb-heading__label"
               style={{
@@ -173,26 +188,29 @@ export const Contact = () => {
               CONTACT
             </h6>
 
-            {/* right lines */}
             <span className="sb-heading__lines sb-heading__lines--right">
               <span className="sb-heading__line sb-heading__line--long" />
               <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
-          <h1 className="mb-3" style={{ fontSize: "28px" }}>
+          <h1 className="mb-2" style={{ fontSize: "28px" }}>
             Contact us for support anytime, anywhere.
           </h1>
 
+          <p className="small text-muted mb-0">
+            Tell us what you need and we’ll get back to you as soon as possible.
+          </p>
+
           {user && (
-            <p className="small mb-2">
+            <p className="small mt-2 mb-0">
               We will respond to your email:&nbsp;
               <span
                 style={{
                   background: "rgba(134,184,23,0.15)",
                   padding: "2px 8px",
                   borderRadius: "8px",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: "var(--primary)",
                 }}
               >
@@ -215,7 +233,7 @@ export const Contact = () => {
                     border: "none",
                     background: "transparent",
                     cursor: "pointer",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: "1rem",
                     lineHeight: 1,
                   }}
@@ -233,13 +251,12 @@ export const Contact = () => {
           {/* Left info */}
           <div className="col-lg-4 col-md-6 d-flex">
             <div className="d-flex flex-column h-100 w-100">
-              {/* ✅ bigger + bolder */}
               <h5 className="mb-2" style={sectionTitleStyle}>
                 Get In Touch
               </h5>
 
-              <p className="mb-3 small">
-                We're here to assist you every step of the way. Let's start a
+              <p className="mb-3 small text-muted">
+                We're here to assist you every step of the way. Let’s start a
                 conversation and make your stay memorable.
               </p>
 
@@ -255,9 +272,7 @@ export const Contact = () => {
                   <h6 className="text-primary mb-1" style={{ fontWeight: 800 }}>
                     Office
                   </h6>
-                  <p className="mb-0 small">
-                    999 Đại Lộ Hòa Bình - Cần Thơ - Việt Nam
-                  </p>
+                  <p className="mb-0 small">999 Đại Lộ Hòa Bình - Cần Thơ - Việt Nam</p>
                 </div>
               </div>
 
@@ -295,7 +310,6 @@ export const Contact = () => {
 
               <hr className="my-3" />
 
-              {/* ✅ bigger + bolder */}
               <h6 className="mb-1" style={subTitleStyle}>
                 Opening Hours
               </h6>
@@ -306,31 +320,21 @@ export const Contact = () => {
               </ul>
 
               <p className="text-muted small mb-3">
-                <strong>Response time:</strong> within 24 hours via email,
-                instant via phone.
+                <strong>Response time:</strong> within 24 hours via email, instant via phone.
               </p>
 
               {/* social */}
               <div className="mt-auto">
-                {/* ✅ bigger + bolder */}
                 <h6 className="mb-2" style={subTitleStyle}>
                   Connect with us
                 </h6>
 
                 <div className="d-flex gap-3 mb-3">
-                  <FaFacebookF
-                    size={20}
-                    className="text-primary"
-                    style={{ cursor: "pointer" }}
-                  />
-                  <FaInstagram
-                    size={20}
-                    className="text-danger"
-                    style={{ cursor: "pointer" }}
-                  />
+                  <FaFacebookF size={20} className="text-primary" style={{ cursor: "pointer" }} />
+                  <FaInstagram size={20} className="text-danger" style={{ cursor: "pointer" }} />
                 </div>
 
-                <p className="fw-semibold text-primary">
+                <p className="fw-semibold text-primary mb-0">
                   Hotline (24/7): 0999 68 68 68
                 </p>
               </div>
@@ -351,11 +355,7 @@ export const Contact = () => {
 
           {/* Contact form */}
           <div className="col-lg-4 col-md-12 d-flex">
-            <form
-              className="d-flex flex-column h-100 w-100"
-              onSubmit={handleSubmit}
-              noValidate
-            >
+            <form className="d-flex flex-column h-100 w-100" onSubmit={handleSubmit} noValidate>
               <div className="row g-2 flex-grow-1">
                 {/* Name */}
                 <div className="col-md-6">
@@ -367,6 +367,7 @@ export const Contact = () => {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="Your Name"
+                      disabled={loading}
                     />
                     <label htmlFor="name">Your Name *</label>
                   </div>
@@ -382,6 +383,7 @@ export const Contact = () => {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="Your Email"
+                      disabled={loading}
                     />
                     <label htmlFor="email">Your Email *</label>
                   </div>
@@ -395,6 +397,7 @@ export const Contact = () => {
                       className="form-select"
                       value={form.topic}
                       onChange={handleChange}
+                      disabled={loading}
                     >
                       <option value="" disabled>
                         Select a topic
@@ -419,6 +422,7 @@ export const Contact = () => {
                       value={form.subject}
                       onChange={handleChange}
                       placeholder="Subject"
+                      disabled={loading}
                     />
                     <label htmlFor="subject">Subject</label>
                   </div>
@@ -434,17 +438,14 @@ export const Contact = () => {
                       value={form.message}
                       onChange={handleChange}
                       placeholder="Your Message"
+                      disabled={loading}
                     />
                     <label htmlFor="message">Message *</label>
                   </div>
                 </div>
               </div>
 
-              <button
-                className="btn btn-primary w-100 py-2 mt-3"
-                type="submit"
-                disabled={loading}
-              >
+              <button className="btn btn-primary w-100 py-2 mt-3" type="submit" disabled={loading}>
                 {loading ? "Sending..." : "Send Message"}
               </button>
             </form>
@@ -456,20 +457,18 @@ export const Contact = () => {
           <div className="col-md-8 mx-auto text-center">
             <p className="mb-2 fw-semibold">Need help with an existing booking?</p>
             <p className="small text-muted mb-3">
-              Check your booking details or send us a message if you want to
-              change dates, update guest information, or request special
-              services.
+              Check your booking details or read our guide if you want to change dates,
+              update guest information, or request special services.
             </p>
             <div className="d-flex justify-content-center gap-2">
-              <a href="/my-bookings" className="btn btn-outline-primary btn-sm">
+              <Link to="/my-bookings" className="btn btn-outline-primary btn-sm">
                 View my bookings
-              </a>
-              <button
-                type="button"
-                className="btn btn-link btn-sm text-decoration-underline"
-              >
-                FAQ & Support Guide
-              </button>
+              </Link>
+
+              {/* ✅ đổi sang Link /faq */}
+              <Link to="/faq" className="btn btn-link btn-sm text-decoration-underline">
+                FAQ &amp; Support Guide
+              </Link>
             </div>
           </div>
         </div>
