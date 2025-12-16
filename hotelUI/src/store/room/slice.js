@@ -1,31 +1,37 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { fetchAllRoom } from "./thunk";
 
+/** Parse date an toàn: chấp nhận "YYYY-MM-DD" hoặc ISO */
+const toDateSafe = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 /**
  * Chuẩn hoá 1 room:
- * - Đảm bảo có discountPercent (mặc định 0)
+ * - Đảm bảo discountPercent (mặc định 0)
  * - Tính discountActive nếu BE chưa gửi
  * - Tính finalPrice nếu BE chưa gửi
  */
 const normalizeRoom = (room) => {
   if (!room) return room;
 
-  const discountPercent = room.discountPercent || 0;
+  // ✅ dùng ?? để giữ đúng giá trị 0
+  const discountPercent = room.discountPercent ?? 0;
 
-  // Nếu BE đã gửi discountActive thì dùng luôn
+  // ✅ Nếu BE đã gửi discountActive thì dùng luôn
   let discountActive = room.discountActive;
 
   if (discountActive === undefined || discountActive === null) {
-    // Tự tính theo ngày + percent
     if (!discountPercent || discountPercent <= 0) {
       discountActive = false;
     } else {
       const today = new Date();
-      const start = room.discountStart ? new Date(room.discountStart) : null;
-      const end = room.discountEnd ? new Date(room.discountEnd) : null;
+      const start = toDateSafe(room.discountStart);
+      const end = toDateSafe(room.discountEnd);
 
       let isActive = true;
-
       if (start && today < start) isActive = false;
       if (end && today > end) isActive = false;
 
@@ -33,17 +39,19 @@ const normalizeRoom = (room) => {
     }
   }
 
-  // Nếu BE đã gửi finalPrice thì dùng luôn, không thì tự tính
+  // ✅ finalPrice: dùng của BE nếu có
+  const priceNum = Number(room.price || 0);
   const finalPrice =
     room.finalPrice ??
     (discountActive
-      ? (room.price * (100 - discountPercent)) / 100
-      : room.price);
+      ? (priceNum * (100 - Number(discountPercent || 0))) / 100
+      : priceNum);
 
   return {
     ...room,
-    discountPercent,
-    discountActive,
+    price: priceNum,
+    discountPercent: Number(discountPercent || 0),
+    discountActive: Boolean(discountActive),
     finalPrice,
   };
 };
@@ -60,11 +68,22 @@ export const { actions: roomAction, reducer: roomReducer } = createSlice({
     setRooms: (state, action) => {
       state.rooms = (action.payload || []).map(normalizeRoom);
     },
+
+    // ✅ update 1 room
     updateRooms: (state, action) => {
-      const updateRoom = normalizeRoom(action.payload);
-      state.rooms = state.rooms.map((room) =>
-        room.id === updateRoom.id ? updateRoom : room
+      const updated = normalizeRoom(action.payload);
+      if (!updated?.id) return;
+
+      const idx = state.rooms.findIndex(
+        (r) => String(r.id) === String(updated.id)
       );
+
+      if (idx >= 0) {
+        state.rooms[idx] = updated;
+      } else {
+        // nếu chưa có trong list thì thêm vào (optional)
+        state.rooms.unshift(updated);
+      }
     },
   },
   extraReducers: (builder) => {

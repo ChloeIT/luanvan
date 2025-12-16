@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Input, Modal, Upload } from "antd";
+import { Input, Modal, Upload, message, InputNumber } from "antd";
 import { hotelServices } from "../../../../../services/hotel";
 import { useDispatch, useSelector } from "react-redux";
 import { hotelAction } from "../../../../../store/hotel/slice";
@@ -9,45 +9,69 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState(null); // ✅ number | null
   const [amenities, setAmenities] = useState("");
   const [fileList, setFileList] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const { hotels } = useSelector((state) => state.hotel);
   const dispatch = useDispatch();
 
+  const resetForm = () => {
+    setName("");
+    setAddress("");
+    setPhone("");
+    setRating(null);
+    setAmenities("");
+    setFileList([]);
+  };
+
+  const handleCancel = () => {
+    setIsModalAddVisible(false);
+    resetForm();
+  };
+
   const handleModalOk = async () => {
     const file = fileList[0]?.originFileObj;
-    if (!file) {
-      console.error("No file uploaded.");
+
+    if (!file) return message.error("Please upload hotel image.");
+    if (!name.trim()) return message.error("Hotel name is required.");
+    if (!address.trim()) return message.error("Address is required.");
+    if (!phone.trim()) return message.error("Phone is required.");
+
+    if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 5)) {
+      message.error("Rating must be a number from 0 to 5.");
       return;
     }
 
     try {
+      setSaving(true);
+
       const formData = new FormData();
-      formData.append("name", name);
-      formData.append("address", address);
-      formData.append("phone", phone);
-      formData.append("rating", rating);
-      formData.append("amenities", amenities);
-      // key "file" phải trùng với @RequestParam("file") ở BE
+      formData.append("name", name.trim());
+      formData.append("address", address.trim());
+      formData.append("phone", phone.trim());
+
+      // ✅ gửi rating an toàn (BE nhận string)
+      formData.append("rating", rating === null ? "" : String(rating));
+
+      formData.append("amenities", amenities.trim());
       formData.append("file", file);
 
       const response = await hotelServices.create(formData);
 
-      // cập nhật lại danh sách hotel trên redux
-      dispatch(hotelAction.setHotels([...hotels, response.data]));
+      dispatch(hotelAction.setHotels([...(hotels || []), response.data]));
 
-      // reset form
+      message.success("Add hotel successfully!");
       setIsModalAddVisible(false);
-      setName("");
-      setAddress("");
-      setPhone("");
-      setRating("");
-      setAmenities("");
-      setFileList([]);
+      resetForm();
     } catch (error) {
       console.error("Error adding hotel:", error);
+      message.error(
+        error?.response?.data?.message || "Add hotel failed. Please try again."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -60,21 +84,9 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
   };
 
   const uploadButton = (
-    <button
-      style={{
-        border: 0,
-        background: "none",
-      }}
-      type="button"
-    >
+    <button style={{ border: 0, background: "none" }} type="button">
       <BiPlusCircle />
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        Upload
-      </div>
+      <div style={{ marginTop: 8 }}>Upload</div>
     </button>
   );
 
@@ -82,8 +94,10 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
     <Modal
       title="Add Hotel"
       open={isModalAddVisible}
-      onCancel={() => setIsModalAddVisible(false)}
+      onCancel={handleCancel}
       onOk={handleModalOk}
+      confirmLoading={saving}
+      okText="Save"
     >
       <div className="flex items-center mb-2">
         <p className="min-w-20">Image</p>
@@ -91,7 +105,7 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
           listType="picture-circle"
           fileList={fileList}
           onChange={handleChange}
-          beforeUpload={() => false} // không auto upload, chỉ chọn file
+          beforeUpload={() => false}
           maxCount={1}
         >
           {fileList.length >= 1 ? null : uploadButton}
@@ -115,15 +129,21 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
 
       <div className="flex items-center mb-2">
         <p className="min-w-20">Rating</p>
-        <Input value={rating} onChange={(e) => setRating(e.target.value)} />
+        <InputNumber
+          min={0}
+          max={5}
+          step={0.1}
+          value={rating}
+          onChange={(value) => setRating(value ?? null)}
+          style={{ width: "100%" }}
+          placeholder="0 - 5"
+          addonAfter="★"
+        />
       </div>
 
       <div className="flex items-center mb-2">
         <p className="min-w-20">Amenities</p>
-        <Input
-          value={amenities}
-          onChange={(e) => setAmenities(e.target.value)}
-        />
+        <Input value={amenities} onChange={(e) => setAmenities(e.target.value)} />
       </div>
     </Modal>
   );

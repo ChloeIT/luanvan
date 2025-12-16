@@ -1,27 +1,23 @@
 // src/components/layouts/admin/AdRoom.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
-import { AdEditRoom } from "./room/AdEditRoom";
-import { AdDeleteRoom } from "./room/AdDeleteRoom";
-import { AdAddRoom } from "./room/AdAddRoom";
 import { Avatar, Button, Table } from "antd";
 import Column from "antd/es/table/Column";
 import { useLocation, useNavigate } from "react-router-dom";
 import { IoLocationOutline } from "react-icons/io5";
 import { HomeOutlined } from "@ant-design/icons";
 
+import { AdEditRoom } from "./room/AdEditRoom";
+import { AdDeleteRoom } from "./room/AdDeleteRoom";
+import { AdAddRoom } from "./room/AdAddRoom";
+
 /* ========= Helper: Discount info ========= */
 const getDiscountInfo = (room) => {
   const raw =
-    room?.discountPercent ??
-    room?.discount_percent ??
-    room?.discount ??
-    0;
+    room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
 
   const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) {
-    return { value: 0, isActive: false };
-  }
+  if (!Number.isFinite(value) || value <= 0) return { value: 0, isActive: false };
 
   const start = room.discountStart ?? room.discount_start ?? null;
   const end = room.discountEnd ?? room.discount_end ?? null;
@@ -54,7 +50,7 @@ export const AdRoom = () => {
   const [isModalEditVisible, setIsModalEditVisible] = useState(false);
   const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
   const [isModalAddVisible, setIsModalAddVisible] = useState(false);
-  const [itemACtion, setItemACtion] = useState();
+  const [itemACtion, setItemACtion] = useState(null);
 
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -64,19 +60,11 @@ export const AdRoom = () => {
   const { dataSource, hotelName, hotelAddress } = useMemo(() => {
     const allRooms = rooms || [];
 
-    // Không có hotelId trên URL -> show tất cả
     if (!hotelId) {
-      return {
-        dataSource: allRooms,
-        hotelName: null,
-        hotelAddress: "",
-      };
+      return { dataSource: allRooms, hotelName: null, hotelAddress: "" };
     }
 
-    // Có hotelId -> tìm hotel để lấy name/address
-    const hotel = (hotels || []).find(
-      (h) => String(h.id) === String(hotelId)
-    );
+    const hotel = (hotels || []).find((h) => String(h.id) === String(hotelId));
 
     const filteredRooms = allRooms.filter((r) => {
       const roomHotelId = r.hotel?.id ?? r.hotelId ?? r.hotel_id;
@@ -90,11 +78,15 @@ export const AdRoom = () => {
     };
   }, [rooms, hotels, hotelId]);
 
-  // Pagination UI
+  /* ================= Pagination UI (FIX warning border/borderColor) ================= */
   const [page, setPage] = useState(1);
+
+  // ✅ Không dùng `border` shorthand nữa -> tránh warning
   const pagerBase = {
     backgroundColor: "#1677ff",
-    border: "1px solid #1677ff",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "#1677ff",
     color: "#fff",
     height: 28,
     minWidth: 28,
@@ -106,16 +98,18 @@ export const AdRoom = () => {
     justifyContent: "center",
     boxShadow: "0 1px 0 rgba(0,0,0,.06)",
   };
+
   const pagerActive = {
     backgroundColor: "#155bd6",
     borderColor: "#155bd6",
     color: "#fff",
   };
+
   const itemRender = (pageNum, type, original) => {
     if (type === "page") {
       const isActive = pageNum === page;
       return React.cloneElement(original, {
-        style: { ...pagerBase, ...(isActive ? pagerActive : null) },
+        style: { ...pagerBase, ...(isActive ? pagerActive : {}) },
         children: pageNum,
       });
     }
@@ -125,7 +119,7 @@ export const AdRoom = () => {
     return original;
   };
 
-  // Pills base
+  /* ================= Pills ================= */
   const basePill = {
     display: "inline-block",
     padding: "4px 12px",
@@ -137,7 +131,6 @@ export const AdRoom = () => {
     whiteSpace: "nowrap",
   };
 
-  // Availability
   const availabilityGreen = {
     backgroundColor: "#D9F7BE",
     color: "#237804",
@@ -151,44 +144,14 @@ export const AdRoom = () => {
   const availabilityPill = (av) =>
     av ? { ...basePill, ...availabilityGreen } : { ...basePill, ...availabilityRed };
 
-  // Type palette
-  const pillBlue = {
-    backgroundColor: "#BAE0FF",
-    color: "#0958D9",
-    border: "1px solid #69B1FF",
-  }; // Standard/Basic/Single/Twin/Double
-  const pillOrange = {
-    backgroundColor: "#FFE7BA",
-    color: "#AD4E00",
-    border: "1px solid #FFC069",
-  }; // Deluxe/Family/Executive
-  const pillIndigo = {
-    backgroundColor: "#D6E4FF",
-    color: "#1D39C4",
-    border: "1px solid #ADC6FF",
-  }; // Superior/Premium/Executive
-  const pillPurple = {
-    backgroundColor: "#EFDBFF",
-    color: "#722ED1",
-    border: "1px solid #D3ADF7",
-  }; // Suite/Exec Suite/Business Suite
-  const pillDeepPurple = {
-    backgroundColor: "#F9F0FF",
-    color: "#531DAB",
-    border: "1px solid #D3ADF7",
-  }; // VIP/Luxury
-  const pillBrown = {
-    backgroundColor: "#FFF2CC",
-    color: "#AD6800",
-    border: "1px solid #FFD666",
-  }; // Duplex/Apartment/Villa
-  const pillGray = {
-    backgroundColor: "#F5F5F5",
-    color: "#595959",
-    border: "1px solid #D9D9D9",
-  }; // Budget/Economy/Compact & fallback
+  const pillBlue = { backgroundColor: "#BAE0FF", color: "#0958D9", border: "1px solid #69B1FF" };
+  const pillOrange = { backgroundColor: "#FFE7BA", color: "#AD4E00", border: "1px solid #FFC069" };
+  const pillIndigo = { backgroundColor: "#D6E4FF", color: "#1D39C4", border: "1px solid #ADC6FF" };
+  const pillPurple = { backgroundColor: "#EFDBFF", color: "#722ED1", border: "1px solid #D3ADF7" };
+  const pillDeepPurple = { backgroundColor: "#F9F0FF", color: "#531DAB", border: "1px solid #D3ADF7" };
+  const pillBrown = { backgroundColor: "#FFF2CC", color: "#AD6800", border: "1px solid #FFD666" };
+  const pillGray = { backgroundColor: "#F5F5F5", color: "#595959", border: "1px solid #D9D9D9" };
 
-  // Discount pills
   const discountActivePill = {
     ...basePill,
     backgroundColor: "#FFF1B8",
@@ -211,11 +174,10 @@ export const AdRoom = () => {
     fontSize: 11,
   };
 
-  // Chuẩn hoá & mapping theo type trong DB
   const typePillStyle = (raw) => {
     const key = String(raw || "")
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
 
@@ -227,29 +189,27 @@ export const AdRoom = () => {
     if (/(budget|economy|compact)/.test(key)) return pillGray;
     if (/(duplex|apartment|villa)/.test(key)) return pillBrown;
 
-    return pillGray; // fallback
+    return pillGray;
   };
 
-  const fmtPrice = (v) => v; // tuỳ bạn thêm formatter VND
+  const fmtPrice = (v) => v; // bạn có thể format VND
 
   const handleEditRoom = (room) => {
-    setIsModalEditVisible(true);
     setItemACtion(room);
+    setIsModalEditVisible(true);
   };
   const handleDeleteRoom = (room) => {
-    setIsModalDeleteVisible(true);
     setItemACtion(room);
+    setIsModalDeleteVisible(true);
   };
   const handleAddRoom = () => {
+    setItemACtion(null);
     setIsModalAddVisible(true);
-    setItemACtion();
   };
-
-  useEffect(() => { }, [itemACtion]);
 
   return (
     <div className="p-4">
-      {/* Header: Title + Address + Buttons */}
+      {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-extrabold text-[#2a2a2a] flex items-center gap-2">
@@ -262,7 +222,7 @@ export const AdRoom = () => {
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                maxWidth: "600px",
+                maxWidth: 600,
               }}
               title={hotelName || undefined}
             >
@@ -283,10 +243,7 @@ export const AdRoom = () => {
         <div className="flex items-center gap-2">
           {hotelId && (
             <>
-              <Button
-                onClick={() => navigate("/admin/hotels")}
-                icon={<HomeOutlined />}
-              >
+              <Button onClick={() => navigate("/admin/hotels")} icon={<HomeOutlined />}>
                 Back to Hotels
               </Button>
               <Button onClick={() => navigate("/admin/rooms")} ghost>
@@ -344,37 +301,27 @@ export const AdRoom = () => {
           )}
         />
 
-        <Column
-          title="Name"
-          dataIndex="name"
-          key="name"
-          width={160}
-          align="center"
-        />
+        <Column title="Name" dataIndex="name" key="name" width={160} align="center" />
 
-        {/* Cột Hotel – click để mở trang chi tiết hotel */}
         <Column
           title="Hotel"
           key="hotel"
           width={220}
           align="center"
-          responsive={["md"]} // ẩn bớt trên màn nhỏ
+          responsive={["md"]}
           render={(_, room) => {
             let resolvedHotelId = null;
             let resolvedHotelName = "";
 
-            // 1) Nếu đang filter theo hotelId trên URL
             if (hotelId && hotelName) {
               resolvedHotelId = hotelId;
               resolvedHotelName = hotelName;
             } else {
-              // 2) Nếu BE trả về room.hotel
               const hotelFromRoom = room.hotel;
               if (hotelFromRoom?.id) {
                 resolvedHotelId = hotelFromRoom.id;
                 resolvedHotelName = hotelFromRoom.name;
               } else {
-                // 3) Nếu có các field id trên room
                 const possibleId = room.hotelId ?? room.hotel_id;
                 if (possibleId != null) {
                   const byId = (hotels || []).find(
@@ -385,13 +332,9 @@ export const AdRoom = () => {
                     resolvedHotelName = byId.name;
                   }
                 }
-
-                // 4) Fallback: dò theo room.id trong hotels[].rooms
                 if (!resolvedHotelId) {
                   const byRoomInHotel = (hotels || []).find((ht) =>
-                    (ht.rooms || []).some(
-                      (r) => String(r.id) === String(room.id)
-                    )
+                    (ht.rooms || []).some((r) => String(r.id) === String(room.id))
                   );
                   if (byRoomInHotel) {
                     resolvedHotelId = byRoomInHotel.id;
@@ -421,12 +364,9 @@ export const AdRoom = () => {
           key="price"
           width={110}
           align="center"
-          render={(v) => (
-            <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>
-          )}
+          render={(v) => <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>}
         />
 
-        {/* DISCOUNT COLUMN */}
         <Column
           title="Discount"
           key="discount"
@@ -434,29 +374,19 @@ export const AdRoom = () => {
           align="center"
           render={(_, room) => {
             const { value, isActive } = getDiscountInfo(room);
-
             if (value > 0) {
-              const style = isActive
-                ? discountActivePill
-                : discountScheduledPill;
+              const style = isActive ? discountActivePill : discountScheduledPill;
               return (
                 <span style={style}>
                   {value}% {isActive ? "Active" : "Scheduled"}
                 </span>
               );
             }
-
             return <span style={discountNonePill}>No discount</span>;
           }}
         />
 
-        <Column
-          title="Capacity"
-          dataIndex="capacity"
-          key="capacity"
-          width={100}
-          align="center"
-        />
+        <Column title="Capacity" dataIndex="capacity" key="capacity" width={100} align="center" />
 
         <Column
           title="Type"
@@ -466,14 +396,7 @@ export const AdRoom = () => {
           align="center"
           responsive={["sm"]}
           render={(type) => (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 6,
-                justifyContent: "center",
-              }}
-            >
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
               {String(type || "")
                 .split(",")
                 .map((t, i) => (
@@ -506,7 +429,6 @@ export const AdRoom = () => {
           fixed="right"
           render={(_, room) => (
             <div
-              key={room.id}
               style={{
                 display: "flex",
                 flexDirection: "column",

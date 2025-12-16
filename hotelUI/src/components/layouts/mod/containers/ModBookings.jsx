@@ -1,12 +1,6 @@
-// src/components/layouts/mod/containers/ModBookings.jsx
-import React, {
-    useMemo,
-    useState,
-    useCallback,
-    useEffect,
-} from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Input, Select, Button, Tag, Tooltip } from "antd";
+import { Input, Select, Button, Tag, Tooltip, message, Spin } from "antd";
 import { BsCartFill } from "react-icons/bs";
 
 import { ModAddBooking } from "./booking/ModAddBooking";
@@ -40,37 +34,24 @@ const getTodayRange = () => {
     return { startMs: start.getTime(), endMs: end.getTime() };
 };
 
-/**
- * Phân loại booking so với hôm nay.
- * Dùng khoảng [todayStartMs, todayEndMs) cho đúng ngày.
- */
+/** Phân loại booking so với hôm nay. */
 const classifyBookingByToday = (booking, todayStartMs, todayEndMs) => {
     if (!booking?.checkIn || !booking?.checkOut) {
         return {
             text: "",
             color: "default",
-            flags: {
-                isStayingToday: false,
-                isCheckInToday: false,
-                isCheckOutToday: false,
-            },
+            flags: { isStayingToday: false, isCheckInToday: false, isCheckOutToday: false },
         };
     }
 
     const checkInMs = new Date(booking.checkIn).getTime();
     const checkOutMs = new Date(booking.checkOut).getTime();
 
-    const isCheckInToday =
-        checkInMs >= todayStartMs && checkInMs < todayEndMs;
+    const isCheckInToday = checkInMs >= todayStartMs && checkInMs < todayEndMs;
+    const isCheckOutToday = checkOutMs >= todayStartMs && checkOutMs < todayEndMs;
 
-    const isCheckOutToday =
-        checkOutMs >= todayStartMs && checkOutMs < todayEndMs;
-
-    const isOverlapToday =
-        checkOutMs > todayStartMs && checkInMs < todayEndMs;
-
-    const isStayingToday =
-        isOverlapToday && !isCheckInToday && !isCheckOutToday;
+    const isOverlapToday = checkOutMs > todayStartMs && checkInMs < todayEndMs;
+    const isStayingToday = isOverlapToday && !isCheckInToday && !isCheckOutToday;
 
     let text = "";
     let color = "default";
@@ -92,11 +73,7 @@ const classifyBookingByToday = (booking, todayStartMs, todayEndMs) => {
         color = "cyan";
     }
 
-    return {
-        text,
-        color,
-        flags: { isStayingToday, isCheckInToday, isCheckOutToday },
-    };
+    return { text, color, flags: { isStayingToday, isCheckInToday, isCheckOutToday } };
 };
 
 export const ModBookings = () => {
@@ -105,10 +82,7 @@ export const ModBookings = () => {
     const { hotels } = useSelector((s) => s.hotel);
     const { user } = useSelector((s) => s.auth);
 
-    const { startMs: todayStartMs, endMs: todayEndMs } = useMemo(
-        () => getTodayRange(),
-        []
-    );
+    const { startMs: todayStartMs, endMs: todayEndMs } = useMemo(() => getTodayRange(), []);
 
     const [filters, setFilters] = useState({
         q: "",
@@ -117,21 +91,27 @@ export const ModBookings = () => {
         date: "all", // "all" | "today"
     });
 
+    const [loading, setLoading] = useState(false);
+
     const [isModalEditVisible, setIsModalEditVisible] = useState(false);
     const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
     const [isModalAddVisible, setIsModalAddVisible] = useState(false);
-    const [itemACtion, setItemACtion] = useState();
+    const [itemACtion, setItemACtion] = useState(undefined);
 
     /* =========================
-     *  FETCH BOOKINGS TỪ API
+     *  FETCH BOOKINGS
      * ========================= */
     const fetchBookings = useCallback(async () => {
+        setLoading(true);
         try {
             const res = await bookingServices.getAll();
             const data = res?.data ?? res;
-            dispatch(bookingAction.setBookings(data));
+            dispatch(bookingAction.setBookings(Array.isArray(data) ? data : []));
         } catch (err) {
             console.error("Error fetching bookings (MOD):", err);
+            message.error("Failed to load bookings. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }, [dispatch]);
 
@@ -147,47 +127,38 @@ export const ModBookings = () => {
     const myBookings = useMemo(() => {
         if (!bookings || !user) return [];
         return bookings.filter(
-            (b) =>
-                Array.isArray(b.rooms) &&
-                b.rooms.some((r) => r.hotel && r.hotel.ownerId === user.id)
+            (b) => Array.isArray(b.rooms) && b.rooms.some((r) => r?.hotel?.ownerId === user.id)
         );
     }, [bookings, user]);
 
-    const todayStayingCount = useMemo(
-        () =>
-            myBookings.filter((b) => {
-                const { flags } = classifyBookingByToday(
-                    b,
-                    todayStartMs,
-                    todayEndMs
-                );
-                return flags.isStayingToday;
-            }).length,
-        [myBookings, todayStartMs, todayEndMs]
-    );
+    const todayCount = useMemo(() => {
+        return myBookings.filter((b) => {
+            const { flags } = classifyBookingByToday(b, todayStartMs, todayEndMs);
+            return flags.isStayingToday || flags.isCheckInToday || flags.isCheckOutToday;
+        }).length;
+    }, [myBookings, todayStartMs, todayEndMs]);
 
-    const paidCount = useMemo(
-        () => myBookings.filter((b) => isPaid(b)).length,
-        [myBookings]
-    );
+    const stayingCount = useMemo(() => {
+        return myBookings.filter((b) => classifyBookingByToday(b, todayStartMs, todayEndMs).flags.isStayingToday).length;
+    }, [myBookings, todayStartMs, todayEndMs]);
 
-    const handleChangeFilter = (key, value) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
-    };
+    const paidCount = useMemo(() => myBookings.filter((b) => isPaid(b)).length, [myBookings]);
+
+    const handleChangeFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
 
     const handleEditBooking = (booking) => {
-        setIsModalEditVisible(true);
         setItemACtion(booking);
+        setIsModalEditVisible(true);
     };
 
     const handleDeleteBooking = (booking) => {
-        setIsModalDeleteVisible(true);
         setItemACtion(booking);
+        setIsModalDeleteVisible(true);
     };
 
     const handleAddBooking = () => {
-        setIsModalAddVisible(true);
         setItemACtion(undefined);
+        setIsModalAddVisible(true);
     };
 
     /* ========== FILTER + SORT ========== */
@@ -196,35 +167,18 @@ export const ModBookings = () => {
 
         if (filters.date === "today") {
             list = list.filter((b) => {
-                const { flags } = classifyBookingByToday(
-                    b,
-                    todayStartMs,
-                    todayEndMs
-                );
-                return (
-                    flags.isStayingToday ||
-                    flags.isCheckInToday ||
-                    flags.isCheckOutToday
-                );
+                const { flags } = classifyBookingByToday(b, todayStartMs, todayEndMs);
+                return flags.isStayingToday || flags.isCheckInToday || flags.isCheckOutToday;
             });
         }
 
         if (filters.q) {
             const q = filters.q.toLowerCase();
             list = list.filter((b) => {
-                const guestName =
-                    (b.user?.fullName || b.user?.username || "").toLowerCase();
+                const guestName = (b.user?.fullName || b.user?.username || "").toLowerCase();
                 const idStr = String(b.id || "").toLowerCase();
-                const roomNames = (b.rooms || [])
-                    .map((r) => r.name || "")
-                    .join(" ")
-                    .toLowerCase();
-
-                return (
-                    guestName.includes(q) ||
-                    idStr.includes(q) ||
-                    roomNames.includes(q)
-                );
+                const roomNames = (b.rooms || []).map((r) => r?.name || "").join(" ").toLowerCase();
+                return guestName.includes(q) || idStr.includes(q) || roomNames.includes(q);
             });
         }
 
@@ -235,29 +189,16 @@ export const ModBookings = () => {
 
         const parseDate = (d) => (d ? new Date(d).getTime() : 0);
 
-        if (filters.sort === "checkin_asc") {
-            list = [...list].sort(
-                (a, b) => parseDate(a.checkIn) - parseDate(b.checkIn)
-            );
-        } else if (filters.sort === "checkin_desc") {
-            list = [...list].sort(
-                (a, b) => parseDate(b.checkIn) - parseDate(a.checkIn)
-            );
-        } else if (filters.sort === "price_asc") {
-            list = [...list].sort(
-                (a, b) => (a.totalPrice || 0) - (b.totalPrice || 0)
-            );
-        } else if (filters.sort === "price_desc") {
-            list = [...list].sort(
-                (a, b) => (b.totalPrice || 0) - (a.totalPrice || 0)
-            );
-        }
+        if (filters.sort === "checkin_asc") list = [...list].sort((a, b) => parseDate(a.checkIn) - parseDate(b.checkIn));
+        else if (filters.sort === "checkin_desc") list = [...list].sort((a, b) => parseDate(b.checkIn) - parseDate(a.checkIn));
+        else if (filters.sort === "price_asc") list = [...list].sort((a, b) => (a.totalPrice || 0) - (b.totalPrice || 0));
+        else if (filters.sort === "price_desc") list = [...list].sort((a, b) => (b.totalPrice || 0) - (a.totalPrice || 0));
 
         return list;
     }, [myBookings, filters, todayStartMs, todayEndMs]);
 
     return (
-        <div className="p-4 space-y-4">
+        <div className="p-3 sm:p-4 space-y-4">
             {/* ==== MODALS ==== */}
             <ModEditBooking
                 isModalEditVisible={isModalEditVisible}
@@ -265,14 +206,12 @@ export const ModBookings = () => {
                 itemACtion={itemACtion}
                 onUpdated={fetchBookings}
             />
-
             <ModDeleteBooking
                 isModalDeleteVisible={isModalDeleteVisible}
                 setIsModalDeleteVisible={setIsModalDeleteVisible}
                 itemACtion={itemACtion}
                 onDeleted={fetchBookings}
             />
-
             <ModAddBooking
                 isModalAddVisible={isModalAddVisible}
                 setIsModalAddVisible={setIsModalAddVisible}
@@ -281,269 +220,284 @@ export const ModBookings = () => {
             />
 
             {/* ===== HEADER ===== */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--primary)] text-white shadow-md text-lg">
                             <BsCartFill />
                         </div>
                         <div>
-                            <h1
-                                className="text-xl sm:text-2xl font-extrabold leading-tight"
-                                style={{ color: "var(--text)" }}
-                            >
+                            <h1 className="text-lg sm:text-2xl font-extrabold leading-tight" style={{ color: "var(--text)" }}>
                                 {myHotel?.name || "My Hotel"}
                             </h1>
-                            <div
-                                className="mt-1 text-[11px] sm:text-xs uppercase tracking-wide"
-                                style={{ color: "var(--muted)" }}
-                            >
+                            <div className="mt-1 text-[10px] sm:text-xs uppercase tracking-wide" style={{ color: "var(--muted)" }}>
                                 BOOKINGS MANAGEMENT
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs sm:text-sm">
-                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">
-                            🧾 {myBookings.length} bookings
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">
-                            💰 {paidCount} paid
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">
-                            📅 Today: {todayStayingCount} staying
-                        </span>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] sm:text-sm">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">🧾 {myBookings.length} bookings</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">💰 {paidCount} paid</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">📌 Today: {todayCount}</span>
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/5 font-medium">📅 Staying: {stayingCount}</span>
                     </div>
                 </div>
 
-                <Button
-                    type="primary"
-                    className="rounded-full px-4 h-9 text-sm font-semibold"
-                    onClick={handleAddBooking}
-                >
-                    + Add booking
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button
+                        className="flex-1 sm:flex-none"
+                        onClick={fetchBookings}
+                        disabled={loading}
+                    >
+                        Refresh
+                    </Button>
+
+                    <Button
+                        type="primary"
+                        className="flex-1 sm:flex-none rounded-full px-4 h-9 text-sm font-semibold"
+                        onClick={handleAddBooking}
+                        disabled={loading}
+                    >
+                        + Add booking
+                    </Button>
+                </div>
             </div>
 
             {/* ===== FILTER BAR ===== */}
-            <div className="rounded-2xl themed-card shadow px-4 py-3 flex flex-wrap gap-3 items-center">
-                <Search
-                    placeholder="Search guest, room or booking ID..."
-                    allowClear
-                    value={filters.q}
-                    onChange={(e) => handleChangeFilter("q", e.target.value)}
-                    className="w-full sm:w-64"
-                    size="small"
-                />
+            <div className="rounded-2xl themed-card shadow px-3 sm:px-4 py-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 items-center">
+                    <Search
+                        placeholder="Search guest, room or booking ID..."
+                        allowClear
+                        value={filters.q}
+                        onChange={(e) => handleChangeFilter("q", e.target.value)}
+                        size="middle"
+                        className="w-full lg:col-span-2"
+                    />
 
-                <Select
-                    size="small"
-                    value={filters.payment}
-                    onChange={(v) => handleChangeFilter("payment", v)}
-                    options={[
-                        { value: "all", label: "All payments" },
-                        { value: "paid", label: "Paid" },
-                        { value: "unpaid", label: "Unpaid / pending" },
-                    ]}
-                />
+                    <Select
+                        value={filters.payment}
+                        onChange={(v) => handleChangeFilter("payment", v)}
+                        size="middle"
+                        className="w-full"
+                        options={[
+                            { value: "all", label: "All payments" },
+                            { value: "paid", label: "Paid" },
+                            { value: "unpaid", label: "Unpaid / pending" },
+                        ]}
+                    />
 
-                <Select
-                    size="small"
-                    value={filters.sort}
-                    onChange={(v) => handleChangeFilter("sort", v)}
-                    options={[
-                        { value: "checkin_desc", label: "Check-in: newest" },
-                        { value: "checkin_asc", label: "Check-in: oldest" },
-                        { value: "price_desc", label: "Total price ↓" },
-                        { value: "price_asc", label: "Total price ↑" },
-                    ]}
-                />
+                    <Select
+                        value={filters.sort}
+                        onChange={(v) => handleChangeFilter("sort", v)}
+                        size="middle"
+                        className="w-full"
+                        options={[
+                            { value: "checkin_desc", label: "Check-in: newest" },
+                            { value: "checkin_asc", label: "Check-in: oldest" },
+                            { value: "price_desc", label: "Total price ↓" },
+                            { value: "price_asc", label: "Total price ↑" },
+                        ]}
+                    />
 
-                <Select
-                    size="small"
-                    value={filters.date}
-                    onChange={(v) => handleChangeFilter("date", v)}
-                    options={[
-                        { value: "all", label: "All dates" },
-                        { value: "today", label: "Today only" },
-                    ]}
-                />
+                    <Select
+                        value={filters.date}
+                        onChange={(v) => handleChangeFilter("date", v)}
+                        size="middle"
+                        className="w-full"
+                        options={[
+                            { value: "all", label: "All dates" },
+                            { value: "today", label: "Today only" },
+                        ]}
+                    />
+                </div>
             </div>
 
             {/* ===== LIST BOOKINGS ===== */}
             <div className="rounded-2xl themed-card shadow p-3">
-                {filteredBookings.length === 0 ? (
+                {loading ? (
+                    <div className="py-10 flex items-center justify-center">
+                        <Spin />
+                    </div>
+                ) : filteredBookings.length === 0 ? (
                     <p className="text-xs" style={{ color: "var(--muted)" }}>
-                        {myBookings.length === 0
-                            ? "No bookings yet."
-                            : "No bookings found. Try adjusting filters."}
+                        {myBookings.length === 0 ? "No bookings yet." : "No bookings found. Try adjusting filters."}
                     </p>
                 ) : (
-                    <div className="space-y-2">
-                        {/* HEADER ROW */}
-                        <div
-                            className="grid grid-cols-[180px_minmax(0,1.8fr)_130px_100px_120px_150px]
-                   items-center gap-3 px-4 pb-2 border-b border-black/5"
-                        >
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                BOOKING / GUEST
+                    <>
+                        {/* DESKTOP TABLE (xl+) */}
+                        <div className="hidden xl:block space-y-2">
+                            <div className="grid grid-cols-[190px_minmax(0,1.8fr)_140px_120px_120px_170px] items-center gap-3 px-4 pb-2 border-b border-black/5">
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>BOOKING / GUEST</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ROOMS & DATES</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>TODAY</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>TOTAL</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>PAYMENT</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ACTIONS</div>
                             </div>
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                ROOMS &amp; DATES
-                            </div>
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                TODAY
-                            </div>
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                TOTAL
-                            </div>
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                PAYMENT
-                            </div>
-                            <div
-                                className="text-center font-bold text-sm tracking-wide"
-                                style={{ color: "var(--text)" }}
-                            >
-                                ACTIONS
-                            </div>
+
+                            {filteredBookings.map((b) => {
+                                const firstRoom = b.rooms?.[0] || null;
+                                const roomNames = (b.rooms || []).map((r) => r?.name).filter(Boolean).join(", ");
+
+                                const checkInStr = b.checkIn ? new Date(b.checkIn).toLocaleDateString() : "N/A";
+                                const checkOutStr = b.checkOut ? new Date(b.checkOut).toLocaleDateString() : "N/A";
+
+                                const { text: todayStatusText, color: todayStatusColor, flags } =
+                                    classifyBookingByToday(b, todayStartMs, todayEndMs);
+
+                                const isTodayImportant = flags.isStayingToday || flags.isCheckInToday || flags.isCheckOutToday;
+                                const paymentLabel = isPaid(b) ? "Paid" : "Pending";
+
+                                return (
+                                    <div
+                                        key={b.id}
+                                        className={
+                                            "grid grid-cols-[190px_minmax(0,1.8fr)_140px_120px_120px_170px] items-center gap-3 px-4 py-3 rounded-xl transition " +
+                                            (isTodayImportant ? "booking-card--today" : "hover:bg-black/5")
+                                        }
+                                    >
+                                        {/* 1 */}
+                                        <div className="flex items-center gap-3 min-w-0 justify-center">
+                                            <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
+                                                {firstRoom?.image ? (
+                                                    <img
+                                                        src={buildRoomImageUrl(firstRoom.image)}
+                                                        alt={firstRoom?.name || "Room"}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => (e.currentTarget.src = "/hotel-logo.png")}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">
+                                                        No image
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="min-w-0 text-center">
+                                                <div className="text-[11px] opacity-70">Booking #{b.id}</div>
+                                                <div className="text-sm font-semibold truncate whitespace-nowrap" style={{ color: "var(--primary)" }}>
+                                                    {b.user?.fullName || b.user?.username || "Guest"}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 2 */}
+                                        <div className="min-w-0 text-xs flex flex-col items-center">
+                                            <Tooltip title={roomNames || "No rooms"}>
+                                                <div className="truncate whitespace-nowrap text-center">{roomNames || "No rooms"}</div>
+                                            </Tooltip>
+                                            <div className="opacity-70 truncate whitespace-nowrap text-center">
+                                                {checkInStr} — {checkOutStr}
+                                            </div>
+                                        </div>
+
+                                        {/* 3 */}
+                                        <div className="flex justify-center">
+                                            {todayStatusText ? (
+                                                <Tag color={todayStatusColor} className="m-0 text-[11px]">{todayStatusText}</Tag>
+                                            ) : null}
+                                        </div>
+
+                                        {/* 4 */}
+                                        <div className="text-xs font-semibold text-center whitespace-nowrap">
+                                            ${b.totalPrice || 0}
+                                        </div>
+
+                                        {/* 5 */}
+                                        <div className="flex justify-center">
+                                            <Tag color={isPaid(b) ? "green" : "orange"} className="m-0 text-[11px]">
+                                                {paymentLabel}
+                                            </Tag>
+                                        </div>
+
+                                        {/* 6 */}
+                                        <div className="flex justify-center gap-2">
+                                            <Button size="small" onClick={() => handleEditBooking(b)}>Edit</Button>
+                                            <Button size="small" danger onClick={() => handleDeleteBooking(b)}>Delete</Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
-                        {/* ROWS */}
-                        {filteredBookings.map((b) => {
-                            const firstRoom = b.rooms?.[0] || null;
-                            const roomNames = (b.rooms || []).map((r) => r.name).join(", ");
+                        {/* MOBILE + TABLET (<xl) */}
+                        <div className="xl:hidden space-y-3">
+                            {filteredBookings.map((b) => {
+                                const firstRoom = b.rooms?.[0] || null;
+                                const roomNames = (b.rooms || []).map((r) => r?.name).filter(Boolean).join(", ");
+                                const checkInStr = b.checkIn ? new Date(b.checkIn).toLocaleDateString() : "N/A";
+                                const checkOutStr = b.checkOut ? new Date(b.checkOut).toLocaleDateString() : "N/A";
 
-                            const checkInStr = b.checkIn
-                                ? new Date(b.checkIn).toLocaleDateString()
-                                : "N/A";
-                            const checkOutStr = b.checkOut
-                                ? new Date(b.checkOut).toLocaleDateString()
-                                : "N/A";
+                                const { text: todayStatusText, color: todayStatusColor } =
+                                    classifyBookingByToday(b, todayStartMs, todayEndMs);
 
-                            const {
-                                text: todayStatusText,
-                                color: todayStatusColor,
-                                flags,
-                            } = classifyBookingByToday(b, todayStartMs, todayEndMs);
+                                const paymentLabel = isPaid(b) ? "Paid" : "Pending";
 
-                            const isTodayImportant =
-                                flags.isStayingToday ||
-                                flags.isCheckInToday ||
-                                flags.isCheckOutToday;
+                                return (
+                                    <div key={b.id} className="rounded-2xl border border-black/5 bg-white/60 p-3">
+                                        <div className="flex gap-3">
+                                            <div className="w-20 h-16 rounded-xl overflow-hidden bg-black/5 flex-shrink-0">
+                                                {firstRoom?.image ? (
+                                                    <img
+                                                        src={buildRoomImageUrl(firstRoom.image)}
+                                                        alt={firstRoom?.name || "Room"}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => (e.currentTarget.src = "/hotel-logo.png")}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">
+                                                        No image
+                                                    </div>
+                                                )}
+                                            </div>
 
-                            const paymentLabel = isPaid(b) ? "Paid" : "Pending";
-
-                            return (
-                                <div
-                                    key={b.id}
-                                    className={
-                                        "grid grid-cols-[180px_minmax(0,1.8fr)_130px_100px_120px_150px] items-center gap-3 px-4 py-3 rounded-xl transition " +
-                                        (isTodayImportant ? "booking-card--today" : "hover:bg-black/5")
-                                    }
-                                >
-                                    {/* 1. BOOKING / GUEST – căn giữa */}
-                                    <div className="flex items-center gap-3 min-w-0 justify-center">
-                                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
-                                            {firstRoom?.image ? (
-                                                <img
-                                                    src={buildRoomImageUrl(firstRoom.image)}
-                                                    alt={firstRoom.name}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        e.currentTarget.src = "/hotel-logo.png";
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[10px] opacity-60">
-                                                    No image
+                                            <div className="min-w-0 flex-1">
+                                                <div className="text-[11px] opacity-70">Booking #{b.id}</div>
+                                                <div className="font-extrabold truncate" style={{ color: "var(--primary)" }}>
+                                                    {b.user?.fullName || b.user?.username || "Guest"}
                                                 </div>
-                                            )}
+
+                                                <Tooltip title={roomNames || "No rooms"}>
+                                                    <div className="text-xs mt-1 truncate opacity-90">
+                                                        {roomNames || "No rooms"}
+                                                    </div>
+                                                </Tooltip>
+
+                                                <div className="text-[12px] mt-1 opacity-70">
+                                                    {checkInStr} — {checkOutStr}
+                                                </div>
+
+                                                <div className="mt-2 flex flex-wrap gap-2 items-center">
+                                                    {todayStatusText ? (
+                                                        <Tag color={todayStatusColor} className="m-0 text-[11px]">
+                                                            {todayStatusText}
+                                                        </Tag>
+                                                    ) : null}
+
+                                                    <Tag color={isPaid(b) ? "green" : "orange"} className="m-0 text-[11px]">
+                                                        {paymentLabel}
+                                                    </Tag>
+
+                                                    <span className="text-sm font-extrabold ml-auto">
+                                                        ${b.totalPrice || 0}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="min-w-0 text-center">
-                                            <div className="text-[11px] opacity-70">
-                                                Booking #{b.id}
-                                            </div>
-                                            <div
-                                                className="text-sm font-semibold truncate whitespace-nowrap"
-                                                style={{ color: "var(--primary)" }}
-                                            >
-                                                {b.user?.fullName || b.user?.username || "Guest"}
-                                            </div>
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <Button size="small" onClick={() => handleEditBooking(b)}>Edit</Button>
+                                            <Button size="small" danger onClick={() => handleDeleteBooking(b)}>Delete</Button>
                                         </div>
                                     </div>
-
-                                    {/* 2. ROOMS & DATES – căn giữa */}
-                                    <div className="min-w-0 text-xs flex flex-col items-center">
-                                        <Tooltip title={roomNames}>
-                                            <div className="truncate whitespace-nowrap text-center">
-                                                {roomNames || "No rooms"}
-                                            </div>
-                                        </Tooltip>
-                                        <div className="opacity-70 truncate whitespace-nowrap text-center">
-                                            {checkInStr} — {checkOutStr}
-                                        </div>
-                                    </div>
-
-                                    {/* 3. TODAY STATUS */}
-                                    <div className="flex justify-center">
-                                        {todayStatusText && (
-                                            <Tag color={todayStatusColor} className="m-0 text-[11px]">
-                                                {todayStatusText}
-                                            </Tag>
-                                        )}
-                                    </div>
-
-                                    {/* 4. TOTAL */}
-                                    <div className="text-xs font-semibold text-center whitespace-nowrap">
-                                        ${b.totalPrice || 0}
-                                    </div>
-
-                                    {/* 5. PAYMENT */}
-                                    <div className="flex justify-center">
-                                        <Tag
-                                            color={isPaid(b) ? "green" : "orange"}
-                                            className="m-0 text-[11px]"
-                                        >
-                                            {paymentLabel}
-                                        </Tag>
-                                    </div>
-
-                                    {/* 6. ACTIONS */}
-                                    <div className="flex justify-center gap-1">
-                                        <Button size="small" onClick={() => handleEditBooking(b)}>
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            danger
-                                            onClick={() => handleDeleteBooking(b)}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
                 )}
             </div>
-
         </div>
     );
 };
