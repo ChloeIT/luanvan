@@ -18,17 +18,87 @@ import "swiper/css/autoplay";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 
+/* ================= helpers (discount) ================= */
+
 /** Đọc giá trị giảm giá từ room, convert sang number an toàn */
 const getDiscountValue = (room) => {
-  const raw =
-    room?.discountPercent ??
-    room?.discount_percent ??
-    room?.discount ??
-    0;
-
+  const raw = room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
   const num = Number(raw);
   return Number.isFinite(num) && num > 0 ? num : 0;
 };
+
+/** Parse date robustly (supports YYYY-MM-DD, ISO, Date, timestamp) */
+const parseDateOnly = (v) => {
+  if (!v) return null;
+
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const d = new Date(v);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  if (typeof v === "number") {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  const s = String(v).trim();
+  const ymd = s.slice(0, 10);
+
+  // "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss..."
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    const d = new Date(`${ymd}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // fallback parse (ISO/RFC)
+  const d2 = new Date(s);
+  if (Number.isNaN(d2.getTime())) return null;
+  d2.setHours(0, 0, 0, 0);
+  return d2;
+};
+
+/**
+ * STRICT: sale chỉ khi:
+ * - percent > 0
+ * - có đủ start + end
+ * - hôm nay nằm trong [start, end]
+ */
+const isDiscountActiveToday = (room) => {
+  const percent = getDiscountValue(room);
+  if (percent <= 0) return false;
+
+  const startRaw = room?.discountStart ?? room?.discount_start;
+  const endRaw = room?.discountEnd ?? room?.discount_end;
+
+  // thiếu ngày => loại (tránh sale ảo)
+  if (!startRaw || !endRaw) return false;
+
+  const start = parseDateOnly(startRaw);
+  const end = parseDateOnly(endRaw);
+  if (!start || !end) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today >= start && today <= end;
+};
+
+/** Dedupe rooms by id */
+const uniqueById = (arr) => {
+  const map = new Map();
+  for (const it of arr || []) {
+    const id = it?.id ?? it?._id;
+    if (id == null) continue;
+    const k = String(id);
+    if (!map.has(k)) map.set(k, it);
+  }
+  return Array.from(map.values());
+};
+
+/* ================= component ================= */
 
 export const Home = () => {
   const dispatch = useDispatch();
@@ -60,14 +130,41 @@ export const Home = () => {
     setPopularHotels(data);
   }, [hotels]);
 
-  /* ===== ROOMS CÓ DISCOUNT > 0 ===== */
+  /* ===== ROOMS DISCOUNT ĐANG CÒN HẠN (STRICT + DEDUPE) ===== */
   const discountedRooms = useMemo(() => {
     if (!Array.isArray(rooms)) return [];
-    return rooms
+
+    const deduped = uniqueById(rooms);
+
+    return deduped
       .map((r) => ({ ...r, discountPercent: getDiscountValue(r) }))
-      .filter((r) => r.discountPercent > 0)
+      .filter((r) => isDiscountActiveToday(r))
       .sort((a, b) => b.discountPercent - a.discountPercent);
   }, [rooms]);
+
+  /* ===== DEBUG: HOME DISCOUNT COUNT ===== */
+  useEffect(() => {
+    const DEBUG = true;
+    if (!DEBUG) return;
+
+    const ids = discountedRooms.map((r) => String(r.id));
+    const uniqueIds = Array.from(new Set(ids));
+
+    console.log("[Home Discount] rooms total:", Array.isArray(rooms) ? rooms.length : 0);
+    console.log("[Home Discount] discountedRooms count:", discountedRooms.length);
+    console.log("[Home Discount] discountedRooms unique ids:", uniqueIds.length);
+    console.log("[Home Discount] ids:", uniqueIds);
+
+    console.table(
+      discountedRooms.map((r) => ({
+        id: r.id,
+        name: r.name,
+        percent: r.discountPercent,
+        start: r.discountStart ?? r.discount_start,
+        end: r.discountEnd ?? r.discount_end,
+      }))
+    );
+  }, [rooms, discountedRooms]);
 
   /* ===== POPULAR HOTELS ĐANG HIỂN THỊ ===== */
   const popularHotelsToShow = useMemo(() => {
@@ -90,7 +187,7 @@ export const Home = () => {
               <div
                 style={{
                   width: "100%",
-                  height: 520,                 // ✅ card có chiều cao cố định đẹp
+                  height: 520,
                   borderRadius: 18,
                   overflow: "hidden",
                   boxShadow: "0 10px 26px rgba(0,0,0,.14)",
@@ -104,21 +201,19 @@ export const Home = () => {
                   preview={false}
                   style={{
                     width: "100%",
-                    height: "100%",            // ✅ cho ảnh ăn full card
-                    objectFit: "cover",        // ✅ không còn khoảng trắng
+                    height: "100%",
+                    objectFit: "cover",
                     display: "block",
                   }}
                 />
               </div>
             </div>
 
-
             {/* RIGHT: Content */}
             <div className="col-lg-6">
               <div style={{ maxWidth: 560, margin: "0 auto" }}>
                 {/* Heading */}
                 <div className="sb-heading sb-heading--md" style={{ marginBottom: 10 }}>
-
                   <h6
                     className="sb-heading__label"
                     style={{
@@ -164,7 +259,6 @@ export const Home = () => {
                   you find the ideal destination for all your trips.
                 </p>
 
-                {/* ✅ list 2 cột đều + spacing đẹp */}
                 <div className="row g-2">
                   {[
                     "24/7 Service",
@@ -200,12 +294,10 @@ export const Home = () => {
         </div>
       </div>
 
-
       {/* ===== DISCOUNT ===== */}
       <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            {/* ✅ Heading (sb-heading giống Service) */}
             <div className="sb-heading sb-heading--md mx-auto" style={{ marginBottom: 6 }}>
               <span className="sb-heading__lines sb-heading__lines--left">
                 <span className="sb-heading__line sb-heading__line--long" />
@@ -278,7 +370,6 @@ export const Home = () => {
       <div className="container-xxl py-4 destination">
         <div className="container">
           <div className="text-center wow fadeInUp" data-wow-delay="0.1s">
-            {/* ✅ Heading (sb-heading giống Service) */}
             <div className="sb-heading sb-heading--md mx-auto" style={{ marginBottom: 6 }}>
               <span className="sb-heading__lines sb-heading__lines--left">
                 <span className="sb-heading__line sb-heading__line--long" />
@@ -367,7 +458,6 @@ export const Home = () => {
                     )}
                   </button>
                 </div>
-
               )}
             </>
           )}
