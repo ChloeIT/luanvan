@@ -1,13 +1,61 @@
 // src/components/layouts/mod/components/SideBar.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { HiOutlineMenu } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
+import { FiSun, FiMoon } from "react-icons/fi";
 import { useSelector } from "react-redux";
-import { routeMod } from "../../../../contant/linkmod"; // đổi lại đúng file routes của MOD
-import DarkModeToggle from "@/components/common/DarkModeToggle";
+import { routeMod } from "../../../../contant/linkmod";
 
+/* ================= Theme icon-only toggle (data-theme) ================= */
+const ThemeIconToggle = ({ compact = false }) => {
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        const saved = localStorage.getItem("theme");
+        const systemDark =
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+        const theme = saved || (systemDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+        setIsDark(theme === "dark");
+    }, []);
+
+    const toggleTheme = () => {
+        const next = !isDark;
+        setIsDark(next);
+        const theme = next ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+    };
+
+    return (
+        <div className="flex items-center justify-between gap-3">
+            {!compact && (
+                <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white/90">Theme</div>
+                    <div className="text-[11px] text-white/70 leading-4">
+                        {isDark ? "Dark mode" : "Light mode"}
+                    </div>
+                </div>
+            )}
+
+            <button
+                type="button"
+                onClick={toggleTheme}
+                className="sb-theme-btn"
+                aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+                title={isDark ? "Light mode" : "Dark mode"}
+            >
+                {isDark ? <FiSun className="sb-theme-ico" /> : <FiMoon className="sb-theme-ico" />}
+            </button>
+        </div>
+    );
+};
+
+/* ================= UI blocks ================= */
 const BackHome = ({ className = "" }) => (
     <Link
         to="/"
@@ -52,45 +100,34 @@ export const SideBar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const closeMobile = () => setMobileMenuOpen(false);
 
-    // lấy user + roles từ redux
     const { user } = useSelector((state) => state.auth || {});
-
-    // roles có thể dạng: ["ROLE_ADMIN", "ROLE_MODERATOR"]
-    // hoặc [{name: "ROLE_ADMIN"}, {name: "ROLE_MODERATOR"}]
     const roles = user?.roles || [];
-    const hasAdmin = roles.some(
-        (r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN"
-    );
-    const hasMod = roles.some(
-        (r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR"
-    );
-
-    // chỉ hiện nút nếu vừa là mod vừa là admin
+    const hasAdmin = roles.some((r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN");
+    const hasMod = roles.some((r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR");
     const canGoAdmin = hasAdmin && hasMod;
 
-    // Style chữ SB HOTEL giống admin
-    const brandStyle = {
-        fontFamily:
-            "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
-        fontWeight: 900,
-        fontSize: "34px",
-        lineHeight: 1.05,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        whiteSpace: "nowrap",
-        color: "#FFFFFF",
-        textShadow:
-            "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
-    };
+    const brandStyle = useMemo(
+        () => ({
+            fontFamily: "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+            fontWeight: 900,
+            fontSize: "34px",
+            lineHeight: 1.05,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            color: "#FFFFFF",
+            textShadow: "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
+        }),
+        []
+    );
 
-    // component nút “Go to Admin” để dùng cho cả desktop + mobile
-    const AdminSwitchButton = () =>
+    const AdminSwitchButton = ({ onClick }) =>
         !canGoAdmin ? null : (
             <Link
                 to="/admin"
+                onClick={onClick}
                 className="mt-3 w-full inline-flex items-center justify-center gap-1 rounded-full bg-white/90 text-[var(--primary)] text-xs font-semibold py-1.5 px-3 hover:bg-white shadow-sm transition"
             >
-                {/* em đổi text tuỳ ý */}
                 <span>Go to Admin</span>
             </Link>
         );
@@ -104,7 +141,6 @@ export const SideBar = () => {
                 role="complementary"
                 aria-label="Sidebar"
             >
-                {/* Hàng đầu: mũi tên + SB HOTEL */}
                 <div className="flex items-center gap-2 mb-3">
                     <BackHome className="!my-0" />
                     <div style={brandStyle}>SB HOTEL</div>
@@ -112,14 +148,39 @@ export const SideBar = () => {
 
                 <NavLinks />
 
-                {/* bottom tools */}
                 <div className="mt-auto pt-4 border-t border-white/20 space-y-3">
-                    <DarkModeToggle />
+                    <ThemeIconToggle />
                     <AdminSwitchButton />
                 </div>
+
+                {/* local styles for theme button */}
+                <style>{`
+          .sb-theme-btn{
+            height:40px;
+            width:40px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.32);
+            background: rgba(255,255,255,.10);
+            transition: transform .15s ease, background .2s ease, border-color .2s ease;
+            backdrop-filter: blur(6px);
+          }
+          .sb-theme-btn:hover{
+            background: rgba(255,255,255,.16);
+            border-color: rgba(255,255,255,.42);
+            transform: translateY(-1px);
+          }
+          .sb-theme-ico{
+            font-size:18px;
+            color: var(--primary);
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+          }
+        `}</style>
             </aside>
 
-            {/* Mobile top-right toggle button */}
+            {/* Mobile toggle button */}
             <button
                 type="button"
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -162,22 +223,13 @@ export const SideBar = () => {
                 <NavLinks handleClick={closeMobile} />
 
                 <div className="mt-6 space-y-3">
-                    <DarkModeToggle />
-                    {/* bấm xong thì đóng menu mobile luôn cho tiện */}
-                    {canGoAdmin && (
-                        <Link
-                            to="/admin"
-                            onClick={closeMobile}
-                            className="w-full inline-flex items-center justify-center gap-1 rounded-full bg-white/90 text-[var(--primary)] text-xs font-semibold py-1.5 px-3 hover:bg-white shadow-sm transition"
-                        >
-                            <span>Go to Admin</span>
-                        </Link>
-                    )}
+                    {/* Mobile: compact => ẩn chữ, chỉ icon */}
+                    <ThemeIconToggle compact />
+                    <AdminSwitchButton onClick={closeMobile} />
                 </div>
             </aside>
         </>
     );
 };
 
-// optional, không bắt buộc nhưng không sao
 export default SideBar;

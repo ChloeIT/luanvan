@@ -1,3 +1,4 @@
+// src/components/layouts/Header.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { linkpage } from "../../contant/link";
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -7,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { authServices } from "../../services/auth";
 import { authAction } from "../../store";
 import { SearchInput } from "./search/SearchInput";
+import { FiSun, FiMoon } from "react-icons/fi";
 
 export const Header = () => {
   const { user } = useSelector((s) => s.auth);
@@ -15,6 +17,28 @@ export const Header = () => {
 
   const [openToggle, setOpenToggle] = useState(false);
   const [title, setTitle] = useState("");
+
+  // ===== theme (icon-only toggle) =====
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    const systemDark =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+    const theme = saved || (systemDark ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+    setIsDark(theme === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    const theme = next ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  };
 
   // ===== title theo route =====
   useEffect(() => {
@@ -117,7 +141,7 @@ export const Header = () => {
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               >
-                <span style={{ color: "#86B817" }}>SB</span>
+                <span style={{ color: "var(--primary)" }}>SB</span>
                 <span style={{ color: "#EAF5C3", fontWeight: 800 }}>Hotels</span>
               </h1>
             </Link>
@@ -154,12 +178,41 @@ export const Header = () => {
               </div>
 
               {/* SEARCH */}
-              <div className={`header-right header-search-wrap ${openToggle ? "mt-3" : ""}`}>
+              <div
+                className={`header-right header-search-wrap ${openToggle ? "mt-3" : ""
+                  }`}
+              >
                 <SearchInput />
               </div>
 
+              {/* THEME ICON-ONLY */}
+              <div
+                className={`header-right header-theme-wrap ${openToggle ? "mt-3" : ""
+                  }`}
+              >
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="header-theme-btn"
+                  aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+                  title={isDark ? "Light mode" : "Dark mode"}
+                >
+                  {isDark ? (
+                    <FiSun className="header-theme-ico" />
+                  ) : (
+                    <FiMoon className="header-theme-ico" />
+                  )}
+                  <span className="header-theme-text">
+                    {isDark ? "Light" : "Dark"}
+                  </span>
+                </button>
+              </div>
+
               {/* USER / LOGIN */}
-              <div className={`header-right header-user-wrap ${openToggle ? "mt-3" : ""}`}>
+              <div
+                className={`header-right header-user-wrap ${openToggle ? "mt-3" : ""
+                  }`}
+              >
                 {user ? (
                   <Dropdown menu={{ items }} placement="bottomRight">
                     <a
@@ -209,7 +262,7 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* ✅ CSS inline gợi ý (bạn có thể chuyển sang file css) */}
+      {/* ✅ CSS inline (bạn có thể chuyển sang file css) */}
       <style>{`
         .header-brand{
           font-size:34px;
@@ -255,7 +308,7 @@ export const Header = () => {
           .header-collapse{
             text-align:right;
           }
-          .header-search-wrap, .header-user-wrap{
+          .header-search-wrap, .header-user-wrap, .header-theme-wrap{
             display:flex;
             justify-content:flex-end;
           }
@@ -280,6 +333,52 @@ export const Header = () => {
 
         /* ===== SearchInput styles ===== */
         .header-search{ width: 260px; }
+
+        /* ===== Theme button (icon-only, primary-based) ===== */
+        .header-theme-btn{
+          height:44px;
+          display:inline-flex;
+          align-items:center;
+          gap:8px;
+          padding:0 12px;
+          border-radius:999px;
+          border:1px solid rgba(255,255,255,.28);
+          background: rgba(255,255,255,.12);
+          color:#fff;
+          transition: transform .15s ease, background .2s ease, border-color .2s ease;
+          backdrop-filter: blur(6px);
+        }
+        .header-theme-btn:hover{
+          background: rgba(255,255,255,.18);
+          border-color: rgba(255,255,255,.38);
+          transform: translateY(-1px);
+        }
+        .header-theme-btn:active{
+          transform: translateY(0px);
+        }
+        .header-theme-ico{
+          font-size:18px;
+          color: var(--primary);
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+        }
+        .header-theme-text{
+          font-size:12px;
+          font-weight:800;
+          letter-spacing:.02em;
+          color:#fff;
+        }
+
+        /* Mobile: chỉ icon, ẩn chữ */
+        @media (max-width: 575.98px){
+          .header-theme-btn{
+            padding:0 10px;
+          }
+          .header-theme-text{
+            display:none;
+          }
+        }
+
+        /* dropdown search etc (giữ nguyên code bạn đang có) */
         .header-search-pill{
           width:100%;
           height:44px;
@@ -302,7 +401,6 @@ export const Header = () => {
           font-size:14px;
           color:#374151;
         }
-
         .header-search-dropdown{
           position:absolute;
           left:0;
@@ -359,3 +457,5 @@ export const Header = () => {
     </div>
   );
 };
+
+export default Header;

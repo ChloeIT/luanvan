@@ -1,12 +1,59 @@
 // src/components/layouts/admin/Sidebar.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { HiOutlineMenu } from "react-icons/hi";
 import { RiCloseLine } from "react-icons/ri";
 import { IoArrowBack } from "react-icons/io5";
+import { FiSun, FiMoon } from "react-icons/fi";
 import { useSelector } from "react-redux";
 import { routeAdmin } from "../../../../contant/linkadmin";
-import DarkModeToggle from "@/components/common/DarkModeToggle";
+
+/* ================= Theme icon-only toggle (data-theme) ================= */
+const ThemeIconToggle = ({ compact = false }) => {
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        const saved = localStorage.getItem("theme");
+        const systemDark =
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+        const theme = saved || (systemDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+        setIsDark(theme === "dark");
+    }, []);
+
+    const toggleTheme = () => {
+        const next = !isDark;
+        setIsDark(next);
+        const theme = next ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+    };
+
+    return (
+        <div className="flex items-center justify-between gap-3">
+            {!compact && (
+                <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white/90">Theme</div>
+                    <div className="text-[11px] text-white/70 leading-4">
+                        {isDark ? "Dark mode" : "Light mode"}
+                    </div>
+                </div>
+            )}
+
+            <button
+                type="button"
+                onClick={toggleTheme}
+                className="sb-theme-btn"
+                aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+                title={isDark ? "Light mode" : "Dark mode"}
+            >
+                {isDark ? <FiSun className="sb-theme-ico" /> : <FiMoon className="sb-theme-ico" />}
+            </button>
+        </div>
+    );
+};
 
 const BackHome = ({ className = "" }) => (
     <Link
@@ -48,7 +95,6 @@ const NavLinks = ({ handleClick }) => (
     </nav>
 );
 
-// nút chuyển sang trang moderator
 const ModSwitchButton = ({ onClick }) => (
     <Link
         to="/moderator"
@@ -66,30 +112,24 @@ export const Sidebar = () => {
     const { user } = useSelector((state) => state.auth || {});
     const roles = user?.roles || [];
 
-    const hasAdmin = roles.some(
-        (r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN"
-    );
-    const hasMod = roles.some(
-        (r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR"
-    );
-
-    // chỉ hiện nút khi vừa là admin vừa là mod
+    const hasAdmin = roles.some((r) => r === "ROLE_ADMIN" || r?.name === "ROLE_ADMIN");
+    const hasMod = roles.some((r) => r === "ROLE_MODERATOR" || r?.name === "ROLE_MODERATOR");
     const canGoMod = hasAdmin && hasMod;
 
-    // Style chữ to + vàng + 1 dòng
-    const brandStyle = {
-        fontFamily:
-            "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
-        fontWeight: 900,
-        fontSize: "34px",
-        lineHeight: 1.05,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        whiteSpace: "nowrap",
-        color: "#FFFFFF",
-        textShadow:
-            "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
-    };
+    const brandStyle = useMemo(
+        () => ({
+            fontFamily: "'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+            fontWeight: 900,
+            fontSize: "34px",
+            lineHeight: 1.05,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            color: "#FFFFFF",
+            textShadow: "0 0 6px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.25)",
+        }),
+        []
+    );
 
     return (
         <>
@@ -100,7 +140,6 @@ export const Sidebar = () => {
                 role="complementary"
                 aria-label="Sidebar"
             >
-                {/* Hàng đầu: mũi tên + SB HOTEL trên 1 dòng */}
                 <div className="flex items-center gap-2 mb-3">
                     <BackHome className="!my-0" />
                     <div style={brandStyle}>SB HOTEL</div>
@@ -108,14 +147,38 @@ export const Sidebar = () => {
 
                 <NavLinks />
 
-                {/* bottom tools */}
                 <div className="mt-auto pt-4 border-t border-white/20 space-y-3">
-                    <DarkModeToggle />
+                    <ThemeIconToggle />
                     {canGoMod && <ModSwitchButton />}
                 </div>
+
+                <style>{`
+          .sb-theme-btn{
+            height:40px;
+            width:40px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,.32);
+            background: rgba(255,255,255,.10);
+            transition: transform .15s ease, background .2s ease, border-color .2s ease;
+            backdrop-filter: blur(6px);
+          }
+          .sb-theme-btn:hover{
+            background: rgba(255,255,255,.16);
+            border-color: rgba(255,255,255,.42);
+            transform: translateY(-1px);
+          }
+          .sb-theme-ico{
+            font-size:18px;
+            color: var(--primary);
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+          }
+        `}</style>
             </aside>
 
-            {/* Mobile top-right toggle button */}
+            {/* Mobile toggle button */}
             <button
                 type="button"
                 aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -150,7 +213,6 @@ export const Sidebar = () => {
                 aria-modal="true"
                 aria-label="Mobile menu"
             >
-                {/* Hàng đầu mobile: mũi tên + SB HOTEL */}
                 <div className="flex items-center gap-2 mb-3">
                     <BackHome className="!my-0" />
                     <div style={brandStyle}>SB HOTEL</div>
@@ -159,7 +221,7 @@ export const Sidebar = () => {
                 <NavLinks handleClick={closeMobile} />
 
                 <div className="mt-6 space-y-3">
-                    <DarkModeToggle />
+                    <ThemeIconToggle compact />
                     {canGoMod && <ModSwitchButton onClick={closeMobile} />}
                 </div>
             </aside>

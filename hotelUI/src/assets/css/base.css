@@ -7,16 +7,21 @@ body,
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: var(--bg, #FAFF96) !important; /* ✅ khóa nền */
-  color: var(--text, #1b1b1b);
 }
 
 /* ================== GLOBAL APPLY (theme) ================== */
 html,
 body {
-  background: var(--bg);
-  color: var(--text);
-  transition: background .25s ease, color .25s ease;
+  background: var(--bg, #FAFF96);
+  color: var(--text, #1b1b1b);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* Nếu bạn muốn #root luôn theo nền theme */
+#root {
+  background: var(--bg, #FAFF96);
+  color: var(--text, #1b1b1b);
+  min-height: 100vh;
 }
 
 /* Typography helpers */
@@ -27,6 +32,7 @@ body {
 .primarycolor { color: var(--primary) !important; }
 .pricecolor { color: grey; }
 
+/* Themed surfaces */
 .themed-card {
   background: var(--card-yellow) !important;
   color: var(--text) !important;

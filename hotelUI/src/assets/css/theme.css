@@ -1,17 +1,56 @@
-:root {
+/* src/assets/css/theme.css */
+
+/* =========================================================
+   THEME TOKENS (Light / Dark) - driven by html[data-theme]
+   DarkModeToggle đang set: documentElement.setAttribute("data-theme", theme)
+   ========================================================= */
+
+/* LIGHT (mặc định) */
+:root,
+html[data-theme="light"] {
   --primary: #86B817;
   --secondary: #FE8800;
+
   --light: #F5F5F5;
   --dark: #14141F;
+
   --card-yellow: #FDFF7C;
 
-  /* ✅ đổi về vàng cũ */
+  /* nền tổng */
   --bg: #FAFF96;
 
+  /* surfaces */
   --surface: #ffffff;
   --surface-2: #f3f5e8;
+
+  /* text */
   --text: #1b1b1b;
   --muted: #5c6b57;
 
-  /* ...giữ nguyên phần table vars của bạn... */
+  /* Nếu bạn có table vars thì đặt tiếp ở đây */
+}
+
+/* DARK */
+html[data-theme="dark"] {
+  /* giữ brand color hoặc chỉnh tối hơn tuỳ bạn */
+  --primary: #86B817;
+  --secondary: #FE8800;
+
+  /* map light/dark cho các chỗ đang dùng --light/--dark */
+  --light: #0f172a;
+  --dark: #e5e7eb;
+
+  /* card vàng trong dark nên dịu lại để đỡ chói */
+  --card-yellow: #2a2f1a;
+
+  /* nền tổng */
+  --bg: #0b1220;
+
+  /* surfaces */
+  --surface: #0f172a;
+  --surface-2: #111c33;
+
+  /* text */
+  --text: #e5e7eb;
+  --muted: #a7b3a0;
 }
