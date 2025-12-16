@@ -310,22 +310,47 @@ export const BookingItem = () => {
 
         {/* ===== Footer ===== */}
         <div className="mt-3 d-flex justify-content-between align-items-center">
-          <div>
-            <b>
+          {/* Summary pill */}
+          <div
+            style={{
+              background: "#FFFBEB",
+              border: "1px solid #FDE68A",
+              color: "#92400E",
+              borderRadius: 9999,
+              padding: "8px 18px",
+              fontWeight: 900,
+              fontSize: 15,
+              letterSpacing: ".3px",
+              boxShadow: "0 4px 12px rgba(0,0,0,.08)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span>
               {selectedItems.length} room
-              {selectedItems.length > 1 ? "s" : ""} — {totalSelected}$
-            </b>
+              {selectedItems.length > 1 ? "s" : ""}
+            </span>
+            <span style={{ opacity: 0.5 }}>—</span>
+            <span style={{ color: "var(--primary)", fontSize: 16 }}>
+              {totalSelected}$
+            </span>
           </div>
 
           <button
             className="btn btn-primary"
             onClick={onProceed}
             disabled={!selectedItems.length || hasInvalidRange}
-            style={{ borderRadius: 9999 }}
+            style={{
+              borderRadius: 9999,
+              padding: "8px 18px",
+              fontWeight: 800,
+            }}
           >
             Proceed to checkout
           </button>
         </div>
+
       </div>
     </div>
   );
