@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Input, Select, Button, Tag, Tooltip, message, Spin } from "antd";
 import { MdOutlineBedroomParent } from "react-icons/md";
+import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 
 import { roomServices } from "../../../../services";
 import { roomAction } from "../../../../store";
@@ -13,7 +14,7 @@ import { ModDeleteRoom } from "./room/ModDeleteRoom";
 
 const { Search } = Input;
 
-// ===== ENV & helpers =====
+/* ========= ENV & helpers ========= */
 const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(/\/+$/, "");
 const buildRoomImageUrl = (fileName, attempt = 0) =>
     fileName ? `${RAW_IMAGE_URL}/rooms/${fileName}${attempt ? `?v=${attempt}` : ""}` : "";
@@ -33,17 +34,14 @@ const RoomImage = ({ fileName, alt }) => {
     const src = buildRoomImageUrl(fileName, attempt);
 
     const handleError = (e) => {
-        if (attempt < 2) {
-            setTimeout(() => setAttempt((a) => a + 1), 700);
-        } else {
-            e.currentTarget.src = "/hotel-logo.png";
-        }
+        if (attempt < 2) setTimeout(() => setAttempt((a) => a + 1), 700);
+        else e.currentTarget.src = "/hotel-logo.png";
     };
 
     return <img src={src} alt={alt} className="w-full h-full object-cover" onError={handleError} />;
 };
 
-/* ===== DISCOUNT HELPERS ===== */
+/* ========= DISCOUNT HELPERS ========= */
 const formatDateShort = (value) => {
     if (!value) return "";
     const d = new Date(value);
@@ -162,15 +160,11 @@ export const ModRooms = () => {
         if (filters.q) {
             const q = filters.q.toLowerCase();
             list = list.filter(
-                (r) =>
-                    (r.name || "").toLowerCase().includes(q) ||
-                    (r.type || "").toLowerCase().includes(q)
+                (r) => (r.name || "").toLowerCase().includes(q) || (r.type || "").toLowerCase().includes(q)
             );
         }
 
-        if (filters.type !== "all") {
-            list = list.filter((r) => r.type === filters.type);
-        }
+        if (filters.type !== "all") list = list.filter((r) => r.type === filters.type);
 
         if (filters.status !== "all") {
             const wantAvailable = filters.status === "available";
@@ -203,6 +197,13 @@ export const ModRooms = () => {
         setItemACtion(null);
         setIsModalAddVisible(true);
     };
+
+    /* ========= GRID TEMPLATES =========
+       xl (1280px): ROOM | CAPACITY | PRICE | DISCOUNT | STATUS | ACTIONS  (ẩn TYPE)
+       2xl (>=1536px): ROOM | TYPE | CAPACITY | PRICE | DISCOUNT | STATUS | ACTIONS
+    */
+    const GRID_XL = "grid-cols-[2.6fr_0.8fr_0.9fr_1.1fr_1fr_1.1fr]";
+    const GRID_2XL = "grid-cols-[2.4fr_1fr_0.8fr_0.9fr_1.1fr_1fr_1.1fr]";
 
     return (
         <div className="p-3 sm:p-4 space-y-4">
@@ -336,16 +337,40 @@ export const ModRooms = () => {
                     </p>
                 ) : (
                     <>
-                        {/* DESKTOP TABLE (xl+) */}
+                        {/* ===================== DESKTOP TABLE (xl+) ===================== */}
                         <div className="hidden xl:block space-y-2">
-                            <div className="grid grid-cols-[260px_minmax(0,1fr)_120px_120px_140px_140px_180px] items-center gap-3 px-4 pb-2 border-b border-black/5">
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ROOM</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>TYPE</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>GUESTS</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>PRICE</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>DISCOUNT</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>STATUS</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ACTIONS</div>
+                            <div
+                                className={[
+                                    "grid items-center gap-2 px-4 pb-2 border-b border-black/5",
+                                    `${GRID_XL} 2xl:${GRID_2XL}`,
+                                ].join(" ")}
+                            >
+                                <div className="text-left font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    ROOM
+                                </div>
+
+                                {/* TYPE chỉ 2xl */}
+                                <div className="hidden 2xl:block text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    TYPE
+                                </div>
+
+                                {/* ✅ CAPACITY: hiện từ xl */}
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    CAPACITY
+                                </div>
+
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    PRICE
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    DISCOUNT
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    STATUS
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    ACTIONS
+                                </div>
                             </div>
 
                             {filteredRooms.map((room) => {
@@ -359,23 +384,41 @@ export const ModRooms = () => {
                                 return (
                                     <div
                                         key={room.id}
-                                        className="grid grid-cols-[260px_minmax(0,1fr)_120px_120px_140px_140px_180px] items-center gap-3 px-4 py-3 rounded-xl hover:bg-black/5 transition"
+                                        className={[
+                                            "grid items-center gap-2 px-4 py-2 rounded-xl hover:bg-black/5 transition",
+                                            `${GRID_XL} 2xl:${GRID_2XL}`,
+                                        ].join(" ")}
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
+                                        {/* ROOM */}
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-14 h-10 rounded-lg overflow-hidden bg-black/5 flex-shrink-0">
                                                 <RoomImage fileName={room.image} alt={room.name} />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-sm font-semibold truncate" style={{ color: "var(--primary)" }}>
+                                                <div
+                                                    className="text-sm font-semibold truncate leading-tight"
+                                                    style={{ color: "var(--primary)" }}
+                                                    title={room.name}
+                                                >
                                                     {room.name}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="text-xs text-center truncate">{room.type || "Unspecified"}</div>
-                                        <div className="text-xs text-center truncate">{room.capacity} guests</div>
+                                        {/* TYPE chỉ 2xl */}
+                                        <div className="hidden 2xl:block text-xs text-center truncate">
+                                            {room.type || "Unspecified"}
+                                        </div>
+
+                                        {/* ✅ CAPACITY */}
+                                        <div className="text-xs text-center whitespace-nowrap">
+                                            {room.capacity} guests
+                                        </div>
+
+                                        {/* PRICE */}
                                         <div className="text-xs font-semibold text-center whitespace-nowrap">${room.price}</div>
 
+                                        {/* DISCOUNT */}
                                         <div className="flex justify-center">
                                             {info.percent > 0 ? (
                                                 <Tooltip title={buildDiscountTooltip(info)}>
@@ -386,22 +429,39 @@ export const ModRooms = () => {
                                             )}
                                         </div>
 
+                                        {/* STATUS */}
                                         <div className="flex justify-center">
                                             <Tag color={room.availability ? "green" : "red"} className="m-0 text-[11px]">
                                                 {room.availability ? "Available" : "Unavailable"}
                                             </Tag>
                                         </div>
 
+                                        {/* ACTIONS icon-only */}
                                         <div className="flex justify-center gap-2">
-                                            <Button size="small" onClick={() => handleEditRoom(room)}>Edit</Button>
-                                            <Button size="small" danger onClick={() => handleDeleteRoom(room)}>Delete</Button>
+                                            <Tooltip title="Edit">
+                                                <Button size="small" className="px-2" onClick={() => handleEditRoom(room)} aria-label="Edit room">
+                                                    <FaRegEdit />
+                                                </Button>
+                                            </Tooltip>
+
+                                            <Tooltip title="Delete">
+                                                <Button
+                                                    size="small"
+                                                    danger
+                                                    className="px-2"
+                                                    onClick={() => handleDeleteRoom(room)}
+                                                    aria-label="Delete room"
+                                                >
+                                                    <FaRegTrashAlt />
+                                                </Button>
+                                            </Tooltip>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
 
-                        {/* MOBILE + TABLET (<xl) */}
+                        {/* ===================== MOBILE + TABLET (<xl) ===================== */}
                         <div className="xl:hidden space-y-3">
                             {filteredRooms.map((room) => {
                                 const info = getDiscountInfo(room);
@@ -438,10 +498,7 @@ export const ModRooms = () => {
                                                         <span className="text-[11px] opacity-60">No discount</span>
                                                     )}
 
-                                                    <Tag
-                                                        color={room.availability ? "green" : "red"}
-                                                        className="m-0 text-[11px] ml-auto"
-                                                    >
+                                                    <Tag color={room.availability ? "green" : "red"} className="m-0 text-[11px] ml-auto">
                                                         {room.availability ? "Available" : "Unavailable"}
                                                     </Tag>
                                                 </div>
@@ -449,8 +506,12 @@ export const ModRooms = () => {
                                         </div>
 
                                         <div className="mt-3 grid grid-cols-2 gap-2">
-                                            <Button size="small" onClick={() => handleEditRoom(room)}>Edit</Button>
-                                            <Button size="small" danger onClick={() => handleDeleteRoom(room)}>Delete</Button>
+                                            <Button size="small" onClick={() => handleEditRoom(room)}>
+                                                Edit
+                                            </Button>
+                                            <Button size="small" danger onClick={() => handleDeleteRoom(room)}>
+                                                Delete
+                                            </Button>
                                         </div>
                                     </div>
                                 );

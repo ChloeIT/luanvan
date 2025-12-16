@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Input, Select, Button, Tag, Tooltip, message, Spin } from "antd";
 import { BsCartFill } from "react-icons/bs";
+import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
 
 import { ModAddBooking } from "./booking/ModAddBooking";
 import { ModEditBooking } from "./booking/ModEditBooking";
@@ -14,8 +15,7 @@ const { Search } = Input;
 
 /* ========= ENV & helpers ========= */
 const RAW_IMAGE_URL = (import.meta.env.VITE_IMAGE_URL || "").replace(/\/+$/, "");
-const buildRoomImageUrl = (fileName) =>
-    fileName ? `${RAW_IMAGE_URL}/rooms/${fileName}` : "";
+const buildRoomImageUrl = (fileName) => (fileName ? `${RAW_IMAGE_URL}/rooms/${fileName}` : "");
 
 /** Thanh toán đã hoàn tất? (support cả string & boolean) */
 const isPaid = (booking) => {
@@ -126,9 +126,7 @@ export const ModBookings = () => {
 
     const myBookings = useMemo(() => {
         if (!bookings || !user) return [];
-        return bookings.filter(
-            (b) => Array.isArray(b.rooms) && b.rooms.some((r) => r?.hotel?.ownerId === user.id)
-        );
+        return bookings.filter((b) => Array.isArray(b.rooms) && b.rooms.some((r) => r?.hotel?.ownerId === user.id));
     }, [bookings, user]);
 
     const todayCount = useMemo(() => {
@@ -245,11 +243,7 @@ export const ModBookings = () => {
                 </div>
 
                 <div className="flex gap-2 w-full sm:w-auto">
-                    <Button
-                        className="flex-1 sm:flex-none"
-                        onClick={fetchBookings}
-                        disabled={loading}
-                    >
+                    <Button className="flex-1 sm:flex-none" onClick={fetchBookings} disabled={loading}>
                         Refresh
                     </Button>
 
@@ -329,12 +323,24 @@ export const ModBookings = () => {
                         {/* DESKTOP TABLE (xl+) */}
                         <div className="hidden xl:block space-y-2">
                             <div className="grid grid-cols-[190px_minmax(0,1.8fr)_140px_120px_120px_170px] items-center gap-3 px-4 pb-2 border-b border-black/5">
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>BOOKING / GUEST</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ROOMS & DATES</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>TODAY</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>TOTAL</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>PAYMENT</div>
-                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>ACTIONS</div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    BOOKING / GUEST
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    ROOMS & DATES
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    TODAY
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    TOTAL
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    PAYMENT
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    ACTIONS
+                                </div>
                             </div>
 
                             {filteredBookings.map((b) => {
@@ -344,8 +350,11 @@ export const ModBookings = () => {
                                 const checkInStr = b.checkIn ? new Date(b.checkIn).toLocaleDateString() : "N/A";
                                 const checkOutStr = b.checkOut ? new Date(b.checkOut).toLocaleDateString() : "N/A";
 
-                                const { text: todayStatusText, color: todayStatusColor, flags } =
-                                    classifyBookingByToday(b, todayStartMs, todayEndMs);
+                                const { text: todayStatusText, color: todayStatusColor, flags } = classifyBookingByToday(
+                                    b,
+                                    todayStartMs,
+                                    todayEndMs
+                                );
 
                                 const isTodayImportant = flags.isStayingToday || flags.isCheckInToday || flags.isCheckOutToday;
                                 const paymentLabel = isPaid(b) ? "Paid" : "Pending";
@@ -396,14 +405,14 @@ export const ModBookings = () => {
                                         {/* 3 */}
                                         <div className="flex justify-center">
                                             {todayStatusText ? (
-                                                <Tag color={todayStatusColor} className="m-0 text-[11px]">{todayStatusText}</Tag>
+                                                <Tag color={todayStatusColor} className="m-0 text-[11px]">
+                                                    {todayStatusText}
+                                                </Tag>
                                             ) : null}
                                         </div>
 
                                         {/* 4 */}
-                                        <div className="text-xs font-semibold text-center whitespace-nowrap">
-                                            ${b.totalPrice || 0}
-                                        </div>
+                                        <div className="text-xs font-semibold text-center whitespace-nowrap">${b.totalPrice || 0}</div>
 
                                         {/* 5 */}
                                         <div className="flex justify-center">
@@ -412,10 +421,30 @@ export const ModBookings = () => {
                                             </Tag>
                                         </div>
 
-                                        {/* 6 */}
+                                        {/* 6 - ACTIONS icon-only giống ModRooms */}
                                         <div className="flex justify-center gap-2">
-                                            <Button size="small" onClick={() => handleEditBooking(b)}>Edit</Button>
-                                            <Button size="small" danger onClick={() => handleDeleteBooking(b)}>Delete</Button>
+                                            <Tooltip title="Edit">
+                                                <Button
+                                                    size="small"
+                                                    className="px-2"
+                                                    onClick={() => handleEditBooking(b)}
+                                                    aria-label="Edit booking"
+                                                >
+                                                    <FaRegEdit />
+                                                </Button>
+                                            </Tooltip>
+
+                                            <Tooltip title="Delete">
+                                                <Button
+                                                    size="small"
+                                                    danger
+                                                    className="px-2"
+                                                    onClick={() => handleDeleteBooking(b)}
+                                                    aria-label="Delete booking"
+                                                >
+                                                    <FaRegTrashAlt />
+                                                </Button>
+                                            </Tooltip>
                                         </div>
                                     </div>
                                 );
@@ -430,8 +459,11 @@ export const ModBookings = () => {
                                 const checkInStr = b.checkIn ? new Date(b.checkIn).toLocaleDateString() : "N/A";
                                 const checkOutStr = b.checkOut ? new Date(b.checkOut).toLocaleDateString() : "N/A";
 
-                                const { text: todayStatusText, color: todayStatusColor } =
-                                    classifyBookingByToday(b, todayStartMs, todayEndMs);
+                                const { text: todayStatusText, color: todayStatusColor } = classifyBookingByToday(
+                                    b,
+                                    todayStartMs,
+                                    todayEndMs
+                                );
 
                                 const paymentLabel = isPaid(b) ? "Paid" : "Pending";
 
@@ -460,9 +492,7 @@ export const ModBookings = () => {
                                                 </div>
 
                                                 <Tooltip title={roomNames || "No rooms"}>
-                                                    <div className="text-xs mt-1 truncate opacity-90">
-                                                        {roomNames || "No rooms"}
-                                                    </div>
+                                                    <div className="text-xs mt-1 truncate opacity-90">{roomNames || "No rooms"}</div>
                                                 </Tooltip>
 
                                                 <div className="text-[12px] mt-1 opacity-70">
@@ -480,16 +510,19 @@ export const ModBookings = () => {
                                                         {paymentLabel}
                                                     </Tag>
 
-                                                    <span className="text-sm font-extrabold ml-auto">
-                                                        ${b.totalPrice || 0}
-                                                    </span>
+                                                    <span className="text-sm font-extrabold ml-auto">${b.totalPrice || 0}</span>
                                                 </div>
                                             </div>
                                         </div>
 
+                                        {/* Mobile actions: vẫn text cho dễ bấm (giữ như bạn) */}
                                         <div className="mt-3 grid grid-cols-2 gap-2">
-                                            <Button size="small" onClick={() => handleEditBooking(b)}>Edit</Button>
-                                            <Button size="small" danger onClick={() => handleDeleteBooking(b)}>Delete</Button>
+                                            <Button size="small" onClick={() => handleEditBooking(b)}>
+                                                Edit
+                                            </Button>
+                                            <Button size="small" danger onClick={() => handleDeleteBooking(b)}>
+                                                Delete
+                                            </Button>
                                         </div>
                                     </div>
                                 );
