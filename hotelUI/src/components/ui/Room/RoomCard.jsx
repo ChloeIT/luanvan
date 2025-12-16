@@ -7,9 +7,10 @@ import { IoMdPricetags } from "react-icons/io";
 import { CiCirclePlus, CiCircleMinus } from "react-icons/ci";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+
 import { favoriteServices } from "@/services/favorite";
 import { favoriteAction } from "@/store";
-import { bookingAction } from "@/store/booking"; // ✅ thêm
+import { bookingAction } from "@/store/booking";
 
 /* ================= helpers ================= */
 const readCompare = () => {
@@ -50,15 +51,16 @@ export const RoomCard = ({
   room,
   hotelName: hotelNameProp,
   hotelId: hotelIdProp,
-  isFavorite,
   variant = "default",
   inCompare,
   isAvailableToday = true,
   linkToHotel = false,
 }) => {
   const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
-  const { myFavorite } = useSelector((s) => s.favorite);
+
+  const myFavorite = useSelector((s) => s.favorite?.myFavorite);
   const hotels = useSelector((s) => s.hotel?.hotels || []);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -82,6 +84,12 @@ export const RoomCard = ({
     room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
   const discountPercent = Number(rawDiscount) || 0;
   const showDiscount = discountPercent > 0;
+
+  // ✅ favorite status thật sự dựa trên myFavorite.rooms
+  const isFavNow = useMemo(() => {
+    const list = myFavorite?.rooms || [];
+    return Array.isArray(list) && list.some((r) => String(r?.id) === String(room?.id));
+  }, [myFavorite, room?.id]);
 
   const [isInCompare, setIsInCompare] = useState(() =>
     readCompare().some((r) => r.id === room.id)
@@ -108,6 +116,7 @@ export const RoomCard = ({
   const addToCompare = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
     const cur = readCompare();
     if (cur.some((r) => r.id === room.id)) return;
 
@@ -133,21 +142,25 @@ export const RoomCard = ({
     setIsInCompare(false);
   };
 
+  // ✅ FIX: gọi API đúng thứ tự (favoriteId, roomId)
   const onToggleFavorite = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
     try {
-      if (!myFavorite?.id) return;
-      const res = isFavorite
-        ? await favoriteServices.removeRoom(room.id, myFavorite.id)
-        : await favoriteServices.addRoom(room.id, myFavorite.id);
+      const favoriteId = myFavorite?.id;
+      if (!favoriteId) return;
+
+      const res = isFavNow
+        ? await favoriteServices.removeRoom(favoriteId, room.id)
+        : await favoriteServices.addRoom(favoriteId, room.id);
+
       dispatch(favoriteAction.setMyFavorite(res.data));
     } catch (err) {
-      console.error("Favorite toggle error:", err);
+      console.error("Favorite toggle error:", err?.response?.data || err);
     }
   };
 
-  // ✅ ADD TO CART (thay vì navigate /booking/:id)
   const onAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -157,16 +170,14 @@ export const RoomCard = ({
     dispatch(
       bookingAction.addToCart({
         room,
-        hotelName, // cho BookingItem hiển thị nhanh
-        // hotelAddress: ... (nếu bạn có field address ở đây thì truyền thêm)
+        hotelName,
       })
     );
 
-    // ✅ đi tới cart page (BookingItem)
     navigate("/booking");
   };
 
-  const canAdd = !!room.availability && !!isAvailableToday;
+  const canAdd = !!room?.availability && !!isAvailableToday;
 
   return (
     <div className={`room-card ${isCompact ? "room-card--compact" : ""}`}>
@@ -226,13 +237,13 @@ export const RoomCard = ({
         <div className="room-actions d-flex justify-content-center align-items-center text-primary">
           <span
             role="button"
-            title={isFavorite ? "Remove room from favorites" : "Add room to favorites"}
+            title={isFavNow ? "Remove room from favorites" : "Add room to favorites"}
             className="me-2"
             style={{ fontSize: HEART_FS, lineHeight: 1, cursor: "pointer" }}
             onClick={onToggleFavorite}
-            aria-pressed={!!isFavorite}
+            aria-pressed={isFavNow}
           >
-            {isFavorite ? <FaHeart /> : <FaRegHeart />}
+            {isFavNow ? <FaHeart /> : <FaRegHeart />}
           </span>
 
           <Button
