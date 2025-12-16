@@ -8,13 +8,13 @@ import com.java.hotel.security.services.UserDetailsImpl;
 import com.java.hotel.service.RoomService;
 import com.java.hotel.service.StoreService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -80,7 +80,6 @@ public class RoomController {
                         .body("You are not the owner of this hotel");
             }
         }
-        // ADMIN thì bỏ qua check trên
 
         String newFilename = storeService.generateImageName(file);
 
@@ -128,7 +127,6 @@ public class RoomController {
                 return ResponseEntity.status(403).body("Not your hotel");
             }
         }
-        // ADMIN (hoặc admin+mod) thì bỏ qua check trên
 
         Room updated = roomService.updateRoom(id, updates);
         return ResponseEntity.ok(updated);
@@ -143,7 +141,12 @@ public class RoomController {
     ) {
 
         Room room = roomRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Room not found"));
+                .orElse(null);
+
+        if (room == null) {
+            // ✅ trả 404 rõ ràng
+            return ResponseEntity.status(404).body("Room not found");
+        }
 
         boolean isAdmin = hasRole(userDetails, "ROLE_ADMIN");
         boolean isModerator = hasRole(userDetails, "ROLE_MODERATOR");
@@ -155,7 +158,12 @@ public class RoomController {
                 return ResponseEntity.status(403).body("Not allowed");
             }
         }
-        // ADMIN thì xoá được tất cả
+
+        // ✅ Chặn xoá nếu room đã từng nằm trong booking_room (tránh 500 + FK error)
+        if (roomRepository.existsInBookingRoom(id) == 1) {
+            return ResponseEntity.badRequest()
+                    .body("This room has bookings, cannot delete.");
+        }
 
         roomRepository.deleteById(id);
         return ResponseEntity.ok("Room deleted");
@@ -164,9 +172,7 @@ public class RoomController {
     // ⭐ Lấy tất cả room thuộc các hotel mà current user là owner (cho trang MOD)
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
-    public ResponseEntity<?> getMyRooms(
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
-
+    public ResponseEntity<?> getMyRooms(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long ownerId = userDetails.getId();
         List<Room> list = roomRepository.findByHotelOwnerId(ownerId);
         return ResponseEntity.ok(list);
@@ -176,16 +182,10 @@ public class RoomController {
     @GetMapping("/hotel/{hotelId}/available")
     public ResponseEntity<List<Room>> getAvailableRoomsForHotel(
             @PathVariable Long hotelId,
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime checkIn,
-            @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime checkOut
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut
     ) {
-        List<Room> available = roomRepository.findAvailableRoomsForHotel(
-                hotelId, checkIn, checkOut
-        );
+        List<Room> available = roomRepository.findAvailableRoomsForHotel(hotelId, checkIn, checkOut);
         return ResponseEntity.ok(available);
     }
 }

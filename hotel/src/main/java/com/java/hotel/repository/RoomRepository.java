@@ -16,15 +16,11 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     // Lấy danh sách Room theo list id (dùng cho BookingService)
     List<Room> findByIdIn(Collection<Long> ids);
 
-    // ⭐ Lấy tất cả Room thuộc các hotel mà owner_id = :ownerId
-    //   (đi đường: Room -> hotel -> owner -> id)
+    // Lấy tất cả Room thuộc các hotel mà owner_id = :ownerId
     @Query("SELECT r FROM Room r WHERE r.hotel.owner.id = :ownerId")
     List<Room> findByHotelOwnerId(@Param("ownerId") Long ownerId);
 
-    // ⭐ Lấy các phòng TRỐNG trong một khoảng thời gian cho 1 hotel
-    // - Điều kiện "không trùng" ngày:
-    //   booking.checkOut > :checkIn  AND  booking.checkIn < :checkOut  ==> có overlap
-    //   => ta loại những room có overlap khỏi kết quả.
+    // Lấy các phòng TRỐNG trong một khoảng thời gian cho 1 hotel
     @Query("""
            SELECT r
            FROM Room r
@@ -42,4 +38,9 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("checkIn") LocalDateTime checkIn,
             @Param("checkOut") LocalDateTime checkOut
     );
+
+    // ✅ NEW: check FK booking_room -> room (room đã từng được đặt chưa)
+    // Trả 1 nếu tồn tại, 0 nếu không
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM booking_room br WHERE br.room_id = :roomId)", nativeQuery = true)
+    int existsInBookingRoom(@Param("roomId") Long roomId);
 }
