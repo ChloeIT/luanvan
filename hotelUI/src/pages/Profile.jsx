@@ -2,8 +2,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Upload, Modal, message } from "antd";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+
 import { userServices } from "../services";
 import { authAction } from "../store/auth/slice";
+import { loyaltyService } from "../services/loyalty"; // ✅ lấy điểm thật giống Service
 
 export const Profile = () => {
   const dispatch = useDispatch();
@@ -28,8 +31,11 @@ export const Profile = () => {
   const [previewImage, setPreviewImage] = useState("");
 
   const fullnameInputRef = useRef(null);
-  const AVATAR_SIZE = 132; // px
+  const AVATAR_SIZE = 132;
   const [initialized, setInitialized] = useState(false);
+
+  // ✅ Loyalty state (data thật từ API)
+  const [loyalty, setLoyalty] = useState({ points: 0, tier: "BRONZE" });
 
   // helpers
   const getBase64 = (file) =>
@@ -79,6 +85,24 @@ export const Profile = () => {
     setInitialized(true);
   }, [user, initialized, IMAGES_URL]);
 
+  // ✅ Load loyalty thật (đồng bộ Service)
+  useEffect(() => {
+    if (!user) return;
+
+    (async () => {
+      try {
+        const res = await loyaltyService.getMyLoyalty();
+        const data = res?.data || res; // phòng trường hợp service trả trực tiếp
+        const points = Number(data?.points ?? 0);
+        const tier = String(data?.tier ?? "BRONZE").toUpperCase();
+        setLoyalty({ points, tier });
+      } catch (e) {
+        console.error("Load loyalty failed:", e);
+        // fallback: giữ default 0/BRONZE
+      }
+    })();
+  }, [user]);
+
   const handleChangeInfo = () => {
     setChangeInfo(true);
     setTimeout(() => fullnameInputRef.current?.focus(), 0);
@@ -126,8 +150,7 @@ export const Profile = () => {
   const onPreview = async () => {
     const url =
       fileList[0]?.url ||
-      (fileList[0]?.originFileObj &&
-        (await getBase64(fileList[0].originFileObj)));
+      (fileList[0]?.originFileObj && (await getBase64(fileList[0].originFileObj)));
     if (url) {
       setPreviewImage(url);
       setPreviewOpen(true);
@@ -141,11 +164,11 @@ export const Profile = () => {
       const body = { fullName, phone, address, birthDate, gender };
       let finalUser = user;
 
-      // 1. update text
+      // 1) update text
       const resJson = await userServices.edit(user.id, body);
       if (resJson?.data) finalUser = resJson.data;
 
-      // 2. update avatar nếu có
+      // 2) update avatar nếu có
       const file = fileList[0]?.originFileObj;
       if (file) {
         const fd = new FormData();
@@ -167,6 +190,14 @@ export const Profile = () => {
 
   const isEditing = changeInfo;
 
+  // ✅ progress text (ngắn gọn như yêu cầu)
+  const progressText = (() => {
+    const p = Number(loyalty.points || 0);
+    if (p < 10) return `Earn ${10 - p} more points to unlock SILVER rewards.`;
+    if (p < 100) return `Earn ${100 - p} more points to unlock GOLD rewards.`;
+    return "You’re enjoying GOLD rewards.";
+  })();
+
   // --------- styles ----------
   const ringStyle = {
     width: AVATAR_SIZE + 8,
@@ -179,6 +210,7 @@ export const Profile = () => {
     alignItems: "center",
     justifyContent: "center",
   };
+
   const circleStyle = {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -187,6 +219,7 @@ export const Profile = () => {
     position: "relative",
     cursor: "pointer",
   };
+
   const imgStyle = {
     width: "100%",
     height: "100%",
@@ -194,6 +227,7 @@ export const Profile = () => {
     objectFit: "cover",
     objectPosition: "center",
   };
+
   const overlayStyle = {
     position: "absolute",
     inset: 0,
@@ -207,57 +241,84 @@ export const Profile = () => {
   return (
     <div className="container-xxl py-5">
       <div className="container">
-        {/* ===== Heading giống trang Hotel ===== */}
-        <div
-          className="text-center wow fadeInUp"
-          data-wow-delay="0.1s"
-        >
-          <div
-            className="heading-line mx-auto"
-            style={{ "--heading-gap": "14px" }}
-          >
-            {/* 2 gạch bên trái */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "end",
-                gap: "6px",
-                marginRight: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+        {/* ====== TIÊU ĐỀ (sb-heading đồng bộ UI) ====== */}
+        <div className="text-center mb-4">
+          <div className="sb-heading sb-heading--md mx-auto">
+            <span className="sb-heading__lines sb-heading__lines--left">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
-            <h6 className="heading-text text-3xl text-primary text-uppercase">
-              Profile
+            <h6
+              className="sb-heading__label"
+              style={{ fontSize: "26px", fontWeight: 900, letterSpacing: "0.18em" }}
+            >
+              PROFILE
             </h6>
 
-            {/* 2 gạch bên phải */}
-            <span
-              style={{
-                display: "grid",
-                justifyItems: "start",
-                gap: "6px",
-                marginLeft: "2px",
-              }}
-            >
-              <span className="divider" style={{ "--w": "120px" }} />
-              <span
-                className="divider"
-                style={{ "--w": "60px", "--alpha": 0.45 }}
-              />
+            <span className="sb-heading__lines sb-heading__lines--right">
+              <span className="sb-heading__line sb-heading__line--long" />
+              <span className="sb-heading__line sb-heading__line--short" />
             </span>
           </div>
 
-          <h1 className="mb-5">Personalize it in your own way!</h1>
+          <h1 className="mb-4" style={{ fontSize: "28px" }}>
+            Personalize it in your own way!
+          </h1>
         </div>
 
+        {/* ====== LOYALTY CARD – ĐIỂM THẬT + NỘI DUNG NGẮN ====== */}
+        {user && (
+          <div className="row justify-content-center mb-4">
+            <div className="col-lg-8">
+              <div
+                className="h-full rounded-4 p-4 p-md-4 text-center shadow-sm"
+                style={{
+                  background: "rgba(255, 237, 160, 0.90)",
+                  border: "1px solid rgba(252, 211, 77, 0.55)",
+                }}
+              >
+                <h3
+                  className="mb-2 text-primary text-uppercase"
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    letterSpacing: "0.6px",
+                    textShadow: "0 1px 0 rgba(0,0,0,0.08)",
+                  }}
+                >
+                  Your Loyalty Program
+                </h3>
+
+                {/* ✅ Nội dung ngắn gọn đúng yêu cầu */}
+                <p className="mb-0" style={{ fontSize: "14px", lineHeight: 1.55 }}>
+                  Hello{" "}
+                  <span className="fw-bold">{user.fullName || user.username}</span>{" "}
+                  👋 <br />
+                  You have{" "}
+                  <span className="fw-bold text-primary">{loyalty.points}</span>{" "}
+                  points •{" "}
+                  <span className="fw-bold text-uppercase">{loyalty.tier}</span>{" "}
+                  tier.{" "}
+                  <span className="text-muted">{progressText}</span>
+                </p>
+
+                <div className="mt-3">
+                  <Link
+                    to="/my-bookings"
+                    className="btn btn-primary rounded-pill px-4 py-2"
+                    style={{ fontSize: "14px" }}
+                  >
+                    View my bookings
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ===== Upload avatar ===== */}
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 d-flex justify-content-center">
           <Upload
             showUploadList={false}
             beforeUpload={() => false}
@@ -280,8 +341,7 @@ export const Profile = () => {
                     alt="avatar"
                     src={
                       fileList[0]?.url ||
-                      (fileList[0]?.originFileObj &&
-                        URL.createObjectURL(fileList[0].originFileObj))
+                      (fileList[0]?.originFileObj && URL.createObjectURL(fileList[0].originFileObj))
                     }
                     style={imgStyle}
                   />
@@ -339,10 +399,7 @@ export const Profile = () => {
         {/* ===== Actions ===== */}
         <div className="mt-4 text-center">
           {!changeInfo ? (
-            <button
-              className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2"
-              onClick={handleChangeInfo}
-            >
+            <button className="rounded-2xl py-2 px-5 btn-primary ml-auto my-2" onClick={handleChangeInfo}>
               Edit Profile
             </button>
           ) : (
@@ -367,16 +424,8 @@ export const Profile = () => {
         </div>
 
         {/* Preview modal */}
-        <Modal
-          open={previewOpen}
-          footer={null}
-          onCancel={() => setPreviewOpen(false)}
-        >
-          <img
-            alt="avatar preview"
-            style={{ width: "100%" }}
-            src={previewImage}
-          />
+        <Modal open={previewOpen} footer={null} onCancel={() => setPreviewOpen(false)}>
+          <img alt="avatar preview" style={{ width: "100%" }} src={previewImage} />
         </Modal>
       </div>
     </div>
