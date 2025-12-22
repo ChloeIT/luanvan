@@ -1,5 +1,5 @@
 // src/components/layouts/admin/AdHotel.jsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { AdAddHotel, AdDeleteHotel, AdEditHotel } from "./hotel";
 import { Avatar, Button, Table } from "antd";
@@ -7,6 +7,43 @@ import Column from "antd/es/table/Column";
 import { Link } from "react-router-dom";
 
 const IMAGE_ROOT = import.meta.env.VITE_IMAGE_URL || "";
+
+/** Preset amenities (vừa chọn vừa nhập) */
+const AMENITY_PRESETS = [
+  "Free WiFi",
+  "Restaurant",
+  "Beach",
+  "Private Beach",
+  "Pool",
+  "Spa",
+  "Gym",
+  "Golf",
+  "Villas",
+  "Kids Club",
+  "Theme Park Access",
+  "Parking",
+  "Airport Shuttle",
+  "Breakfast",
+  "Bar",
+  "Pet Friendly",
+];
+
+const normalizeAmenities = (amenities) => {
+  if (!amenities) return [];
+  if (Array.isArray(amenities)) {
+    return amenities.map((x) => String(x).trim()).filter(Boolean);
+  }
+  return String(amenities)
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+};
+
+export const joinAmenities = (list) =>
+  (Array.isArray(list) ? list : [])
+    .map((x) => String(x).trim())
+    .filter(Boolean)
+    .join(", ");
 
 export const AdHotel = () => {
   const { hotels } = useSelector((state) => state.hotel);
@@ -102,6 +139,11 @@ export const AdHotel = () => {
     };
   };
 
+  const amenityOptions = useMemo(
+    () => AMENITY_PRESETS.map((a) => ({ label: a, value: a })),
+    []
+  );
+
   return (
     <div className="p-4">
       {/* Modals */}
@@ -109,6 +151,7 @@ export const AdHotel = () => {
         isModalEditVisible={isModalEditVisible}
         setIsModalEditVisible={setIsModalEditVisible}
         itemACtion={itemACtion}
+        amenityOptions={amenityOptions}
       />
       <AdDeleteHotel
         isModalDeleteVisible={isModalDeleteVisible}
@@ -118,7 +161,7 @@ export const AdHotel = () => {
       <AdAddHotel
         isModalAddVisible={isModalAddVisible}
         setIsModalAddVisible={setIsModalAddVisible}
-        itemACtion={itemACtion}
+        amenityOptions={amenityOptions}
       />
 
       {/* Header + Add button */}
@@ -128,13 +171,12 @@ export const AdHotel = () => {
         </Button>
       </div>
 
-      {/* TABLE */}
       <Table
         dataSource={hotels}
         rowKey="id"
         className="themed-table themed-table--center"
         size="middle"
-        scroll={{ x: 1100 }} // cho phép kéo ngang trên màn nhỏ
+        scroll={{ x: 1100 }}
         pagination={{
           current: page,
           onChange: setPage,
@@ -143,7 +185,6 @@ export const AdHotel = () => {
           itemRender,
         }}
       >
-        {/* Image */}
         <Column
           title="Image"
           dataIndex="image"
@@ -153,8 +194,7 @@ export const AdHotel = () => {
           render={(image, hotel) => {
             const src = image ? `${IMAGE_ROOT}/hotels/${image}` : null;
             const initials =
-              hotel?.name?.trim()?.split(" ")?.map((w) => w[0])?.join("") ??
-              "?";
+              hotel?.name?.trim()?.split(" ")?.map((w) => w[0])?.join("") ?? "?";
             return (
               <Avatar src={src} alt={hotel?.name || "hotel"}>
                 {!src && initials}
@@ -163,7 +203,6 @@ export const AdHotel = () => {
           }}
         />
 
-        {/* Name → link sang trang rooms của hotel đó */}
         <Column
           title="Name"
           dataIndex="name"
@@ -181,7 +220,6 @@ export const AdHotel = () => {
           )}
         />
 
-        {/* Address: click để mở chỉ đường Google Maps */}
         <Column
           title="Address"
           dataIndex="address"
@@ -206,7 +244,6 @@ export const AdHotel = () => {
           }
         />
 
-        {/* Amenities – ẩn trên màn rất nhỏ, hiện từ md trở lên */}
         <Column
           title="Amenities"
           dataIndex="amenities"
@@ -215,13 +252,8 @@ export const AdHotel = () => {
           width={260}
           responsive={["md"]}
           render={(amenities) => {
-            const list = (amenities || "")
-              .split(",")
-              .map((a) => a.trim())
-              .filter(Boolean);
-
+            const list = normalizeAmenities(amenities);
             if (!list.length) return "—";
-
             return (
               <div
                 style={{
@@ -244,7 +276,6 @@ export const AdHotel = () => {
           }}
         />
 
-        {/* Rating */}
         <Column
           title="Rating"
           dataIndex="rating"
@@ -254,7 +285,6 @@ export const AdHotel = () => {
           render={(r) => <span style={{ fontWeight: 700 }}>{r}</span>}
         />
 
-        {/* Phone – ẩn trên màn rất nhỏ */}
         <Column
           title="Phone"
           dataIndex="phone"
@@ -264,8 +294,6 @@ export const AdHotel = () => {
           responsive={["sm"]}
         />
 
-
-        {/* Actions */}
         <Column
           title="Action"
           key="action"

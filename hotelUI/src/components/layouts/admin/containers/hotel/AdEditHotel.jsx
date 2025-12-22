@@ -1,22 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { Avatar, Input, Modal, message, InputNumber } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { Avatar, Input, Modal, message, InputNumber, Select } from "antd";
 import { hotelServices } from "../../../../../services/hotel";
 import { useDispatch } from "react-redux";
 import { hotelAction } from "../../../../../store";
+import { joinAmenities } from "../AdHotel"; // ✅ chỉnh path đúng nếu bạn đặt khác
+
+const normalizeAmenities = (amenities) => {
+  if (!amenities) return [];
+  if (Array.isArray(amenities)) {
+    return amenities.map((x) => String(x).trim()).filter(Boolean);
+  }
+  return String(amenities)
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+};
 
 export const AdEditHotel = ({
   isModalEditVisible,
   setIsModalEditVisible,
   itemACtion,
+  amenityOptions = [],
 }) => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
-  const [rating, setRating] = useState(null); // ✅ number | null
+  const [rating, setRating] = useState(null); // number | null
   const [image, setImage] = useState("");
-  const [amenities, setAmenities] = useState("");
-  const [saving, setSaving] = useState(false);
 
+  // ✅ amenities array
+  const [amenitiesArr, setAmenitiesArr] = useState([]);
+
+  const [saving, setSaving] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -25,27 +40,34 @@ export const AdEditHotel = ({
       setAddress(itemACtion.address || "");
       setPhone(itemACtion.phone || "");
 
-      // ✅ convert về number an toàn
       const r = itemACtion.rating;
       setRating(r === null || r === undefined || r === "" ? null : Number(r));
 
       setImage(itemACtion.image || "");
-      setAmenities(itemACtion.amenities || "");
+
+      // ✅ convert string -> array để select tags hiển thị
+      setAmenitiesArr(normalizeAmenities(itemACtion.amenities));
     }
   }, [itemACtion]);
 
   const handleCancel = () => setIsModalEditVisible(false);
 
+  // ✅ chống trùng + trim khi user gõ tag mới
+  const onAmenitiesChange = (vals) => {
+    const cleaned = (vals || [])
+      .map((v) => String(v).trim())
+      .filter(Boolean);
+    setAmenitiesArr(Array.from(new Set(cleaned)));
+  };
+
+  const amenitiesValue = useMemo(() => normalizeAmenities(amenitiesArr), [amenitiesArr]);
+
   const handleModalOk = async () => {
-    if (!itemACtion?.id) {
-      message.error("Missing hotel id.");
-      return;
-    }
+    if (!itemACtion?.id) return message.error("Missing hotel id.");
     if (!name.trim()) return message.error("Hotel name is required.");
     if (!address.trim()) return message.error("Address is required.");
     if (!phone.trim()) return message.error("Phone is required.");
 
-    // ✅ rating optional, nhưng nếu có thì phải hợp lệ
     if (rating !== null && (!Number.isFinite(rating) || rating < 0 || rating > 5)) {
       message.error("Rating must be a number from 0 to 5.");
       return;
@@ -55,9 +77,10 @@ export const AdEditHotel = ({
       name: name.trim(),
       address: address.trim(),
       phone: phone.trim(),
-      rating: rating ?? "", // hoặc 0 tuỳ BE của bạn
+      rating: rating ?? "",
       image,
-      amenities: amenities.trim(),
+      // ✅ array -> string
+      amenities: joinAmenities(amenitiesArr),
     };
 
     try {
@@ -127,7 +150,18 @@ export const AdEditHotel = ({
 
       <div className="flex items-center mb-2">
         <p className="min-w-20">Amenities</p>
-        <Input value={amenities} onChange={(e) => setAmenities(e.target.value)} />
+
+        {/* ✅ Vừa nhập vừa chọn */}
+        <Select
+          mode="tags"
+          allowClear
+          style={{ width: "100%" }}
+          placeholder="Select or type amenities (press Enter to add)"
+          options={amenityOptions}
+          value={amenitiesValue}
+          onChange={onAmenitiesChange}
+          maxTagCount="responsive"
+        />
       </div>
     </Modal>
   );

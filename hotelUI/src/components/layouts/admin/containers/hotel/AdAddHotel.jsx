@@ -1,16 +1,35 @@
-import React, { useEffect, useState } from "react";
-import { Input, Modal, Upload, message, InputNumber } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { Input, Modal, Upload, message, InputNumber, Select } from "antd";
 import { hotelServices } from "../../../../../services/hotel";
 import { useDispatch, useSelector } from "react-redux";
 import { hotelAction } from "../../../../../store/hotel/slice";
 import { BiPlusCircle } from "react-icons/bi";
+import { joinAmenities } from "../AdHotel"; // ✅ chỉnh path đúng nếu bạn đặt khác
 
-export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
+const normalizeAmenities = (amenities) => {
+  if (!amenities) return [];
+  if (Array.isArray(amenities)) {
+    return amenities.map((x) => String(x).trim()).filter(Boolean);
+  }
+  return String(amenities)
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+};
+
+export const AdAddHotel = ({
+  isModalAddVisible,
+  setIsModalAddVisible,
+  amenityOptions = [],
+}) => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
-  const [rating, setRating] = useState(null); // ✅ number | null
-  const [amenities, setAmenities] = useState("");
+  const [rating, setRating] = useState(null); // number | null
+
+  // ✅ đổi amenities sang array để Select tags dùng
+  const [amenitiesArr, setAmenitiesArr] = useState([]);
+
   const [fileList, setFileList] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -22,7 +41,7 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
     setAddress("");
     setPhone("");
     setRating(null);
-    setAmenities("");
+    setAmenitiesArr([]);
     setFileList([]);
   };
 
@@ -51,15 +70,14 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
       formData.append("name", name.trim());
       formData.append("address", address.trim());
       formData.append("phone", phone.trim());
-
-      // ✅ gửi rating an toàn (BE nhận string)
       formData.append("rating", rating === null ? "" : String(rating));
 
-      formData.append("amenities", amenities.trim());
+      // ✅ convert array -> string "a, b, c"
+      formData.append("amenities", joinAmenities(amenitiesArr));
+
       formData.append("file", file);
 
       const response = await hotelServices.create(formData);
-
       dispatch(hotelAction.setHotels([...(hotels || []), response.data]));
 
       message.success("Add hotel successfully!");
@@ -79,9 +97,7 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
     console.log("Current fileList[0]: ", fileList[0]);
   }, [fileList]);
 
-  const handleChange = ({ fileList: newFileList }) => {
-    setFileList(newFileList);
-  };
+  const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
 
   const uploadButton = (
     <button style={{ border: 0, background: "none" }} type="button">
@@ -89,6 +105,17 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
       <div style={{ marginTop: 8 }}>Upload</div>
     </button>
   );
+
+  // ✅ chống trùng + trim khi user gõ tag mới
+  const onAmenitiesChange = (vals) => {
+    const cleaned = (vals || [])
+      .map((v) => String(v).trim())
+      .filter(Boolean);
+    setAmenitiesArr(Array.from(new Set(cleaned)));
+  };
+
+  // (Optional) sắp xếp để hiển thị gọn
+  const amenitiesValue = useMemo(() => normalizeAmenities(amenitiesArr), [amenitiesArr]);
 
   return (
     <Modal
@@ -143,7 +170,18 @@ export const AdAddHotel = ({ isModalAddVisible, setIsModalAddVisible }) => {
 
       <div className="flex items-center mb-2">
         <p className="min-w-20">Amenities</p>
-        <Input value={amenities} onChange={(e) => setAmenities(e.target.value)} />
+
+        {/* ✅ Vừa nhập vừa chọn */}
+        <Select
+          mode="tags"
+          allowClear
+          style={{ width: "100%" }}
+          placeholder="Select or type amenities (press Enter to add)"
+          options={amenityOptions}
+          value={amenitiesValue}
+          onChange={onAmenitiesChange}
+          maxTagCount="responsive"
+        />
       </div>
     </Modal>
   );
