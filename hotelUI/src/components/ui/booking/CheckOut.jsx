@@ -1,12 +1,15 @@
 // src/pages/CheckOut.jsx
 import React, { useMemo } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { PaypalMain } from "./PaypalMain";
 import { PaypalInfoUser } from "./PaypalInfoUser";
 import { PaypalInforOrder } from "./PaypalInforOrder";
 
 export const CheckOut = () => {
+  const navigate = useNavigate();
+
   const cart = useSelector((s) => s.booking?.cart || []);
   const selectedIds = useSelector((s) => s.booking?.selectedIds || []);
 
@@ -15,6 +18,7 @@ export const CheckOut = () => {
     return (cart || []).filter((x) => set.has(String(x.roomId)));
   }, [cart, selectedIds]);
 
+  // total from redux selected items (may be 0 if refresh)
   const totalPrice = useMemo(() => {
     return selectedItems.reduce((sum, it) => sum + (it.totalPrice || 0), 0);
   }, [selectedItems]);
@@ -22,6 +26,7 @@ export const CheckOut = () => {
   // Data passed into PaypalInforOrder / PaypalMain
   // Format: { items: [...], totalPrice }
   const data = useMemo(() => {
+    // ✅ prefer redux
     if (selectedItems.length) return { items: selectedItems, totalPrice };
 
     // fallback (in case of refresh before redux hydration)
@@ -36,17 +41,77 @@ export const CheckOut = () => {
     }
   }, [selectedItems, totalPrice]);
 
+  // ✅ Enforce single-room checkout
+  const itemCount = data?.items?.length || 0;
+  const isSingleRoom = itemCount === 1;
+
   if (!data) {
     return (
       <div className="container-xxl py-5">
         <div className="container">
           <div className="alert alert-warning m-0">
-            Missing checkout data. Please select rooms in your booking cart and try again.
+            Missing checkout data. Please select a room in your booking cart and
+            try again.
+          </div>
+
+          <div className="mt-3">
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate("/booking")}
+              style={{ borderRadius: 9999, padding: "8px 16px", fontWeight: 800 }}
+            >
+              Back to booking cart
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
+  // ✅ If more than 1 room was carried over (redux/localStorage), block here
+  if (!isSingleRoom) {
+    return (
+      <div className="container-xxl py-5">
+        <div className="container" style={{ maxWidth: 900 }}>
+          <div className="alert alert-danger">
+            You can only checkout <b>1 room</b> at a time.
+            <br />
+            Please go back and select exactly one room.
+          </div>
+
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate("/booking")}
+              style={{ borderRadius: 9999, padding: "8px 16px", fontWeight: 800 }}
+            >
+              Back to booking cart
+            </button>
+
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                // optional: clear stale localStorage to avoid re-entering with multi rooms
+                try {
+                  localStorage.removeItem("bookData");
+                } catch { }
+                navigate("/booking");
+              }}
+              style={{ borderRadius: 9999, padding: "8px 16px", fontWeight: 800 }}
+            >
+              Clear checkout data
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Normalize data to exactly one item (safety)
+  const safeData = useMemo(() => {
+    const one = data.items[0];
+    return { items: [one], totalPrice: Number(data.totalPrice || one?.totalPrice || 0) };
+  }, [data]);
 
   return (
     <div className="container-xxl py-5">
@@ -127,7 +192,7 @@ export const CheckOut = () => {
                   Payment
                 </h2>
 
-                <PaypalInforOrder order={data} />
+                <PaypalInforOrder order={safeData} />
               </section>
             </div>
 
@@ -149,7 +214,7 @@ export const CheckOut = () => {
                 </h2>
 
                 <div className="w-full max-w-md md:max-w-lg mx-auto">
-                  <PaypalMain order={data} />
+                  <PaypalMain order={safeData} />
                 </div>
               </section>
             </div>

@@ -1,5 +1,5 @@
 // src/pages/MyBookings.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { Button, Rate, Modal, Input, message } from "antd";
@@ -15,9 +15,13 @@ export const MyBookings = () => {
     const dispatch = useDispatch();
 
     const { user } = useSelector((s) => s.auth);
-    const { bookings, loading, error } = useSelector((s) => s.booking || {});
+    const { bookings } = useSelector((s) => s.booking || {});
 
     const [hoveredId, setHoveredId] = useState(null);
+
+    // ✅ page-level loading/error (độc lập redux)
+    const [pageLoading, setPageLoading] = useState(false);
+    const [pageError, setPageError] = useState("");
 
     const [reviewModal, setReviewModal] = useState({
         open: false,
@@ -58,7 +62,7 @@ export const MyBookings = () => {
         return { state: "waiting", text: "Waiting", bg: "#faad14", color: "#111" };
     };
 
-    // ===== UI helpers (inline, không cần css) =====
+    // ===== UI helpers (inline) =====
     const pillStyle = (bg, color = "#111") => ({
         display: "inline-flex",
         alignItems: "center",
@@ -101,31 +105,37 @@ export const MyBookings = () => {
     });
 
     const getReviewPill = (stayCompleted, hasReview) => {
-        if (!stayCompleted) {
-            return { text: "In progress", bg: "rgba(52,152,219,.18)", color: "#111" };
-        }
-        if (stayCompleted && !hasReview) {
-            return { text: "Need review", bg: "rgba(241,196,15,.22)", color: "#111" };
-        }
+        if (!stayCompleted) return { text: "In progress", bg: "rgba(52,152,219,.18)", color: "#111" };
+        if (stayCompleted && !hasReview) return { text: "Need review", bg: "rgba(241,196,15,.22)", color: "#111" };
         return { text: "Reviewed", bg: "rgba(46,204,113,.22)", color: "#111" };
     };
 
-    // Lọc booking thuộc về user hiện tại
-    const myBookings = useMemo(() => {
-        if (!user || !Array.isArray(bookings)) return [];
-        return bookings.filter((b) => String(b.user?.id) === String(user.id));
-    }, [bookings, user]);
+    // ✅ Fetch "my bookings" từ BE: /api/booking/me
+    const fetchMyBookings = useCallback(async () => {
+        if (!user) return;
+        setPageError("");
+        setPageLoading(true);
+        try {
+            const res = await axios.get(`${API_URL}/api/booking/me`, {
+                headers: authServices.authHeader(),
+            });
+            dispatch(bookingAction.setBookings(res.data || []));
+        } catch (err) {
+            console.error(err);
+            const msg =
+                err?.response?.data ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Cannot load your bookings.";
+            setPageError(String(msg));
+        } finally {
+            setPageLoading(false);
+        }
+    }, [dispatch, user]);
 
-    // Sắp xếp: booking mới nhất lên trên
-    const myBookingsSorted = useMemo(() => {
-        return [...myBookings].sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
-    }, [myBookings]);
-
-    // Debug (có thể xoá)
     useEffect(() => {
-        // console.log("All bookings:", bookings);
-        // console.log("My bookings:", myBookingsSorted);
-    }, [bookings, myBookingsSorted]);
+        fetchMyBookings();
+    }, [fetchMyBookings]);
 
     if (!user) {
         return (
@@ -137,11 +147,17 @@ export const MyBookings = () => {
         );
     }
 
+    // ✅ BE đã trả đúng booking của user -> không cần filter nữa
+    const myBookingsSorted = useMemo(() => {
+        const arr = Array.isArray(bookings) ? bookings : [];
+        return [...arr].sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+    }, [bookings]);
+
     // ===== Helpers cho review =====
     const now = new Date();
 
     const openReview = (booking, mode = "create") => {
-        const hasReview = !!booking.review;
+        const hasReview = !!booking?.review;
         setReviewModal({
             open: true,
             booking,
@@ -167,23 +183,23 @@ export const MyBookings = () => {
             const url = `${API_URL}/api/booking/${booking.id}/review`;
             const payload = { rating, comment };
 
-            const res =
-                mode === "create"
-                    ? await axios.post(url, payload, { headers: authServices.authHeader() })
-                    : await axios.put(url, payload, { headers: authServices.authHeader() });
-
-            const review = res.data;
-            const updatedBooking = { ...booking, review };
-
-            dispatch(bookingAction.updateBookings(updatedBooking));
+            if (mode === "create") {
+                await axios.post(url, payload, { headers: authServices.authHeader() });
+            } else {
+                await axios.put(url, payload, { headers: authServices.authHeader() });
+            }
 
             message.success(mode === "create" ? "Thank you! Your review has been submitted." : "Your review has been updated.");
+
+            // ✅ refetch để chắc chắn rooms/hotel/review update đúng
+            setReviewModal((s) => ({ ...s, open: false }));
+            fetchMyBookings();
         } catch (err) {
             console.error(err);
             const msg = err?.response?.data || "Cannot submit review. Please try again.";
             message.error(msg);
         } finally {
-            setReviewModal((s) => ({ ...s, loading: false, open: false }));
+            setReviewModal((s) => ({ ...s, loading: false }));
         }
     };
 
@@ -198,7 +214,10 @@ export const MyBookings = () => {
                             <span className="sb-heading__line sb-heading__line--short" />
                         </span>
 
-                        <h6 className="sb-heading__label" style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "0.18em" }}>
+                        <h6
+                            className="sb-heading__label"
+                            style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "0.18em" }}
+                        >
                             BOOKINGS
                         </h6>
 
@@ -213,9 +232,9 @@ export const MyBookings = () => {
                     </h1>
                 </div>
 
-                {loading && <p>Loading...</p>}
-                {error && <p className="text-danger">{error}</p>}
-                {myBookingsSorted.length === 0 && !loading && <p>You have no bookings yet.</p>}
+                {pageLoading && <p>Loading...</p>}
+                {pageError && <p className="text-danger">{pageError}</p>}
+                {!pageLoading && !pageError && myBookingsSorted.length === 0 && <p>You have no bookings yet.</p>}
 
                 {myBookingsSorted.map((b) => {
                     const room = b.rooms?.[0];
@@ -229,13 +248,12 @@ export const MyBookings = () => {
                     const payUi = getPaymentUi(b);
                     const isPaid = payUi.state === "paid";
 
-                    // Accent bar màu theo payment state
                     const accent =
                         payUi.state === "paid"
                             ? "linear-gradient(180deg,#2ecc71,#1abc9c)"
                             : payUi.state === "expired"
                                 ? "linear-gradient(180deg,#6b7280,#9ca3af)"
-                                : "linear-gradient(180deg,#faad14,#ffd666)"; // waiting/unpaid
+                                : "linear-gradient(180deg,#faad14,#ffd666)";
 
                     return (
                         <div
@@ -245,7 +263,6 @@ export const MyBookings = () => {
                             onMouseLeave={() => setHoveredId(null)}
                             style={cardStyle(hoveredId === b.id)}
                         >
-                            {/* Accent bar */}
                             <div
                                 style={{
                                     position: "absolute",
@@ -266,7 +283,6 @@ export const MyBookings = () => {
                                     background: "rgba(255,255,255,.35)",
                                 }}
                             >
-                                {/* Left header */}
                                 <div className="d-flex flex-wrap align-items-center gap-2">
                                     <span style={softPillStyle()}>
                                         <span style={{ opacity: 0.65, letterSpacing: ".08em" }}>BOOKING</span>
@@ -274,12 +290,9 @@ export const MyBookings = () => {
                                     </span>
 
                                     <span style={pillStyle(reviewPill.bg, reviewPill.color)}>{reviewPill.text}</span>
-
-                                    {/* ✅ Payment pill: Paid / Waiting / Expired */}
                                     <span style={pillStyle(payUi.bg, payUi.color)}>{payUi.text}</span>
                                 </div>
 
-                                {/* Right header: dates */}
                                 <div className="d-flex flex-wrap gap-2 justify-content-md-end w-100 w-md-auto">
                                     <span style={softPillStyle()}>
                                         <span style={{ opacity: 0.7 }}>Check-in:</span>
@@ -295,7 +308,6 @@ export const MyBookings = () => {
                             {/* Body */}
                             <div className="p-4" style={{ paddingLeft: 26 }}>
                                 <div className="d-flex flex-column flex-lg-row gap-3 justify-content-between">
-                                    {/* Left info */}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div className="mb-2">
                                             <div className="mb-1" style={{ fontWeight: 800 }}>
@@ -303,11 +315,7 @@ export const MyBookings = () => {
                                                 {hotel ? (
                                                     <Link
                                                         to={`/hotel/${hotel.id}`}
-                                                        style={{
-                                                            fontWeight: 900,
-                                                            color: "#0b5ed7",
-                                                            textDecoration: "none",
-                                                        }}
+                                                        style={{ fontWeight: 900, color: "#0b5ed7", textDecoration: "none" }}
                                                     >
                                                         {hotel.name}
                                                     </Link>
@@ -325,7 +333,6 @@ export const MyBookings = () => {
                                             </div>
                                         </div>
 
-                                        {/* Review box */}
                                         {hasReview && (
                                             <div
                                                 style={{
@@ -347,7 +354,6 @@ export const MyBookings = () => {
                                         )}
                                     </div>
 
-                                    {/* Right actions */}
                                     <div className="d-flex flex-column gap-2 justify-content-end align-items-stretch" style={{ minWidth: 220 }}>
                                         {isPaid && stayCompleted && !hasReview && (
                                             <Button
@@ -425,7 +431,11 @@ export const MyBookings = () => {
                         <p className="mb-1" style={{ fontWeight: 600 }}>
                             Rating
                         </p>
-                        <Rate allowHalf value={reviewModal.rating} onChange={(val) => setReviewModal((s) => ({ ...s, rating: val }))} />
+                        <Rate
+                            allowHalf
+                            value={reviewModal.rating}
+                            onChange={(val) => setReviewModal((s) => ({ ...s, rating: val }))}
+                        />
                     </div>
 
                     <div>

@@ -1,9 +1,9 @@
 // src/pages/PaypalMain.jsx
-import React from "react";
+import React, { useRef } from "react";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { bookingServices, roomServices } from "../../../services";
+import { bookingServices } from "../../../services";
 
 export const PaypalMain = ({ order }) => {
   const { user } = useSelector((state) => state.auth);
@@ -20,11 +20,15 @@ export const PaypalMain = ({ order }) => {
   const items = Array.isArray(order?.items) ? order.items : [];
   const totalPrice = Number(order?.totalPrice || 0);
 
-  // ✅ Convert "YYYY-MM-DD" -> "YYYY-MM-DDT00:00:00" for BE LocalDateTime
   const toLocalDateTime = (d) => (d ? `${d}T00:00:00` : null);
+
+  // ✅ chặn chạy 2 lần
+  const creatingRef = useRef(false);
 
   // Create PayPal order
   const onCreateOrder = (data, actions) => {
+    // ✅ nếu user lỡ chọn nhiều phòng, vẫn tạo order theo tổng tiền hiện tại,
+    // nhưng ta sẽ chặn ở onApprove (an toàn hơn)
     const amount = (Number.isFinite(totalPrice) ? totalPrice : 0).toFixed(2);
 
     return actions.order.create({
@@ -51,45 +55,52 @@ export const PaypalMain = ({ order }) => {
     console.log("✅ PayPal capture success:", details);
 
     if (!items.length) {
-      console.error("❌ Missing checkout items. Cannot create bookings.", order);
+      console.error("❌ Missing checkout items. Cannot create booking.", order);
       return;
     }
 
+    // ✅ CHẶN: 1 lần chỉ được 1 room
+    if (items.length !== 1) {
+      console.error("❌ You can only pay for 1 room per checkout.");
+      alert("You can only pay for 1 room per checkout. Please select exactly 1 room.");
+      return;
+    }
+
+    if (creatingRef.current) return;
+    creatingRef.current = true;
+
     try {
-      // ✅ 1 booking per room (supports different dates per room)
-      const createJobs = items.map((it) => {
-        const payload = {
-          checkIn: toLocalDateTime(it.checkIn),
-          checkOut: toLocalDateTime(it.checkOut),
-          totalPrice: Number(it.totalPrice || 0),
-          payment: true,
-          roomIds: [it.roomId],
-        };
+      const it = items[0];
 
-        console.log("📤 Create booking payload:", payload);
-        return bookingServices.create(payload);
-      });
+      const payload = {
+        checkIn: toLocalDateTime(it.checkIn),
+        checkOut: toLocalDateTime(it.checkOut),
+        totalPrice: Number(it.totalPrice || 0),
+        payment: true,
+        roomIds: [it.roomId], // ✅ chỉ 1 room
+      };
 
-      const results = await Promise.all(createJobs);
+      console.log("📤 Create booking payload (SINGLE):", payload);
 
-      const bookingIds = results
-        .map((res) => res?.data ?? res)
-        .map((b) => b?.id)
-        .filter((id) => id != null);
+      const res = await bookingServices.create(payload);
+      const booking = res?.data ?? res;
 
-      console.log("✅ Bookings created:", bookingIds);
+      const bookingId = booking?.id;
+      console.log("✅ Booking created:", bookingId);
 
-      // Update room availability (if BE already does it, you can remove this)
-      const roomUpdateJobs = items.map((it) =>
-        roomServices.edit(it.roomId, { availability: false })
+      localStorage.setItem(
+        "lastBookingIds",
+        JSON.stringify(bookingId ? [bookingId] : [])
       );
-      await Promise.allSettled(roomUpdateJobs);
 
-      localStorage.setItem("lastBookingIds", JSON.stringify(bookingIds));
-      navigate("/success", { state: { bookingIds } });
+      navigate("/success", {
+        state: { bookingIds: bookingId ? [bookingId] : [] },
+      });
     } catch (error) {
-      console.error("❌ Error creating bookings:", error);
+      console.error("❌ Error creating booking:", error);
       console.log("💬 BE response:", error?.response?.data);
+    } finally {
+      creatingRef.current = false;
     }
   };
 

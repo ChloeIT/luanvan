@@ -11,15 +11,15 @@ export const BookingItem = () => {
 
   const cart = useSelector((s) => s.booking?.cart || []);
   const selectedIds = useSelector((s) => s.booking?.selectedIds || []);
+  const message = useSelector((s) => s.booking?.message || "");
 
   const isSelected = (roomId) =>
     selectedIds.some((id) => String(id) === String(roomId));
 
-  const selectedItems = useMemo(
-    () => cart.filter((x) => isSelected(x.roomId)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cart, selectedIds]
-  );
+  const selectedItems = useMemo(() => {
+    const set = new Set((selectedIds || []).map(String));
+    return (cart || []).filter((x) => set.has(String(x.roomId)));
+  }, [cart, selectedIds]);
 
   const totalSelected = useMemo(
     () => selectedItems.reduce((sum, it) => sum + (it.totalPrice || 0), 0),
@@ -42,11 +42,14 @@ export const BookingItem = () => {
     [selectedItems]
   );
 
+  // ✅ Only allow checkout exactly 1 room
+  const canProceed = selectedItems.length === 1 && !hasInvalidRange;
+
   const onProceed = () => {
-    if (!selectedItems.length || hasInvalidRange) return;
+    if (!canProceed) return;
 
     const draft = {
-      items: selectedItems,
+      items: selectedItems, // ✅ exactly 1
       totalPrice: totalSelected,
       totalNights: totalSelectedNights,
     };
@@ -88,19 +91,39 @@ export const BookingItem = () => {
   return (
     <div className="container-xxl py-4">
       <div className="container" style={{ maxWidth: 1080 }}>
+        {/* ✅ System message from slice (ex: different hotel warning) */}
+        {!!message && (
+          <div className="alert alert-warning mb-3" style={{ borderRadius: 12 }}>
+            {message}
+          </div>
+        )}
+
         {/* ===== List items ===== */}
         <div className="d-grid" style={{ gap: 12 }}>
           {cart.map((it) => {
             const checked = isSelected(it.roomId);
             const validRange = (it.nights || 0) > 0;
 
-            // Safe hotelId resolution
             const hotelId =
               it.hotelId ??
               it.room?.hotelId ??
               it.room?.hotel?.id ??
               it.room?.hotel?.hotelId ??
               null;
+
+            const onToggleSingle = () => {
+              // Nếu đang bỏ chọn -> cho toggle bình thường
+              if (checked) {
+                dispatch(bookingAction.toggleSelect(it.roomId));
+                return;
+              }
+
+              // Nếu đang chọn room khác -> clear rồi chọn room này (đảm bảo chỉ 1)
+              if (selectedItems.length >= 1) {
+                dispatch(bookingAction.clearSelected());
+              }
+              dispatch(bookingAction.toggleSelect(it.roomId));
+            };
 
             return (
               <div
@@ -119,9 +142,7 @@ export const BookingItem = () => {
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() =>
-                        dispatch(bookingAction.toggleSelect(it.roomId))
-                      }
+                      onChange={onToggleSingle}
                     />
                     <span style={{ fontWeight: 800, color: "var(--primary)" }}>
                       Select
@@ -206,12 +227,7 @@ export const BookingItem = () => {
                             </span>
                           </Link>
                         ) : (
-                          <span
-                            style={{
-                              fontWeight: 900,
-                              color: "var(--primary)",
-                            }}
-                          >
+                          <span style={{ fontWeight: 900, color: "var(--primary)" }}>
                             {it.hotelName || "Unknown"}
                           </span>
                         )}
@@ -226,9 +242,7 @@ export const BookingItem = () => {
                         <span style={{ color: "#FFC30B", fontWeight: 800 }}>
                           Price:
                         </span>
-                        <span style={{ fontWeight: 800 }}>
-                          {it.price}$ / night
-                        </span>
+                        <span style={{ fontWeight: 800 }}>{it.price}$ / night</span>
                       </div>
 
                       {/* ===== Dates ===== */}
@@ -277,13 +291,7 @@ export const BookingItem = () => {
                       </div>
 
                       {!validRange && (
-                        <div
-                          style={{
-                            color: "#dc2626",
-                            fontSize: 12,
-                            marginTop: 4,
-                          }}
-                        >
+                        <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>
                           Check-out must be at least 1 day after check-in.
                         </div>
                       )}
@@ -292,14 +300,21 @@ export const BookingItem = () => {
                       <div className="mt-2 d-flex gap-2 align-items-center">
                         <span className="rounded-pill" style={pillStyle}>
                           {validRange
-                            ? `${it.nights} night${it.nights > 1 ? "s" : ""
-                            }`
+                            ? `${it.nights} night${it.nights > 1 ? "s" : ""}`
                             : "—"}
                         </span>
                         <span>
                           Total: <b>{it.totalPrice}$</b>
                         </span>
                       </div>
+
+                      {/* ✅ Hint if user tries to select another room */}
+                      {!checked && selectedItems.length === 1 && (
+                        <div style={{ marginTop: 10, color: "#b91c1c", fontSize: 13 }}>
+                          You can only select 1 room for checkout. Selecting this room will
+                          replace the previous selection.
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -328,8 +343,7 @@ export const BookingItem = () => {
             }}
           >
             <span>
-              {selectedItems.length} room
-              {selectedItems.length > 1 ? "s" : ""}
+              {selectedItems.length} room{selectedItems.length > 1 ? "s" : ""}
             </span>
             <span style={{ opacity: 0.5 }}>—</span>
             <span style={{ color: "var(--primary)", fontSize: 16 }}>
@@ -337,20 +351,39 @@ export const BookingItem = () => {
             </span>
           </div>
 
-          <button
-            className="btn btn-primary"
-            onClick={onProceed}
-            disabled={!selectedItems.length || hasInvalidRange}
-            style={{
-              borderRadius: 9999,
-              padding: "8px 18px",
-              fontWeight: 800,
-            }}
-          >
-            Proceed to checkout
-          </button>
-        </div>
+          <div className="d-flex flex-column align-items-end">
+            <button
+              className="btn btn-primary"
+              onClick={onProceed}
+              disabled={!canProceed}
+              style={{
+                borderRadius: 9999,
+                padding: "8px 18px",
+                fontWeight: 800,
+              }}
+            >
+              Proceed to checkout
+            </button>
 
+            {selectedItems.length === 0 && (
+              <div style={{ marginTop: 8, fontSize: 13, color: "#92400E" }}>
+                Please select exactly 1 room to continue.
+              </div>
+            )}
+
+            {selectedItems.length > 1 && (
+              <div style={{ marginTop: 8, fontSize: 13, color: "#b91c1c" }}>
+                You can only checkout 1 room at a time.
+              </div>
+            )}
+
+            {selectedItems.length === 1 && hasInvalidRange && (
+              <div style={{ marginTop: 8, fontSize: 13, color: "#b91c1c" }}>
+                Please fix the date range before proceeding.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
