@@ -37,17 +37,9 @@ const getTodayRangeISO = () => {
 };
 
 /* ===================== UI styles ===================== */
-const pillRowStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 14,
-  marginTop: 18,
-  flexWrap: "wrap", // mobile tự xuống dòng
-};
-
 const pillStyle = {
   display: "flex",
-  alignItems: "flex-start",      // ✅ icon top khi text xuống dòng
+  alignItems: "flex-start", // icon top khi text xuống dòng
   gap: 10,
   padding: "12px 16px",
   borderRadius: 18,
@@ -57,11 +49,9 @@ const pillStyle = {
   fontSize: 15,
   fontWeight: 650,
   color: "#1f2937",
-
-  width: "100%",                 // ✅ pill dài hết cột
-  maxWidth: "100%",              // ✅ không bị giới hạn
+  width: "100%",
+  maxWidth: "100%",
 };
-
 
 const iconWrapStyle = {
   width: 26,
@@ -99,50 +89,41 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
     });
   }, [roomsProp, hotel, allRooms]);
 
-  /* ========= AVAILABLE TODAY ========= */
+  /* ========= AVAILABLE TODAY =========
+   * - gọi API /room/hotel/:id/available?checkIn=...&checkOut=...
+   * - API đã áp dụng Option B ở BE (PAID luôn block, UNPAID block trước cutoff)
+   */
   const [availableTodayIds, setAvailableTodayIds] = useState(null);
 
   useEffect(() => {
     if (!hotel?.id) return;
 
+    const controller = new AbortController();
     const { startISO, endISO } = getTodayRangeISO();
     const url = buildAvailableUrl(hotel.id, startISO, endISO);
 
-    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(url, { signal: controller.signal });
 
-    fetch(url)
-      .then((res) => res.ok && res.json())
-      .then((data) => {
-        if (cancelled) return;
+        if (!res.ok) {
+          // nếu API lỗi, cho UI fallback (coi như unknown => không block user)
+          setAvailableTodayIds(null);
+          return;
+        }
+
+        const data = await res.json();
         const ids = Array.isArray(data) ? data.map((r) => r?.id).filter(Boolean) : [];
         setAvailableTodayIds(ids);
-      })
-      .catch(() => !cancelled && setAvailableTodayIds(null));
+      } catch (e) {
+        // abort thì bỏ qua
+        if (e?.name === "AbortError") return;
+        setAvailableTodayIds(null);
+      }
+    })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [hotel?.id]);
-
-  /* ========= HIGHLIGHTS: 3 REAL INFO ========= */
-  const highlights = useMemo(() => {
-    if (!hotel) return [];
-
-    return [
-      {
-        icon: <FaStar />,
-        text: `${hotel.rating ?? "—"} Rating & Reviews`,
-      },
-      {
-        icon: <IoLocation />,
-        text: hotel.address || "Address updating…",
-      },
-      {
-        icon: <FaConciergeBell />,
-        text: hotel.amenities || "Amenities updating…",
-      },
-    ];
-  }, [hotel]);
 
   return (
     <>
@@ -187,22 +168,18 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
                     </span>
                   </div>
 
-                  <h1
-                    className="text-primary"
-                    style={{ fontSize: 36, fontWeight: 950, lineHeight: 1.12 }}
-                  >
+                  <h1 className="text-primary" style={{ fontSize: 36, fontWeight: 950, lineHeight: 1.12 }}>
                     {hotel.name}
                   </h1>
 
-                  {/* ✅ 3 pill – 1 hàng ngang */}
-                  {/* ===== Hotel Info (3 lines – vertical stack) ===== */}
+                  {/* ===== Hotel Info (vertical stack) ===== */}
                   <div
                     style={{
                       display: "flex",
-                      flexDirection: "column", // ✅ xếp dọc
+                      flexDirection: "column",
                       gap: 14,
                       marginTop: 18,
-                      maxWidth: 620, // giống ảnh
+                      maxWidth: 620,
                     }}
                   >
                     {/* Rating */}
@@ -211,9 +188,7 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
                         <FaStar />
                       </span>
                       <span>
-                        {hotel?.rating != null
-                          ? `${hotel.rating} Rating & Reviews`
-                          : "Rating & Reviews"}
+                        {hotel?.rating != null ? `${hotel.rating} Rating & Reviews` : "Rating & Reviews"}
                       </span>
                     </div>
 
@@ -251,17 +226,14 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
       {/* ========= ROOMS ========= */}
       <div className="container-xxl pb-5 pt-4">
         <div className="container">
-
           {/* ===== Heading ===== */}
           <div className="text-center mb-4">
             <div className="sb-heading sb-heading--md mx-auto">
-              {/* lines left */}
               <span className="sb-heading__lines sb-heading__lines--left">
                 <span className="sb-heading__line sb-heading__line--long" />
                 <span className="sb-heading__line sb-heading__line--short" />
               </span>
 
-              {/* LABEL */}
               <h6
                 className="sb-heading__label"
                 style={{
@@ -274,31 +246,25 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
                 ROOM
               </h6>
 
-              {/* lines right */}
               <span className="sb-heading__lines sb-heading__lines--right">
                 <span className="sb-heading__line sb-heading__line--long" />
                 <span className="sb-heading__line sb-heading__line--short" />
               </span>
             </div>
 
-            <h1
-              className="mb-0"
-              style={{
-                fontSize: "28px",
-                fontWeight: 800,
-              }}
-            >
+            <h1 className="mb-0" style={{ fontSize: "28px", fontWeight: 800 }}>
               Our Rooms
             </h1>
           </div>
 
           {/* ===== Rooms Grid ===== */}
-          <div className="rooms-grid" style={{ marginTop: 36 }} >
+          <div className="rooms-grid" style={{ marginTop: 36 }}>
             {rooms.map((room) => {
               const isFavorite = myFavorite?.rooms?.some((fav) => fav.id === room.id);
+
+              // null = unknown => đừng chặn UI (coi như available để user vẫn xem/đặt)
               const isAvailableToday =
-                availableTodayIds === null ||
-                availableTodayIds.includes(room.id);
+                availableTodayIds === null || availableTodayIds.includes(room.id);
 
               return (
                 <div className="room-cell" key={room.id}>
@@ -313,7 +279,6 @@ export function HotelDetail({ rooms: roomsProp, hotel: hotelProp, showHeader = t
               );
             })}
           </div>
-
         </div>
       </div>
 

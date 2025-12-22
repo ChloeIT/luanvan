@@ -5,8 +5,15 @@ import { authServices } from "./auth";
 const API_URL = import.meta.env.VITE_HOTEL_API || "http://localhost:8080";
 
 export const bookingServices = {
+  // ADMIN only (giữ nguyên)
   getAll: () =>
     axios.get(`${API_URL}/api/booking/all`, {
+      headers: authServices.authHeader(),
+    }),
+
+  // ✅ LOGIN REQUIRED: dùng cho trang /review
+  getReviews: () =>
+    axios.get(`${API_URL}/api/booking/reviews`, {
       headers: authServices.authHeader(),
     }),
 
@@ -20,7 +27,6 @@ export const bookingServices = {
       headers: authServices.authHeader(),
     }),
 
-  // nếu create booking là public thì bỏ header, còn nếu cần login thì giữ
   create: (newBooking) =>
     axios.post(`${API_URL}/api/booking/create`, newBooking, {
       headers: authServices.authHeader(),

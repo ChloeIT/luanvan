@@ -48,6 +48,8 @@ export const AdBooking = () => {
     fontSize: 12,
     display: "inline-block",
     whiteSpace: "nowrap",
+    textTransform: "uppercase",
+    letterSpacing: ".06em",
   };
 
   const pillPaid = {
@@ -57,11 +59,39 @@ export const AdBooking = () => {
     color: "#237804",
   };
 
-  const pillUnpaid = {
+  const pillWaiting = {
     ...pillBase,
-    backgroundColor: "#FFF1D6",
-    border: "1px solid #FFC069",
-    color: "#AD4E00",
+    backgroundColor: "#FFF7E6",
+    border: "1px solid #FFD591",
+    color: "#AD6800",
+  };
+
+  const pillExpired = {
+    ...pillBase,
+    backgroundColor: "#F3F4F6",
+    border: "1px solid #D1D5DB",
+    color: "#374151",
+  };
+
+  const CHECKIN_CUTOFF_HOUR = 14;
+
+  const getPaymentUi = (b) => {
+    if (b?.payment) return { text: "paid", style: pillPaid };
+
+    const checkIn = b?.checkIn ? new Date(b.checkIn) : null;
+    if (!checkIn) return { text: "unpaid", style: pillWaiting };
+
+    const cutoff = new Date(
+      checkIn.getFullYear(),
+      checkIn.getMonth(),
+      checkIn.getDate(),
+      CHECKIN_CUTOFF_HOUR,
+      0,
+      0
+    );
+
+    const expired = new Date() >= cutoff;
+    return expired ? { text: "expired", style: pillExpired } : { text: "waiting", style: pillWaiting };
   };
 
   return (
@@ -99,7 +129,7 @@ export const AdBooking = () => {
         rowKey="id"
         className="themed-table themed-table--center"
         size="middle"
-        scroll={{ x: 1050 }}  // responsive scroll
+        scroll={{ x: 1050 }}
         pagination={{
           current: page,
           onChange: setPage,
@@ -107,25 +137,9 @@ export const AdBooking = () => {
           showSizeChanger: false,
         }}
       >
-        {/* Column: Check In */}
-        <Column
-          title="Check In"
-          dataIndex="checkIn"
-          align="center"
-          width={120}
-          render={(v) => formatDate(v)}
-        />
+        <Column title="Check In" dataIndex="checkIn" align="center" width={120} render={(v) => formatDate(v)} />
+        <Column title="Check Out" dataIndex="checkOut" align="center" width={120} render={(v) => formatDate(v)} />
 
-        {/* Column: Check Out */}
-        <Column
-          title="Check Out"
-          dataIndex="checkOut"
-          align="center"
-          width={120}
-          render={(v) => formatDate(v)}
-        />
-
-        {/* Column: Room */}
         <Column
           title="Room"
           dataIndex="rooms"
@@ -155,17 +169,13 @@ export const AdBooking = () => {
           }
         />
 
-        {/* Column: Hotel */}
         <Column
           title="Hotel"
           align="center"
           width={200}
           responsive={["md"]}
           render={(_, b) => {
-            const hotels = [
-              ...new Set((b.rooms || []).map((r) => r?.hotel?.name).filter(Boolean)),
-            ];
-
+            const hotels = [...new Set((b.rooms || []).map((r) => r?.hotel?.name).filter(Boolean))];
             if (!hotels.length) return "-";
 
             return (
@@ -192,27 +202,19 @@ export const AdBooking = () => {
           }}
         />
 
-        {/* Column: Total Price */}
-        <Column
-          title="Total Price"
-          dataIndex="totalPrice"
-          align="center"
-          width={110}
-          render={(v) => <strong>{v}</strong>}
-        />
+        <Column title="Total Price" dataIndex="totalPrice" align="center" width={110} render={(v) => <strong>{v}</strong>} />
 
-        {/* Column: Payment */}
+        {/* ✅ Payment: Paid / Waiting / Expired */}
         <Column
           title="Payment"
-          dataIndex="payment"
           align="center"
           width={150}
-          render={(v) =>
-            v ? <span style={pillPaid}>paid</span> : <span style={pillUnpaid}>not yet paid</span>
-          }
+          render={(_, b) => {
+            const p = getPaymentUi(b);
+            return <span style={p.style}>{p.text}</span>;
+          }}
         />
 
-        {/* Column: Actions */}
         <Column
           title="Action"
           align="center"

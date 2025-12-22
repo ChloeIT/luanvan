@@ -26,6 +26,26 @@ const isPaid = (booking) => {
     return p.includes("paid") || p.includes("success") || p.includes("completed");
 };
 
+/** Option B cutoff 14:00 ngày check-in */
+const CHECKIN_CUTOFF_HOUR = 14;
+
+const getPaymentState = (b) => {
+    if (isPaid(b)) return "paid";
+    const checkIn = b?.checkIn ? new Date(b.checkIn) : null;
+    if (!checkIn) return "unpaid";
+
+    const cutoff = new Date(
+        checkIn.getFullYear(),
+        checkIn.getMonth(),
+        checkIn.getDate(),
+        CHECKIN_CUTOFF_HOUR,
+        0,
+        0
+    );
+
+    return new Date() >= cutoff ? "expired" : "waiting";
+};
+
 /** Lấy mốc thời gian đầu / cuối ngày hôm nay (ms) */
 const getTodayRange = () => {
     const now = new Date();
@@ -278,7 +298,7 @@ export const ModBookings = () => {
                         options={[
                             { value: "all", label: "All payments" },
                             { value: "paid", label: "Paid" },
-                            { value: "unpaid", label: "Unpaid / pending" },
+                            { value: "unpaid", label: "Unpaid / pending" }, // giữ như cũ: mọi thứ !paid
                         ]}
                     />
 
@@ -357,7 +377,17 @@ export const ModBookings = () => {
                                 );
 
                                 const isTodayImportant = flags.isStayingToday || flags.isCheckInToday || flags.isCheckOutToday;
-                                const paymentLabel = isPaid(b) ? "Paid" : "Pending";
+
+                                const payState = getPaymentState(b);
+                                const paymentLabel =
+                                    payState === "paid" ? "Paid" :
+                                        payState === "expired" ? "Expired" :
+                                            payState === "waiting" ? "Waiting" : "Unpaid";
+
+                                const paymentColor =
+                                    payState === "paid" ? "green" :
+                                        payState === "expired" ? "default" :
+                                            payState === "waiting" ? "gold" : "orange";
 
                                 return (
                                     <div
@@ -416,20 +446,15 @@ export const ModBookings = () => {
 
                                         {/* 5 */}
                                         <div className="flex justify-center">
-                                            <Tag color={isPaid(b) ? "green" : "orange"} className="m-0 text-[11px]">
+                                            <Tag color={paymentColor} className="m-0 text-[11px]">
                                                 {paymentLabel}
                                             </Tag>
                                         </div>
 
-                                        {/* 6 - ACTIONS icon-only giống ModRooms */}
+                                        {/* 6 */}
                                         <div className="flex justify-center gap-2">
                                             <Tooltip title="Edit">
-                                                <Button
-                                                    size="small"
-                                                    className="px-2"
-                                                    onClick={() => handleEditBooking(b)}
-                                                    aria-label="Edit booking"
-                                                >
+                                                <Button size="small" className="px-2" onClick={() => handleEditBooking(b)} aria-label="Edit booking">
                                                     <FaRegEdit />
                                                 </Button>
                                             </Tooltip>
@@ -459,13 +484,18 @@ export const ModBookings = () => {
                                 const checkInStr = b.checkIn ? new Date(b.checkIn).toLocaleDateString() : "N/A";
                                 const checkOutStr = b.checkOut ? new Date(b.checkOut).toLocaleDateString() : "N/A";
 
-                                const { text: todayStatusText, color: todayStatusColor } = classifyBookingByToday(
-                                    b,
-                                    todayStartMs,
-                                    todayEndMs
-                                );
+                                const { text: todayStatusText, color: todayStatusColor } = classifyBookingByToday(b, todayStartMs, todayEndMs);
 
-                                const paymentLabel = isPaid(b) ? "Paid" : "Pending";
+                                const payState = getPaymentState(b);
+                                const paymentLabel =
+                                    payState === "paid" ? "Paid" :
+                                        payState === "expired" ? "Expired" :
+                                            payState === "waiting" ? "Waiting" : "Unpaid";
+
+                                const paymentColor =
+                                    payState === "paid" ? "green" :
+                                        payState === "expired" ? "default" :
+                                            payState === "waiting" ? "gold" : "orange";
 
                                 return (
                                     <div key={b.id} className="rounded-2xl border border-black/5 bg-white/60 p-3">
@@ -506,7 +536,7 @@ export const ModBookings = () => {
                                                         </Tag>
                                                     ) : null}
 
-                                                    <Tag color={isPaid(b) ? "green" : "orange"} className="m-0 text-[11px]">
+                                                    <Tag color={paymentColor} className="m-0 text-[11px]">
                                                         {paymentLabel}
                                                     </Tag>
 
@@ -515,7 +545,6 @@ export const ModBookings = () => {
                                             </div>
                                         </div>
 
-                                        {/* Mobile actions: vẫn text cho dễ bấm (giữ như bạn) */}
                                         <div className="mt-3 grid grid-cols-2 gap-2">
                                             <Button size="small" onClick={() => handleEditBooking(b)}>
                                                 Edit

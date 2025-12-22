@@ -1,6 +1,6 @@
 // src/store/booking/slice.js
 import { createSlice } from "@reduxjs/toolkit";
-import { fetchAllBooking } from "./thunk";
+import { fetchAllBooking, fetchAllReviews } from "./thunk";
 
 /* ===================== Persist helpers ===================== */
 const CART_KEY = "sb_booking_cart_v2";
@@ -70,27 +70,20 @@ const computeLockedHotelIdFromSelected = (cart, selectedIds) => {
 export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
   name: "booking",
   initialState: {
-    // ===== Bookings from API =====
     bookings: [],
     loading: false,
     error: null,
-
-    // UI message for toast/alert (antd message, Modal, Alert...)
     message: "",
-
-    // ===== CART (multi-room) =====
-    cart: loadArr(CART_KEY), // [{ roomId, room, hotelId, ... }]
-    selectedIds: loadArr(SELECTED_KEY), // [roomId, ...]
-    lockedHotelId: loadLockedHotelId(), // hotelId currently "locked" for checkout
+    cart: loadArr(CART_KEY),
+    selectedIds: loadArr(SELECTED_KEY),
+    lockedHotelId: loadLockedHotelId(),
   },
 
   reducers: {
-    /* ===== utils ===== */
     clearMessage: (state) => {
       state.message = "";
     },
 
-    /* ===== Bookings list (keep) ===== */
     setBookings: (state, action) => {
       state.bookings = action.payload;
     },
@@ -102,10 +95,7 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       );
     },
 
-    /* ===================== CART ACTIONS ===================== */
-
-    // Add room to cart (if exists -> update)
-    // payload: { room, checkIn?, checkOut?, hotelName?, hotelAddress? }
+    // ===================== CART ACTIONS =====================
     addToCart: (state, action) => {
       state.message = "";
 
@@ -138,13 +128,12 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
 
       const nextItem = {
         roomId: room.id,
-        room, // keep full room for rendering
-        hotelId, // important for "same hotel" rule
+        room,
+        hotelId,
         checkIn,
         checkOut,
         nights,
         totalPrice,
-
         image: room.image,
         name: room.name,
         price: room.price,
@@ -156,18 +145,15 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       if (idx >= 0) state.cart[idx] = { ...state.cart[idx], ...nextItem };
       else state.cart.unshift(nextItem);
 
-      // Auto-select like e-commerce cart, but respect "same hotel" rule
       const alreadySelected = state.selectedIds.some(
         (id) => normalizeId(id) === normalizeId(room.id)
       );
 
       if (!alreadySelected) {
-        // If nothing selected yet -> lock to this hotel and select it
         if (!state.lockedHotelId && state.selectedIds.length === 0) {
           state.lockedHotelId = hotelId ?? null;
           state.selectedIds.push(room.id);
         } else {
-          // If locked and different hotel -> do not auto-select
           if (
             state.lockedHotelId != null &&
             hotelId != null &&
@@ -176,7 +162,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
             state.message =
               "You can only check out rooms from the same hotel. Please deselect rooms from other hotels.";
           } else {
-            // Same hotel / lock not set clearly -> select and set lock if needed
             if (!state.lockedHotelId) state.lockedHotelId = hotelId ?? null;
             state.selectedIds.push(room.id);
           }
@@ -188,8 +173,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Update dates in cart
-    // payload: { roomId, checkIn, checkOut }
     updateCartDates: (state, action) => {
       const { roomId, checkIn, checkOut } = action.payload || {};
       if (!roomId) return;
@@ -214,7 +197,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveArr(CART_KEY, state.cart);
     },
 
-    // Remove item from cart
     removeFromCart: (state, action) => {
       const roomId = action.payload;
 
@@ -225,7 +207,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
         (id) => normalizeId(id) !== normalizeId(roomId)
       );
 
-      // Recompute lock
       state.lockedHotelId = computeLockedHotelIdFromSelected(
         state.cart,
         state.selectedIds
@@ -236,7 +217,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Toggle select for checkout (same hotel rule)
     toggleSelect: (state, action) => {
       state.message = "";
 
@@ -248,28 +228,23 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       );
 
       if (exists) {
-        // Unselect
         state.selectedIds = state.selectedIds.filter(
           (id) => normalizeId(id) !== normalizeId(roomId)
         );
-        // If none selected -> unlock; else -> lock based on first selected
         state.lockedHotelId = computeLockedHotelIdFromSelected(
           state.cart,
           state.selectedIds
         );
       } else {
-        // Select -> validate hotel rule
         const item = state.cart.find(
           (x) => normalizeId(x.roomId) === normalizeId(roomId)
         );
         const hotelId = item?.hotelId ?? null;
 
-        // If nothing selected -> lock to this hotel and select it
         if (!state.lockedHotelId || state.selectedIds.length === 0) {
           state.lockedHotelId = hotelId ?? null;
           state.selectedIds.push(roomId);
         } else {
-          // Different hotel -> block
           if (
             state.lockedHotelId != null &&
             hotelId != null &&
@@ -287,7 +262,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Select all (only within the locked hotel)
     selectAll: (state) => {
       state.message = "";
 
@@ -299,18 +273,15 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
         return;
       }
 
-      // If not locked yet -> lock to the first item hotel
       const lock = state.lockedHotelId ?? state.cart[0]?.hotelId ?? null;
       state.lockedHotelId = lock;
 
-      // Select only rooms from the same hotel
       const next = state.cart
         .filter((x) => normalizeId(x.hotelId) === normalizeId(lock))
         .map((x) => x.roomId);
 
       state.selectedIds = next;
 
-      // If there are rooms from other hotels -> gentle notice
       const hasOther = state.cart.some(
         (x) => normalizeId(x.hotelId) !== normalizeId(lock)
       );
@@ -323,7 +294,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Clear all selected
     clearSelected: (state) => {
       state.selectedIds = [];
       state.lockedHotelId = null;
@@ -331,7 +301,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Clear entire cart
     clearCart: (state) => {
       state.cart = [];
       state.selectedIds = [];
@@ -342,7 +311,6 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
       saveLockedHotelId(state.lockedHotelId);
     },
 
-    // Optional: sync lock on app mount
     hydrateLockFromSelected: (state) => {
       state.lockedHotelId = computeLockedHotelIdFromSelected(
         state.cart,
@@ -354,6 +322,7 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
 
   extraReducers: (builder) => {
     builder
+      // ===== ADMIN: all bookings =====
       .addCase(fetchAllBooking.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -366,6 +335,21 @@ export const { actions: bookingAction, reducer: bookingReducer } = createSlice({
         state.loading = false;
         state.error =
           action.payload || action.error?.message || "Fetch bookings failed";
+      })
+
+      // ===== ✅ REVIEWS (LOGIN REQUIRED) =====
+      .addCase(fetchAllReviews.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllReviews.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = action.payload; // reuse bookings for Review.jsx
+      })
+      .addCase(fetchAllReviews.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error?.message || "Fetch reviews failed";
       });
   },
 });

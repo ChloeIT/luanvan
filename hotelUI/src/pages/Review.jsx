@@ -1,7 +1,7 @@
 // src/pages/Review.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAllBooking } from "@/store/booking/thunk";
+import { fetchAllReviews } from "@/store/booking/thunk"; // ✅ đổi thunk
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -59,7 +59,7 @@ const TestimonialCard = ({ item }) => {
         <img
           src={imgSrc}
           onError={() => setImgSrc(item.fallbackImage)}
-          alt={`Avatar`}
+          alt="Avatar"
           className="w-16 h-16 rounded-full object-cover ring-2 ring-yellow-200"
         />
         <span className="absolute -bottom-1 -right-1 text-[9px] bg-green-600 text-white px-1.5 py-[1px] rounded-full shadow">
@@ -117,10 +117,10 @@ const TestimonialCard = ({ item }) => {
 // ================= PAGE =================
 export const Review = () => {
   const dispatch = useDispatch();
-  const { bookings } = useSelector((s) => s.booking || {});
+  const { bookings, loading, error } = useSelector((s) => s.booking || {});
 
   useEffect(() => {
-    dispatch(fetchAllBooking());
+    dispatch(fetchAllReviews()); // ✅ đổi thunk gọi reviews
   }, [dispatch]);
 
   // Convert bookings -> testimonials
@@ -133,7 +133,7 @@ export const Review = () => {
         const r = b.review || {};
         const u = b.user || {};
 
-        let room = b.room || b.rooms?.[0] || b.bookingDetails?.[0]?.room || {};
+        const room = b.room || b.rooms?.[0] || b.bookingDetails?.[0]?.room || {};
         const hotel = room?.hotel || b.hotel || {};
 
         const avatar = buildUserImageUrl(u.image);
@@ -154,7 +154,6 @@ export const Review = () => {
       });
   }, [bookings]);
 
-  // Avg rating + total
   const { avgRating, totalReviews } = useMemo(() => {
     if (!testimonials.length) return { avgRating: 0, totalReviews: 0 };
     const sum = testimonials.reduce((a, t) => a + t.rating, 0);
@@ -170,25 +169,18 @@ export const Review = () => {
         {/* ===== Heading ===== */}
         <div className="text-center">
           <div className="sb-heading sb-heading--md mx-auto">
-            {/* lines left */}
             <span className="sb-heading__lines sb-heading__lines--left">
               <span className="sb-heading__line sb-heading__line--long" />
               <span className="sb-heading__line sb-heading__line--short" />
             </span>
 
-            {/* LABEL */}
             <h6
               className="sb-heading__label"
-              style={{
-                fontSize: "26px",      // 👈 to
-                fontWeight: 900,       // 👈 đậm
-                letterSpacing: "0.18em"
-              }}
+              style={{ fontSize: "26px", fontWeight: 900, letterSpacing: "0.18em" }}
             >
               Review
             </h6>
 
-            {/* lines right */}
             <span className="sb-heading__lines sb-heading__lines--right">
               <span className="sb-heading__line sb-heading__line--long" />
               <span className="sb-heading__line sb-heading__line--short" />
@@ -202,12 +194,20 @@ export const Review = () => {
           <p className="text-gray-600 text-sm mt-1">
             ⭐ {avgRating.toFixed(1)}/5 · {totalReviews} reviews · Verified guests
           </p>
-        </div>
 
+          {/* optional: show error */}
+          {error && (
+            <p className="text-red-500 text-sm mt-2">
+              {typeof error === "string" ? error : "Không lấy được reviews. Vui lòng đăng nhập."}
+            </p>
+          )}
+        </div>
 
         {/* ===== Swiper ===== */}
         <div className="mt-4">
-          {testimonials.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-600">Đang tải...</p>
+          ) : testimonials.length === 0 ? (
             <p className="text-center text-gray-600">Chưa có đánh giá nào.</p>
           ) : (
             <Swiper

@@ -34,6 +34,30 @@ export const MyBookings = () => {
         return String(str).split("T")[0];
     };
 
+    // ===== Payment UI theo Option B (cutoff 14:00 ngày check-in) =====
+    const CHECKIN_CUTOFF_HOUR = 14;
+
+    const getPaymentUi = (b) => {
+        const paid = !!b?.payment;
+        if (paid) return { state: "paid", text: "Paid", bg: "#28a745", color: "#fff" };
+
+        const checkIn = b?.checkIn ? new Date(b.checkIn) : null;
+        if (!checkIn) return { state: "unpaid", text: "Unpaid", bg: "#ff4d4f", color: "#fff" };
+
+        const cutoff = new Date(
+            checkIn.getFullYear(),
+            checkIn.getMonth(),
+            checkIn.getDate(),
+            CHECKIN_CUTOFF_HOUR,
+            0,
+            0
+        );
+
+        const expired = new Date() >= cutoff;
+        if (expired) return { state: "expired", text: "Expired", bg: "#6b7280", color: "#fff" };
+        return { state: "waiting", text: "Waiting", bg: "#faad14", color: "#111" };
+    };
+
     // ===== UI helpers (inline, không cần css) =====
     const pillStyle = (bg, color = "#111") => ({
         display: "inline-flex",
@@ -99,8 +123,8 @@ export const MyBookings = () => {
 
     // Debug (có thể xoá)
     useEffect(() => {
-        console.log("All bookings:", bookings);
-        console.log("My bookings:", myBookingsSorted);
+        // console.log("All bookings:", bookings);
+        // console.log("My bookings:", myBookingsSorted);
     }, [bookings, myBookingsSorted]);
 
     if (!user) {
@@ -166,7 +190,7 @@ export const MyBookings = () => {
     return (
         <div className="container-xxl py-5">
             <div className="container">
-                {/* ====== TIÊU ĐỀ (ĐỒNG BỘ UI) ====== */}
+                {/* ====== TITLE ====== */}
                 <div className="text-center mb-4">
                     <div className="sb-heading sb-heading--md mx-auto">
                         <span className="sb-heading__lines sb-heading__lines--left">
@@ -174,10 +198,7 @@ export const MyBookings = () => {
                             <span className="sb-heading__line sb-heading__line--short" />
                         </span>
 
-                        <h6
-                            className="sb-heading__label"
-                            style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "0.18em" }}
-                        >
+                        <h6 className="sb-heading__label" style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "0.18em" }}>
                             BOOKINGS
                         </h6>
 
@@ -199,13 +220,22 @@ export const MyBookings = () => {
                 {myBookingsSorted.map((b) => {
                     const room = b.rooms?.[0];
                     const hotel = room?.hotel || null;
-                    const isPaid = !!b.payment;
 
                     const checkOutDate = b.checkOut ? new Date(b.checkOut) : null;
                     const stayCompleted = !!(checkOutDate && checkOutDate.getTime() < now.getTime());
                     const hasReview = !!b.review;
 
                     const reviewPill = getReviewPill(stayCompleted, hasReview);
+                    const payUi = getPaymentUi(b);
+                    const isPaid = payUi.state === "paid";
+
+                    // Accent bar màu theo payment state
+                    const accent =
+                        payUi.state === "paid"
+                            ? "linear-gradient(180deg,#2ecc71,#1abc9c)"
+                            : payUi.state === "expired"
+                                ? "linear-gradient(180deg,#6b7280,#9ca3af)"
+                                : "linear-gradient(180deg,#faad14,#ffd666)"; // waiting/unpaid
 
                     return (
                         <div
@@ -215,7 +245,7 @@ export const MyBookings = () => {
                             onMouseLeave={() => setHoveredId(null)}
                             style={cardStyle(hoveredId === b.id)}
                         >
-                            {/* Accent bar trái */}
+                            {/* Accent bar */}
                             <div
                                 style={{
                                     position: "absolute",
@@ -223,9 +253,7 @@ export const MyBookings = () => {
                                     top: 0,
                                     bottom: 0,
                                     width: 8,
-                                    background: isPaid
-                                        ? "linear-gradient(180deg,#2ecc71,#1abc9c)"
-                                        : "linear-gradient(180deg,#ff4d4f,#ff7979)",
+                                    background: accent,
                                 }}
                             />
 
@@ -238,7 +266,7 @@ export const MyBookings = () => {
                                     background: "rgba(255,255,255,.35)",
                                 }}
                             >
-                                {/* Left header: booking id + status + paid */}
+                                {/* Left header */}
                                 <div className="d-flex flex-wrap align-items-center gap-2">
                                     <span style={softPillStyle()}>
                                         <span style={{ opacity: 0.65, letterSpacing: ".08em" }}>BOOKING</span>
@@ -247,9 +275,8 @@ export const MyBookings = () => {
 
                                     <span style={pillStyle(reviewPill.bg, reviewPill.color)}>{reviewPill.text}</span>
 
-                                    <span style={pillStyle(isPaid ? "#28a745" : "#ff4d4f", "#fff")}>
-                                        {isPaid ? "Paid" : "Unpaid"}
-                                    </span>
+                                    {/* ✅ Payment pill: Paid / Waiting / Expired */}
+                                    <span style={pillStyle(payUi.bg, payUi.color)}>{payUi.text}</span>
                                 </div>
 
                                 {/* Right header: dates */}
@@ -320,11 +347,8 @@ export const MyBookings = () => {
                                         )}
                                     </div>
 
-                                    {/* Right actions (responsive) */}
-                                    <div
-                                        className="d-flex flex-column gap-2 justify-content-end align-items-stretch"
-                                        style={{ minWidth: 220 }}
-                                    >
+                                    {/* Right actions */}
+                                    <div className="d-flex flex-column gap-2 justify-content-end align-items-stretch" style={{ minWidth: 220 }}>
                                         {isPaid && stayCompleted && !hasReview && (
                                             <Button
                                                 onClick={() => openReview(b, "create")}
@@ -401,11 +425,7 @@ export const MyBookings = () => {
                         <p className="mb-1" style={{ fontWeight: 600 }}>
                             Rating
                         </p>
-                        <Rate
-                            allowHalf
-                            value={reviewModal.rating}
-                            onChange={(val) => setReviewModal((s) => ({ ...s, rating: val }))}
-                        />
+                        <Rate allowHalf value={reviewModal.rating} onChange={(val) => setReviewModal((s) => ({ ...s, rating: val }))} />
                     </div>
 
                     <div>
