@@ -2,23 +2,28 @@
 import axios from "axios";
 import { authServices } from "./auth";
 
-const API_URL = import.meta.env.VITE_HOTEL_API;
+const API_URL = import.meta.env.VITE_HOTEL_API || "http://localhost:8080";
 const auth = () => authServices?.authHeader?.() || {};
 
 export const userServices = {
-  getAll: () =>
-    axios.get(`${API_URL}/api/user/all`, { headers: auth() }),
+  getAll: () => axios.get(`${API_URL}/api/user/all`, { headers: auth() }),
 
-  edit: (id, payload) => {
-    const isFormData = payload instanceof FormData;
-    const url = isFormData
-      ? `${API_URL}/api/user/edit/${id}/avatar`
-      : `${API_URL}/api/user/edit/${id}`;
-
-    return axios.put(url, payload, {
+  /** Update info (JSON) */
+  editInfo: (id, body) => {
+    return axios.put(`${API_URL}/api/user/edit/${id}`, body, {
       headers: {
         ...auth(),
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        "Content-Type": "application/json",
+      },
+    });
+  },
+
+  /** Update avatar (FormData) */
+  updateAvatar: (id, formData) => {
+    return axios.put(`${API_URL}/api/user/edit/${id}/avatar`, formData, {
+      headers: {
+        ...auth(),
+        // ❗ không set Content-Type cho FormData để axios tự set boundary
       },
     });
   },
@@ -26,11 +31,11 @@ export const userServices = {
   delete: (id) =>
     axios.delete(`${API_URL}/api/user/delete/${id}`, { headers: auth() }),
 
-  // Gửi đúng FormData FE đã build (có file, birthDate, roles,...)
   create: (formData) =>
     axios.post(`${API_URL}/api/user/create`, formData, {
       headers: {
-        ...auth(), // KHÔNG set Content-Type, để browser tự set boundary
+        ...auth(),
+        // ❗ không set Content-Type cho FormData
       },
     }),
 };

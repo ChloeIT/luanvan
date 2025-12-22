@@ -1,20 +1,21 @@
-// src/components/layouts/admin/AdRoom.jsx
+// src/components/layouts/admin/containers/AdRoom.jsx
 import React, { useMemo, useState } from "react";
-import { useSelector } from "react-redux";
-import { Avatar, Button, Table } from "antd";
+import { useDispatch, useSelector } from "react-redux";
+import { Avatar, Button, Table, Switch, message, Tooltip } from "antd";
 import Column from "antd/es/table/Column";
 import { useLocation, useNavigate } from "react-router-dom";
 import { IoLocationOutline } from "react-icons/io5";
 import { HomeOutlined } from "@ant-design/icons";
 
 import { AdEditRoom } from "./room/AdEditRoom";
-import { AdDeleteRoom } from "./room/AdDeleteRoom";
 import { AdAddRoom } from "./room/AdAddRoom";
+
+import { roomServices } from "../../../../services";
+import { roomAction } from "../../../../store/room/slice";
 
 /* ========= Helper: Discount info ========= */
 const getDiscountInfo = (room) => {
-  const raw =
-    room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
+  const raw = room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
 
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) return { value: 0, isActive: false };
@@ -44,19 +45,20 @@ const getDiscountInfo = (room) => {
 };
 
 export const AdRoom = () => {
+  const dispatch = useDispatch();
   const { rooms } = useSelector((state) => state.room);
   const { hotels } = useSelector((state) => state.hotel);
 
   const [isModalEditVisible, setIsModalEditVisible] = useState(false);
-  const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
   const [isModalAddVisible, setIsModalAddVisible] = useState(false);
   const [itemACtion, setItemACtion] = useState(null);
+
+  const [togglingId, setTogglingId] = useState(null);
 
   const { search } = useLocation();
   const navigate = useNavigate();
   const hotelId = new URLSearchParams(search).get("hotelId");
 
-  // Lọc rooms theo hotelId (rooms có field hotel.id)
   const { dataSource, hotelName, hotelAddress } = useMemo(() => {
     const allRooms = rooms || [];
 
@@ -78,10 +80,9 @@ export const AdRoom = () => {
     };
   }, [rooms, hotels, hotelId]);
 
-  /* ================= Pagination UI (FIX warning border/borderColor) ================= */
+  /* ================= Pagination UI ================= */
   const [page, setPage] = useState(1);
 
-  // ✅ Không dùng `border` shorthand nữa -> tránh warning
   const pagerBase = {
     backgroundColor: "#1677ff",
     borderWidth: 1,
@@ -122,11 +123,11 @@ export const AdRoom = () => {
   /* ================= Pills ================= */
   const basePill = {
     display: "inline-block",
-    padding: "4px 12px",
+    padding: "2px 10px",
     borderRadius: 9999,
     fontWeight: 700,
-    fontSize: 12,
-    lineHeight: "20px",
+    fontSize: 11,
+    lineHeight: "18px",
     boxShadow: "0 1px 0 rgba(0,0,0,.06)",
     whiteSpace: "nowrap",
   };
@@ -144,85 +145,76 @@ export const AdRoom = () => {
   const availabilityPill = (av) =>
     av ? { ...basePill, ...availabilityGreen } : { ...basePill, ...availabilityRed };
 
-  const pillBlue = { backgroundColor: "#BAE0FF", color: "#0958D9", border: "1px solid #69B1FF" };
-  const pillOrange = { backgroundColor: "#FFE7BA", color: "#AD4E00", border: "1px solid #FFC069" };
-  const pillIndigo = { backgroundColor: "#D6E4FF", color: "#1D39C4", border: "1px solid #ADC6FF" };
-  const pillPurple = { backgroundColor: "#EFDBFF", color: "#722ED1", border: "1px solid #D3ADF7" };
-  const pillDeepPurple = { backgroundColor: "#F9F0FF", color: "#531DAB", border: "1px solid #D3ADF7" };
-  const pillBrown = { backgroundColor: "#FFF2CC", color: "#AD6800", border: "1px solid #FFD666" };
-  const pillGray = { backgroundColor: "#F5F5F5", color: "#595959", border: "1px solid #D9D9D9" };
-
   const discountActivePill = {
     ...basePill,
     backgroundColor: "#FFF1B8",
     color: "#AD6800",
     border: "1px solid #FFD666",
-    fontSize: 11,
   };
   const discountScheduledPill = {
     ...basePill,
     backgroundColor: "#E6F4FF",
     color: "#0958D9",
     border: "1px solid #91CAFF",
-    fontSize: 11,
   };
   const discountNonePill = {
     ...basePill,
     backgroundColor: "#F5F5F5",
     color: "#8C8C8C",
     border: "1px solid #D9D9D9",
-    fontSize: 11,
   };
 
-  const typePillStyle = (raw) => {
-    const key = String(raw || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim();
-
-    if (/(vip|luxury)/.test(key)) return pillDeepPurple;
-    if (/(suite|executive\s*suite|business\s*suite)/.test(key)) return pillPurple;
-    if (/(deluxe|family\s*deluxe)/.test(key)) return pillOrange;
-    if (/(superior|premium|executive)/.test(key)) return pillIndigo;
-    if (/(standard|basic|single|twin|double)/.test(key)) return pillBlue;
-    if (/(budget|economy|compact)/.test(key)) return pillGray;
-    if (/(duplex|apartment|villa)/.test(key)) return pillBrown;
-
-    return pillGray;
-  };
-
-  const fmtPrice = (v) => v; // bạn có thể format VND
+  const fmtPrice = (v) => v;
 
   const handleEditRoom = (room) => {
     setItemACtion(room);
     setIsModalEditVisible(true);
   };
-  const handleDeleteRoom = (room) => {
-    setItemACtion(room);
-    setIsModalDeleteVisible(true);
-  };
+
   const handleAddRoom = () => {
     setItemACtion(null);
     setIsModalAddVisible(true);
+  };
+
+  const handleToggleAvailability = async (room, nextValue) => {
+    if (!room?.id) return;
+
+    try {
+      setTogglingId(room.id);
+
+      const res = await roomServices.setAvailability(room.id, nextValue);
+
+      const updatedRoom = res?.data?.data ?? res?.data?.room ?? res?.data;
+      const finalRoom = updatedRoom?.id ? updatedRoom : { ...room, availability: nextValue };
+
+      dispatch(roomAction.updateRooms(finalRoom));
+      message.success(`Room is now ${nextValue ? "available" : "maintenance"} ✅`);
+    } catch (err) {
+      console.error("Toggle availability error:", err);
+      message.error(err?.response?.data?.message || "Update availability failed.");
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   return (
     <div className="p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h2 className="text-2xl font-extrabold text-[#2a2a2a] flex items-center gap-2">
             Rooms of{" "}
             <span
               style={{
                 color: "var(--primary)",
-                fontSize: 26,
+                fontSize: 22,
                 fontWeight: 900,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                maxWidth: 600,
+                maxWidth: 520,
+                display: "inline-block",
+                verticalAlign: "bottom",
               }}
               title={hotelName || undefined}
             >
@@ -231,9 +223,9 @@ export const AdRoom = () => {
           </h2>
 
           {hotelId && hotelAddress && (
-            <p className="mt-1 text-sm text-gray-700 flex items-center gap-2">
+            <p className="mt-1 text-sm text-gray-700 flex items-center gap-2" style={{ minWidth: 0 }}>
               <IoLocationOutline />
-              <span className="block max-w-[520px] whitespace-nowrap overflow-hidden text-ellipsis">
+              <span className="block whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: 520 }}>
                 {hotelAddress}
               </span>
             </p>
@@ -244,15 +236,15 @@ export const AdRoom = () => {
           {hotelId && (
             <>
               <Button onClick={() => navigate("/admin/hotels")} icon={<HomeOutlined />}>
-                Back to Hotels
+                Back
               </Button>
               <Button onClick={() => navigate("/admin/rooms")} ghost>
-                Clear filter
+                Clear
               </Button>
             </>
           )}
           <Button type="primary" onClick={handleAddRoom}>
-            Add Room
+            Add
           </Button>
         </div>
       </div>
@@ -261,11 +253,6 @@ export const AdRoom = () => {
       <AdEditRoom
         isModalEditVisible={isModalEditVisible}
         setIsModalEditVisible={setIsModalEditVisible}
-        itemACtion={itemACtion}
-      />
-      <AdDeleteRoom
-        isModalDeleteVisible={isModalDeleteVisible}
-        setIsModalDeleteVisible={setIsModalDeleteVisible}
         itemACtion={itemACtion}
       />
       <AdAddRoom
@@ -278,7 +265,7 @@ export const AdRoom = () => {
         dataSource={dataSource}
         rowKey="id"
         className="themed-table themed-table--center"
-        scroll={{ x: 1100 }}
+        // ✅ bỏ scroll ngang để table tự co
         pagination={{
           current: page,
           onChange: setPage,
@@ -287,28 +274,45 @@ export const AdRoom = () => {
           itemRender,
         }}
       >
+        {/* ✅ Image nhỏ */}
         <Column
-          title="Image"
+          title="Img"
           dataIndex="image"
           key="image"
-          width={80}
+          width={56}
           align="center"
           render={(image) => (
             <Avatar
+              size={32}
               src={`${import.meta.env.VITE_IMAGE_URL}/rooms/${image}`}
               alt={`image ${image}`}
             />
           )}
         />
 
-        <Column title="Name" dataIndex="name" key="name" width={160} align="center" />
+        {/* ✅ Name ellipsis */}
+        <Column
+          title="Name"
+          dataIndex="name"
+          key="name"
+          width={160}
+          align="left"
+          ellipsis
+          render={(name) => (
+            <Tooltip title={name}>
+              <span style={{ fontWeight: 700 }}>{name}</span>
+            </Tooltip>
+          )}
+        />
 
+        {/* ✅ Hotel: chỉ hiện từ md trở lên để khỏi chật */}
         <Column
           title="Hotel"
           key="hotel"
-          width={220}
-          align="center"
+          width={160}
+          align="left"
           responsive={["md"]}
+          ellipsis
           render={(_, room) => {
             let resolvedHotelId = null;
             let resolvedHotelName = "";
@@ -324,21 +328,10 @@ export const AdRoom = () => {
               } else {
                 const possibleId = room.hotelId ?? room.hotel_id;
                 if (possibleId != null) {
-                  const byId = (hotels || []).find(
-                    (ht) => String(ht.id) === String(possibleId)
-                  );
+                  const byId = (hotels || []).find((ht) => String(ht.id) === String(possibleId));
                   if (byId) {
                     resolvedHotelId = byId.id;
                     resolvedHotelName = byId.name;
-                  }
-                }
-                if (!resolvedHotelId) {
-                  const byRoomInHotel = (hotels || []).find((ht) =>
-                    (ht.rooms || []).some((r) => String(r.id) === String(room.id))
-                  );
-                  if (byRoomInHotel) {
-                    resolvedHotelId = byRoomInHotel.id;
-                    resolvedHotelName = byRoomInHotel.name;
                   }
                 }
               }
@@ -347,108 +340,98 @@ export const AdRoom = () => {
             if (!resolvedHotelId) return "—";
 
             return (
-              <Button
-                type="link"
-                style={{ padding: 0 }}
-                onClick={() => navigate(`/hotel/${resolvedHotelId}`)}
-              >
-                {resolvedHotelName || `Hotel #${resolvedHotelId}`}
-              </Button>
+              <Tooltip title={resolvedHotelName || `Hotel #${resolvedHotelId}`}>
+                <Button
+                  type="link"
+                  style={{ padding: 0, maxWidth: 150 }}
+                  onClick={() => navigate(`/hotel/${resolvedHotelId}`)}
+                >
+                  <span style={{ display: "inline-block", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {resolvedHotelName || `Hotel #${resolvedHotelId}`}
+                  </span>
+                </Button>
+              </Tooltip>
             );
           }}
         />
 
+        {/* ✅ Price nhỏ */}
         <Column
           title="Price"
           dataIndex="price"
           key="price"
-          width={110}
-          align="center"
-          render={(v) => <span style={{ fontWeight: 700 }}>{fmtPrice(v)}</span>}
+          width={90}
+          align="right"
+          render={(v) => <span style={{ fontWeight: 800 }}>{fmtPrice(v)}</span>}
         />
 
+        {/* ✅ Discount: ẩn trên màn hình nhỏ */}
         <Column
-          title="Discount"
+          title="Disc"
           key="discount"
-          width={150}
+          width={90}
           align="center"
+          responsive={["sm"]}
           render={(_, room) => {
             const { value, isActive } = getDiscountInfo(room);
             if (value > 0) {
               const style = isActive ? discountActivePill : discountScheduledPill;
-              return (
-                <span style={style}>
-                  {value}% {isActive ? "Active" : "Scheduled"}
-                </span>
-              );
+              return <span style={style}>{value}%</span>;
             }
-            return <span style={discountNonePill}>No discount</span>;
+            return <span style={discountNonePill}>0%</span>;
           }}
         />
 
-        <Column title="Capacity" dataIndex="capacity" key="capacity" width={100} align="center" />
+        {/* ✅ Capacity nhỏ */}
+        <Column title="Cap" dataIndex="capacity" key="capacity" width={70} align="center" />
 
+        {/* ✅ Type: chỉ hiện từ lg trở lên để tránh rộng */}
         <Column
           title="Type"
           dataIndex="type"
           key="type"
-          width={230}
-          align="center"
-          responsive={["sm"]}
+          width={140}
+          align="left"
+          responsive={["lg"]}
+          ellipsis
           render={(type) => (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-              {String(type || "")
-                .split(",")
-                .map((t, i) => (
-                  <span key={i} style={{ ...basePill, ...typePillStyle(t) }}>
-                    {String(t).trim()}
-                  </span>
-                ))}
+            <Tooltip title={type}>
+              <span style={{ fontWeight: 600 }}>{type}</span>
+            </Tooltip>
+          )}
+        />
+
+        {/* ✅ Availability: gọn 1 dòng */}
+        <Column
+          title="Avail"
+          dataIndex="availability"
+          key="availability"
+          width={120}
+          align="center"
+          render={(av, room) => (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Switch
+                checked={Boolean(av)}
+                size="small"
+                loading={togglingId === room.id}
+                onChange={(checked) => handleToggleAvailability(room, checked)}
+              />
+              <span style={availabilityPill(Boolean(av))}>{av ? "ON" : "OFF"}</span>
             </div>
           )}
         />
 
-        <Column
-          title="Availability"
-          dataIndex="availability"
-          key="availability"
-          width={140}
-          align="center"
-          render={(av) => (
-            <span style={availabilityPill(Boolean(av))}>
-              {av ? "available" : "not available"}
-            </span>
-          )}
-        />
-
+        {/* ✅ Action nhỏ */}
         <Column
           title="Action"
           key="action"
-          width={120}
+          width={90}
           align="center"
-          fixed="right"
+          fixed={false}
           render={(_, room) => (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                alignItems: "center",
-              }}
-            >
-              <a
-                onClick={() => handleEditRoom(room)}
-                className="px-3 py-1 rounded-md font-medium text-white bg-blue-500 hover:bg-blue-600"
-              >
-                Edit
-              </a>
-              <a
-                onClick={() => handleDeleteRoom(room)}
-                className="px-3 py-1 rounded-md font-medium text-white bg-red-500 hover:bg-red-600"
-              >
-                Delete
-              </a>
-            </div>
+            <Button size="small" type="primary" onClick={() => handleEditRoom(room)}>
+              Edit
+            </Button>
           )}
         />
       </Table>
