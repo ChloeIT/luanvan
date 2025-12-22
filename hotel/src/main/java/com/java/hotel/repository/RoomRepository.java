@@ -13,26 +13,28 @@ import java.util.List;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
 
-    // Lấy danh sách Room theo list id (dùng cho BookingService)
     List<Room> findByIdIn(Collection<Long> ids);
 
-    // Lấy tất cả Room thuộc các hotel mà owner_id = :ownerId (ADMIN/MOD dashboard)
     @Query("SELECT r FROM Room r WHERE r.hotel.owner.id = :ownerId")
     List<Room> findByHotelOwnerId(@Param("ownerId") Long ownerId);
 
-    // ✅ NEW: ADMIN/MOD xem full rooms theo hotel (gồm availability true/false)
     List<Room> findByHotelId(Long hotelId);
 
-    // ✅ NEW: PUBLIC/Customer - rooms theo hotel chỉ lấy availability=true
     @Query("SELECT r FROM Room r WHERE r.hotel.id = :hotelId AND r.availability = true")
     List<Room> findByHotelIdActive(@Param("hotelId") Long hotelId);
 
-    // ✅ NEW: PUBLIC/Customer - all rooms chỉ lấy availability=true (Home/RoomsPage)
     @Query("SELECT r FROM Room r WHERE r.availability = true")
     List<Room> findAllActive();
 
-    // Lấy các phòng TRỐNG trong một khoảng thời gian cho 1 hotel
-    // ✅ Sửa: chỉ xét rooms availability=true
+    /**
+     * ✅ Available rooms (Option B):
+     * - Room phải availability=true
+     * - Room không được nằm trong các booking overlap "BLOCKING"
+     *   BLOCKING nếu:
+     *     (b.payment = true)  // PAID: luôn block
+     *     OR
+     *     (b.payment = false AND :now < cutoff(14:00 ngày check-in)) // UNPAID chỉ block trước cutoff
+     */
     @Query("""
            SELECT r
            FROM Room r
@@ -44,15 +46,22 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
                  JOIN b.rooms r2
                  WHERE b.checkOut > :checkIn
                    AND b.checkIn < :checkOut
+                   AND (
+                        b.payment = true
+                        OR (
+                            b.payment = false
+                            AND :now < function('timestamp', function('date', b.checkIn), '14:00:00')
+                        )
+                   )
              )
            """)
     List<Room> findAvailableRoomsForHotel(
             @Param("hotelId") Long hotelId,
             @Param("checkIn") LocalDateTime checkIn,
-            @Param("checkOut") LocalDateTime checkOut
+            @Param("checkOut") LocalDateTime checkOut,
+            @Param("now") LocalDateTime now
     );
 
-    // ✅ check FK booking_room -> room (room đã từng được đặt chưa)
     @Query(value = "SELECT EXISTS(SELECT 1 FROM booking_room br WHERE br.room_id = :roomId)", nativeQuery = true)
     int existsInBookingRoom(@Param("roomId") Long roomId);
 }

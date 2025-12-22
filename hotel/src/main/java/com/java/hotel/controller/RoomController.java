@@ -163,7 +163,6 @@ public class RoomController {
     }
 
     // ✅ NEW: ADMIN/MOD bật/tắt availability (dùng cho nút switch ở FE)
-    // VD: PATCH /api/room/12/availability?value=false
     @PatchMapping("/{id}/availability")
     @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
     public ResponseEntity<?> setAvailability(
@@ -221,7 +220,6 @@ public class RoomController {
     }
 
     // ⭐ Lấy tất cả room thuộc các hotel mà current user là owner (cho trang MOD)
-    // ✅ vẫn trả full rooms (true/false) để MOD quản lý
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
     public ResponseEntity<?> getMyRooms(@AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -231,14 +229,16 @@ public class RoomController {
     }
 
     // ⭐ PUBLIC – Lấy danh sách phòng TRỐNG của một hotel trong khoảng thời gian
-    // ✅ đã lọc availability=true ở query repository
+    // ✅ Option B: UNPAID chỉ block trước 14:00 ngày check-in (PAID luôn block)
     @GetMapping("/hotel/{hotelId}/available")
     public ResponseEntity<List<Room>> getAvailableRoomsForHotel(
             @PathVariable Long hotelId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkIn,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime checkOut
     ) {
-        List<Room> available = roomRepository.findAvailableRoomsForHotel(hotelId, checkIn, checkOut);
+        List<Room> available = roomRepository.findAvailableRoomsForHotel(
+                hotelId, checkIn, checkOut, LocalDateTime.now()
+        );
         return ResponseEntity.ok(available);
     }
 }

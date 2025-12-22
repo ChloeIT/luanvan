@@ -43,24 +43,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            """)
     List<Booking> findAllByHotelOwner(@Param("ownerId") Long ownerId);
 
-    // ====== CHECK TRÙNG NGÀY ======
+    // ==================================================
+    // ================  CHECK TRÙNG NGÀY  ===============
+    // ==================================================
 
     /**
-     * Dùng khi TẠO booking mới.
-     * Trùng nếu:
-     *   newCheckIn < existing.checkOut
-     *   AND
-     *   newCheckOut > existing.checkIn
+     * Lấy danh sách booking bị overlap theo roomId để Service tự filter theo rule:
+     *  - PAID: luôn blocking
+     *  - UNPAID: chỉ blocking nếu now < cutoff(14:00 ngày check-in)
      */
     @Query("""
-           SELECT (COUNT(b) > 0)
+           SELECT b
            FROM Booking b
            JOIN b.rooms r
            WHERE r.id = :roomId
              AND :checkIn < b.checkOut
              AND :checkOut > b.checkIn
            """)
-    boolean existsOverlappingBooking(
+    List<Booking> findOverlappingBookings(
             @Param("roomId") Long roomId,
             @Param("checkIn") LocalDateTime checkIn,
             @Param("checkOut") LocalDateTime checkOut
@@ -70,7 +70,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
      * Dùng khi UPDATE: bỏ qua chính booking đang sửa.
      */
     @Query("""
-           SELECT (COUNT(b) > 0)
+           SELECT b
            FROM Booking b
            JOIN b.rooms r
            WHERE r.id = :roomId
@@ -78,7 +78,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
              AND :checkIn < b.checkOut
              AND :checkOut > b.checkIn
            """)
-    boolean existsOverlappingBookingForUpdate(
+    List<Booking> findOverlappingBookingsForUpdate(
             @Param("bookingId") Long bookingId,
             @Param("roomId") Long roomId,
             @Param("checkIn") LocalDateTime checkIn,

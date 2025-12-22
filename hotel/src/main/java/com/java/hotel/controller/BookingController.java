@@ -23,7 +23,7 @@ public class BookingController {
 
     /* ========= CREATE BOOKING (USER / MOD / ADMIN) ========= */
     @PostMapping("/create")
-    @PreAuthorize("isAuthenticated()") // hoặc hasAnyRole('USER','MODERATOR','ADMIN')
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request) {
         try {
             Booking created = bookingService.createBooking(request);
@@ -40,7 +40,7 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /* ========= GET BY ID (ADMIN / tuỳ bạn cấu hình thêm quyền) ========= */
+    /* ========= GET BY ID (tùy bạn, currently: login required bởi SecurityFilterChain) ========= */
     @GetMapping("/{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
@@ -91,6 +91,7 @@ public class BookingController {
         }
     }
 
+    /* ========= OWNER / MOD VIEW ========= */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
     public ResponseEntity<?> getMyBookings() {
@@ -106,6 +107,22 @@ public class BookingController {
     // ==================================================
     // ====================  REVIEW  ====================
     // ==================================================
+
+    /**
+     * ✅ GET ALL REVIEWS (LOGIN REQUIRED)
+     * - USER / MOD / ADMIN đều xem được
+     * - Guest (chưa login) không xem được
+     * - Trả về danh sách Booking có review (đã join rooms & hotel)
+     */
+    @GetMapping("/reviews")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getAllReviewsForPage() {
+        List<Booking> all = bookingService.getAllBookings();
+        List<Booking> withReview = all.stream()
+                .filter(b -> b.getReview() != null)
+                .toList();
+        return ResponseEntity.ok(withReview);
+    }
 
     /* ========= CREATE REVIEW (USER) ========= */
     @PostMapping("/{id}/review")

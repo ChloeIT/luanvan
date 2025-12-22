@@ -12,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -31,37 +33,57 @@ public class BookingService {
     @Autowired
     private EmailService emailService;
 
-    // Dùng để lưu loyalty cho user
     @Autowired
     private UserRepository userRepository;
+
+    // ==============================
+    // OPTION B: cutoff 14:00 check-in
+    // ==============================
+    private static final LocalTime CHECKIN_CUTOFF_TIME = LocalTime.of(14, 0);
+
+    /**
+     * Booking có "block room" hay không?
+     * - PAID: luôn block
+     * - UNPAID: chỉ block nếu hiện tại vẫn trước 14:00 ngày check-in
+     */
+    private boolean isBlockingBooking(Booking b) {
+        if (b == null) return false;
+
+        // PAID luôn block
+        if (b.isPayment()) return true;
+
+        // UNPAID: chỉ block trước cutoff
+        if (b.getCheckIn() == null) return false;
+
+        LocalDate checkInDate = b.getCheckIn().toLocalDate();
+        LocalDateTime cutoff = checkInDate.atTime(CHECKIN_CUTOFF_TIME);
+
+        return LocalDateTime.now().isBefore(cutoff);
+    }
+
+    /**
+     * Có booking overlap nào thực sự block room không?
+     */
+    private boolean hasBlockingConflict(List<Booking> overlapped) {
+        if (overlapped == null || overlapped.isEmpty()) return false;
+        return overlapped.stream().anyMatch(this::isBlockingBooking);
+    }
 
     // ==================================================
     // ===============   CREATE BOOKING   ===============
     // ==================================================
-
-    /**
-     * Tạo booking mới từ BookingRequest:
-     *  - Lấy user hiện tại
-     *  - Load Room từ roomIds
-     *  - Check trùng ngày cho từng room
-     *  - Sau khi lưu thành công -> Gửi email xác nhận (KHÁCH + OWNER)
-     *  - Cộng điểm loyalty cho user nếu booking đã thanh toán
-     */
     @Transactional
     public Booking createBooking(BookingRequest request)
             throws ExecutionException, InterruptedException {
 
-        // 1. Lấy user hiện tại
         User currentUser = storeService.getCurrentUser();
 
-        // 2. Validate ngày nhận / trả
         LocalDateTime checkIn = request.getCheckIn();
         LocalDateTime checkOut = request.getCheckOut();
         if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
             throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        // 3. Lấy danh sách roomId từ request
         Set<Long> roomIds = (request.getRoomIds() != null)
                 ? new HashSet<>(request.getRoomIds())
                 : Collections.emptySet();
@@ -70,46 +92,42 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // 4. Load Room từ DB theo roomIds
         Set<Room> rooms = new HashSet<>(roomRepository.findByIdIn(roomIds));
         if (rooms.isEmpty()) {
             throw new IllegalArgumentException("Rooms not found");
         }
 
-        // 5. Check trùng ngày cho từng room
+        // ✅ SỬA CHÍNH Ở ĐÂY: check trùng ngày theo rule blocking (PAID luôn block, UNPAID chỉ block trước 14:00)
         for (Room room : rooms) {
-            // phòng bị disable
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
             }
 
-            boolean conflict = bookingRepository.existsOverlappingBooking(
+            List<Booking> overlapped = bookingRepository.findOverlappingBookings(
                     room.getId(), checkIn, checkOut
             );
-            if (conflict) {
+
+            if (hasBlockingConflict(overlapped)) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
                 );
             }
         }
 
-        // 6. Map DTO -> Entity Booking
         Booking booking = new Booking();
         booking.setCheckIn(checkIn);
         booking.setCheckOut(checkOut);
         booking.setTotalPrice(request.getTotalPrice());
-        booking.setPayment(request.isPayment());
+        booking.setPayment(request.isPayment()); // PAID true / UNPAID false
         booking.setUser(currentUser);
         booking.setRooms(rooms);
 
-        // 7. Lưu vào DB
         Booking saved = bookingRepository.save(booking);
 
-        // 7.1 LOYALTY PROGRAM: cộng điểm cho user nếu đã thanh toán
-        // (Nếu muốn cộng điểm ngay khi tạo booking, bỏ điều kiện saved.isPayment())
+        // LOYALTY: chỉ cộng khi đã thanh toán
         if (currentUser != null && saved.isPayment()) {
-            float totalPrice = saved.getTotalPrice();           // total_price trong DB là float
-            int pointsEarned = calculatePoints(totalPrice);     // tính điểm từ tổng tiền
+            float totalPrice = saved.getTotalPrice();
+            int pointsEarned = calculatePoints(totalPrice);
 
             Integer oldPoints = Optional.ofNullable(currentUser.getLoyaltyPoints()).orElse(0);
             int newPoints = oldPoints + pointsEarned;
@@ -120,15 +138,10 @@ public class BookingService {
             userRepository.save(currentUser);
         }
 
-        // 8. Gửi email (KHÔNG được làm hỏng booking nếu email lỗi)
         try {
-            // 1) Mail cho KHÁCH (Booking Confirmation)
             emailService.sendBookingConfirmation(saved);
-
-            // 2) Mail cho HOTEL OWNER / MOD khi có booking mới
             emailService.sendNewBookingToOwner(saved);
         } catch (Exception e) {
-            // chỉ log, không ném ra để tránh rollback / trả 400
             e.printStackTrace();
         }
 
@@ -138,13 +151,10 @@ public class BookingService {
     // ==================================================
     // =====================  READ  =====================
     // ==================================================
-
-    /** Lấy tất cả booking (đã join rooms & hotel) – dùng cho ADMIN. */
     public List<Booking> getAllBookings() {
         return bookingRepository.findAllWithRoomsAndHotel();
     }
 
-    /** Lấy booking theo id (đã join rooms & hotel). */
     public Booking getBookingById(Long id) {
         return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
     }
@@ -152,8 +162,6 @@ public class BookingService {
     // ==================================================
     // ================  EDIT PAYMENT  ==================
     // ==================================================
-
-    /** Chỉ cập nhật trường payment (đã thanh toán / chưa thanh toán). */
     @Transactional
     public Booking editBookingPayment(Long id, boolean payment) {
         return bookingRepository.findById(id)
@@ -167,7 +175,6 @@ public class BookingService {
     // ==================================================
     // ====================  UPDATE  ====================
     // ==================================================
-
     @Transactional
     public Booking updateBooking(Long id, BookingRequest request) throws Exception {
         Booking existingBooking = bookingRepository.findById(id)
@@ -184,7 +191,6 @@ public class BookingService {
         existingBooking.setTotalPrice(request.getTotalPrice());
         existingBooking.setPayment(request.isPayment());
 
-        // Cập nhật rooms nếu FE gửi roomIds
         if (request.getRoomIds() != null) {
             Set<Room> newRooms = new HashSet<>();
             if (!request.getRoomIds().isEmpty()) {
@@ -198,19 +204,20 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // Check trùng ngày khi UPDATE (bỏ qua chính nó)
+        // ✅ SỬA CHÍNH Ở ĐÂY: update cũng check theo rule blocking
         for (Room room : rooms) {
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
             }
 
-            boolean conflict = bookingRepository.existsOverlappingBookingForUpdate(
+            List<Booking> overlapped = bookingRepository.findOverlappingBookingsForUpdate(
                     existingBooking.getId(),
                     room.getId(),
                     checkIn,
                     checkOut
             );
-            if (conflict) {
+
+            if (hasBlockingConflict(overlapped)) {
                 throw new RuntimeException(
                         "Room " + room.getName() + " is already booked in this date range"
                 );
@@ -223,7 +230,6 @@ public class BookingService {
     // ==================================================
     // ====================  DELETE  ====================
     // ==================================================
-
     @Transactional
     public void deleteBooking(Long id) {
         if (!bookingRepository.existsById(id)) {
@@ -235,16 +241,12 @@ public class BookingService {
     // ==================================================
     // ===========  DÙNG CHO MOD / OWNER VIEW  ==========
     // ==================================================
-
-    /** Lấy booking theo ownerId – dùng cho MOD / OWNER. */
     public List<Booking> getBookingsByHotelOwner(Long ownerId) {
         return bookingRepository.findAllByHotelOwner(ownerId);
     }
 
-    /** Lấy booking theo hotel owner là user hiện tại (endpoint /api/booking/my). */
     public List<Booking> getBookingsByHotelOwnerForCurrentUser()
             throws ExecutionException, InterruptedException {
-
         User currentUser = storeService.getCurrentUser();
         return bookingRepository.findAllByHotelOwner(currentUser.getId());
     }
@@ -252,14 +254,6 @@ public class BookingService {
     // ==================================================
     // ====================  REVIEW  ====================
     // ==================================================
-
-    /**
-     * Tạo review cho booking:
-     *  - Chỉ chủ booking được review
-     *  - Booking phải đã thanh toán
-     *  - Booking đã check-out
-     *  - Chưa có review trước đó
-     */
     @Transactional
     public Review createReview(Long bookingId, float rating, String comment)
             throws ExecutionException, InterruptedException {
@@ -269,24 +263,20 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Check chủ booking
         if (booking.getUser() == null ||
                 !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
             throw new RuntimeException("You cannot review someone else's booking");
         }
 
-        // Check đã thanh toán
         if (!booking.isPayment()) {
             throw new RuntimeException("Booking not paid yet");
         }
 
-        // Check đã check-out
         if (booking.getCheckOut() == null ||
                 booking.getCheckOut().isAfter(LocalDateTime.now())) {
             throw new RuntimeException("Stay not completed yet");
         }
 
-        // Check đã có review chưa
         if (booking.getReview() != null) {
             throw new RuntimeException("Review already exists for this booking");
         }
@@ -304,9 +294,6 @@ public class BookingService {
         return saved.getReview();
     }
 
-    /**
-     * Cập nhật review của booking (cho phép edit).
-     */
     @Transactional
     public Review updateReview(Long bookingId, float rating, String comment)
             throws ExecutionException, InterruptedException {
@@ -316,7 +303,6 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // Check chủ booking
         if (booking.getUser() == null ||
                 !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
             throw new RuntimeException("You cannot edit someone else's review");
@@ -338,21 +324,11 @@ public class BookingService {
     // ==================================================
     // ============= LOYALTY HELPER METHODS =============
     // ==================================================
-
-    /**
-     * Rule: 1 điểm cho mỗi 10 đơn vị tiền (ví dụ 10.000 VND).
-     */
     private int calculatePoints(float totalPrice) {
         if (totalPrice <= 0) return 0;
-        return (int) (totalPrice / 10f);   // 🔥 chia 10
+        return (int) (totalPrice / 10f);
     }
 
-    /**
-     * Tier:
-     *  - < 10   điểm  -> BRONZE
-     *  - 10–99  điểm  -> SILVER
-     *  - >= 100 điểm  -> GOLD
-     */
     private String calculateTier(int points) {
         if (points >= 100) return "GOLD";
         if (points >= 10)  return "SILVER";
