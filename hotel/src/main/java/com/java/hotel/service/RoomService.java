@@ -5,6 +5,8 @@ import com.java.hotel.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,5 +45,15 @@ public class RoomService {
         } else {
             throw new Exception("Room not found");
         }
+    }
+
+    // ✅ NEW: bật/tắt availability (soft delete / restore)
+    public Room setAvailability(Long id, boolean value) throws Exception {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new Exception("Room not found"));
+
+        room.setAvailability(value);
+        room.setUpdate_at(Date.valueOf(LocalDate.now()));
+        return roomRepository.save(room);
     }
 }
