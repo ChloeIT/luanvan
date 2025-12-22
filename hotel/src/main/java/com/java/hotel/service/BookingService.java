@@ -1,3 +1,4 @@
+// src/main/java/com/java/hotel/service/BookingService.java
 package com.java.hotel.service;
 
 import com.java.hotel.model.Booking;
@@ -41,18 +42,10 @@ public class BookingService {
     // ==============================
     private static final LocalTime CHECKIN_CUTOFF_TIME = LocalTime.of(14, 0);
 
-    /**
-     * Booking có "block room" hay không?
-     * - PAID: luôn block
-     * - UNPAID: chỉ block nếu hiện tại vẫn trước 14:00 ngày check-in
-     */
     private boolean isBlockingBooking(Booking b) {
         if (b == null) return false;
+        if (b.isPayment()) return true; // PAID luôn block
 
-        // PAID luôn block
-        if (b.isPayment()) return true;
-
-        // UNPAID: chỉ block trước cutoff
         if (b.getCheckIn() == null) return false;
 
         LocalDate checkInDate = b.getCheckIn().toLocalDate();
@@ -61,9 +54,6 @@ public class BookingService {
         return LocalDateTime.now().isBefore(cutoff);
     }
 
-    /**
-     * Có booking overlap nào thực sự block room không?
-     */
     private boolean hasBlockingConflict(List<Booking> overlapped) {
         if (overlapped == null || overlapped.isEmpty()) return false;
         return overlapped.stream().anyMatch(this::isBlockingBooking);
@@ -84,21 +74,39 @@ public class BookingService {
             throw new IllegalArgumentException("Invalid check-in/check-out time");
         }
 
-        Set<Long> roomIds = (request.getRoomIds() != null)
-                ? new HashSet<>(request.getRoomIds())
-                : Collections.emptySet();
+        // ✅ sort roomIds để lock/check theo thứ tự cố định -> giảm deadlock
+        List<Long> roomIdList = (request.getRoomIds() != null)
+                ? new ArrayList<>(request.getRoomIds())
+                : new ArrayList<>();
 
-        if (roomIds.isEmpty()) {
+        roomIdList.removeIf(Objects::isNull);
+        roomIdList = roomIdList.stream().distinct().sorted().toList();
+
+        if (roomIdList.isEmpty()) {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        Set<Room> rooms = new HashSet<>(roomRepository.findByIdIn(roomIds));
-        if (rooms.isEmpty()) {
+        List<Room> foundRooms = roomRepository.findByIdIn(new HashSet<>(roomIdList));
+        if (foundRooms == null || foundRooms.isEmpty()) {
             throw new IllegalArgumentException("Rooms not found");
         }
 
-        // ✅ SỬA CHÍNH Ở ĐÂY: check trùng ngày theo rule blocking (PAID luôn block, UNPAID chỉ block trước 14:00)
-        for (Room room : rooms) {
+        Map<Long, Room> roomMap = new HashMap<>();
+        for (Room r : foundRooms) {
+            if (r != null && r.getId() != null) roomMap.put(r.getId(), r);
+        }
+
+        Set<Room> rooms = new HashSet<>();
+        for (Long rid : roomIdList) {
+            Room room = roomMap.get(rid);
+            if (room == null) throw new IllegalArgumentException("Room not found: " + rid);
+            rooms.add(room);
+        }
+
+        // ✅ check overlap theo rule blocking
+        for (Long rid : roomIdList) {
+            Room room = roomMap.get(rid);
+
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
             }
@@ -118,24 +126,27 @@ public class BookingService {
         booking.setCheckIn(checkIn);
         booking.setCheckOut(checkOut);
         booking.setTotalPrice(request.getTotalPrice());
-        booking.setPayment(request.isPayment()); // PAID true / UNPAID false
+        booking.setPayment(request.isPayment());
         booking.setUser(currentUser);
         booking.setRooms(rooms);
 
         Booking saved = bookingRepository.save(booking);
 
-        // LOYALTY: chỉ cộng khi đã thanh toán
+        // ✅ LOYALTY: fetch user từ DB (managed entity) rồi update loyalty fields
         if (currentUser != null && saved.isPayment()) {
             float totalPrice = saved.getTotalPrice();
             int pointsEarned = calculatePoints(totalPrice);
 
-            Integer oldPoints = Optional.ofNullable(currentUser.getLoyaltyPoints()).orElse(0);
+            User dbUser = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Integer oldPoints = Optional.ofNullable(dbUser.getLoyaltyPoints()).orElse(0);
             int newPoints = oldPoints + pointsEarned;
 
-            currentUser.setLoyaltyPoints(newPoints);
-            currentUser.setLoyaltyTier(calculateTier(newPoints));
+            dbUser.setLoyaltyPoints(newPoints);
+            dbUser.setLoyaltyTier(calculateTier(newPoints));
 
-            userRepository.save(currentUser);
+            userRepository.save(dbUser);
         }
 
         try {
@@ -157,6 +168,12 @@ public class BookingService {
 
     public Booking getBookingById(Long id) {
         return bookingRepository.findByIdWithRoomsAndHotel(id).orElse(null);
+    }
+
+    // ✅ USER: get my bookings
+    public List<Booking> getBookingsForCurrentUser() throws ExecutionException, InterruptedException {
+        User currentUser = storeService.getCurrentUser();
+        return bookingRepository.findAllByUserId(currentUser.getId());
     }
 
     // ==================================================
@@ -204,7 +221,6 @@ public class BookingService {
             throw new IllegalArgumentException("Booking must contain at least one room");
         }
 
-        // ✅ SỬA CHÍNH Ở ĐÂY: update cũng check theo rule blocking
         for (Room room : rooms) {
             if (Boolean.FALSE.equals(room.getAvailability())) {
                 throw new RuntimeException("Room " + room.getName() + " is disabled");
@@ -263,8 +279,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (booking.getUser() == null ||
-                !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
+        if (booking.getUser() == null || !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
             throw new RuntimeException("You cannot review someone else's booking");
         }
 
@@ -272,8 +287,7 @@ public class BookingService {
             throw new RuntimeException("Booking not paid yet");
         }
 
-        if (booking.getCheckOut() == null ||
-                booking.getCheckOut().isAfter(LocalDateTime.now())) {
+        if (booking.getCheckOut() == null || booking.getCheckOut().isAfter(LocalDateTime.now())) {
             throw new RuntimeException("Stay not completed yet");
         }
 
@@ -303,8 +317,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        if (booking.getUser() == null ||
-                !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
+        if (booking.getUser() == null || !Objects.equals(booking.getUser().getId(), currentUser.getId())) {
             throw new RuntimeException("You cannot edit someone else's review");
         }
 
@@ -331,7 +344,7 @@ public class BookingService {
 
     private String calculateTier(int points) {
         if (points >= 100) return "GOLD";
-        if (points >= 10)  return "SILVER";
+        if (points >= 10) return "SILVER";
         return "BRONZE";
     }
 }

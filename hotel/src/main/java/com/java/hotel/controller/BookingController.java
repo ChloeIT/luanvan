@@ -1,3 +1,4 @@
+// src/main/java/com/java/hotel/controller/BookingController.java
 package com.java.hotel.controller;
 
 import com.java.hotel.model.Booking;
@@ -40,37 +41,39 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
-    /* ========= GET BY ID (tùy bạn, currently: login required bởi SecurityFilterChain) ========= */
+    /* ========= GET MY BOOKINGS (USER / MOD / ADMIN) ========= */
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyBookingsForUser() {
+        try {
+            return ResponseEntity.ok(bookingService.getBookingsForCurrentUser());
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /* ========= GET BY ID (login required bởi SecurityFilterChain) ========= */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
-        if (booking == null) {
-            return ResponseEntity.notFound().build();
-        }
+        if (booking == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(booking);
     }
 
     /* ========= EDIT PAYMENT (ADMIN) ========= */
     @PutMapping("/{id}/payment")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> editPayment(
-            @PathVariable Long id,
-            @RequestParam boolean payment
-    ) {
+    public ResponseEntity<?> editPayment(@PathVariable Long id, @RequestParam boolean payment) {
         Booking updated = bookingService.editBookingPayment(id, payment);
-        if (updated == null) {
-            return ResponseEntity.notFound().build();
-        }
+        if (updated == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(updated);
     }
 
     /* ========= UPDATE BOOKING (ADMIN) ========= */
     @PutMapping("/edit/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateBooking(
-            @PathVariable Long id,
-            @RequestBody BookingRequest request
-    ) {
+    public ResponseEntity<?> updateBooking(@PathVariable Long id, @RequestBody BookingRequest request) {
         try {
             Booking updated = bookingService.updateBooking(id, request);
             return ResponseEntity.ok(updated);
@@ -94,11 +97,9 @@ public class BookingController {
     /* ========= OWNER / MOD VIEW ========= */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('MODERATOR','ADMIN')")
-    public ResponseEntity<?> getMyBookings() {
+    public ResponseEntity<?> getMyBookingsForOwner() {
         try {
-            return ResponseEntity.ok(
-                    bookingService.getBookingsByHotelOwnerForCurrentUser()
-            );
+            return ResponseEntity.ok(bookingService.getBookingsByHotelOwnerForCurrentUser());
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -118,28 +119,19 @@ public class BookingController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getAllReviewsForPage() {
         List<Booking> all = bookingService.getAllBookings();
-        List<Booking> withReview = all.stream()
-                .filter(b -> b.getReview() != null)
-                .toList();
+        List<Booking> withReview = all.stream().filter(b -> b.getReview() != null).toList();
         return ResponseEntity.ok(withReview);
     }
 
     /* ========= CREATE REVIEW (USER) ========= */
     @PostMapping("/{id}/review")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> createReview(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> body
-    ) {
+    public ResponseEntity<?> createReview(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Object ratingObj = body.get("rating");
-            float rating = ratingObj != null
-                    ? Float.parseFloat(ratingObj.toString())
-                    : 5.0f;
+            float rating = ratingObj != null ? Float.parseFloat(ratingObj.toString()) : 5.0f;
 
-            String comment = body.get("comment") != null
-                    ? body.get("comment").toString()
-                    : "";
+            String comment = body.get("comment") != null ? body.get("comment").toString() : "";
 
             Review review = bookingService.createReview(id, rating, comment);
             return ResponseEntity.ok(review);
@@ -151,19 +143,12 @@ public class BookingController {
     /* ========= UPDATE REVIEW (USER) ========= */
     @PutMapping("/{id}/review")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> updateReview(
-            @PathVariable Long id,
-            @RequestBody Map<String, Object> body
-    ) {
+    public ResponseEntity<?> updateReview(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
             Object ratingObj = body.get("rating");
-            float rating = ratingObj != null
-                    ? Float.parseFloat(ratingObj.toString())
-                    : 5.0f;
+            float rating = ratingObj != null ? Float.parseFloat(ratingObj.toString()) : 5.0f;
 
-            String comment = body.get("comment") != null
-                    ? body.get("comment").toString()
-                    : "";
+            String comment = body.get("comment") != null ? body.get("comment").toString() : "";
 
             Review review = bookingService.updateReview(id, rating, comment);
             return ResponseEntity.ok(review);

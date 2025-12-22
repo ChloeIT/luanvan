@@ -1,3 +1,4 @@
+// src/main/java/com/java/hotel/repository/BookingRepository.java
 package com.java.hotel.repository;
 
 import com.java.hotel.model.Booking;
@@ -14,19 +15,21 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // ====== FETCH JOIN DÙNG CHO ADMIN / MOD ======
-
     @Query("""
            SELECT DISTINCT b
            FROM Booking b
+           LEFT JOIN FETCH b.user u
            LEFT JOIN FETCH b.rooms r
            LEFT JOIN FETCH r.hotel
            LEFT JOIN FETCH b.review
+           ORDER BY b.checkIn DESC
            """)
     List<Booking> findAllWithRoomsAndHotel();
 
     @Query("""
-           SELECT b
+           SELECT DISTINCT b
            FROM Booking b
+           LEFT JOIN FETCH b.user u
            LEFT JOIN FETCH b.rooms r
            LEFT JOIN FETCH r.hotel
            LEFT JOIN FETCH b.review
@@ -39,19 +42,32 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            FROM Booking b
            JOIN b.rooms r
            JOIN r.hotel h
+           LEFT JOIN FETCH b.user u
+           LEFT JOIN FETCH b.review
+           LEFT JOIN FETCH b.rooms rr
+           LEFT JOIN FETCH rr.hotel
            WHERE h.owner.id = :ownerId
+           ORDER BY b.checkIn DESC
            """)
     List<Booking> findAllByHotelOwner(@Param("ownerId") Long ownerId);
+
+    // ✅ USER: chỉ lấy booking của user hiện tại (có join rooms + hotel + review + user)
+    @Query("""
+           SELECT DISTINCT b
+           FROM Booking b
+           LEFT JOIN FETCH b.user u
+           LEFT JOIN FETCH b.rooms r
+           LEFT JOIN FETCH r.hotel
+           LEFT JOIN FETCH b.review
+           WHERE u.id = :userId
+           ORDER BY b.checkIn DESC
+           """)
+    List<Booking> findAllByUserId(@Param("userId") Long userId);
+
 
     // ==================================================
     // ================  CHECK TRÙNG NGÀY  ===============
     // ==================================================
-
-    /**
-     * Lấy danh sách booking bị overlap theo roomId để Service tự filter theo rule:
-     *  - PAID: luôn blocking
-     *  - UNPAID: chỉ blocking nếu now < cutoff(14:00 ngày check-in)
-     */
     @Query("""
            SELECT b
            FROM Booking b
@@ -66,9 +82,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("checkOut") LocalDateTime checkOut
     );
 
-    /**
-     * Dùng khi UPDATE: bỏ qua chính booking đang sửa.
-     */
     @Query("""
            SELECT b
            FROM Booking b
