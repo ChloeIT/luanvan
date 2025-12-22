@@ -1,16 +1,17 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Input, Select, Button, Tag, Tooltip, message, Spin } from "antd";
+import { Input, Select, Button, Tag, Tooltip, message, Spin, Switch } from "antd";
 import { MdOutlineBedroomParent } from "react-icons/md";
-import { FaRegEdit, FaRegTrashAlt } from "react-icons/fa";
+import { FaRegEdit } from "react-icons/fa";
 
 import { roomServices } from "../../../../services";
+// ⚠️ Nếu project bạn không export roomAction từ "../../../../store"
+// thì đổi lại đúng path bạn đang dùng, ví dụ: "../../../../store/room/slice"
 import { roomAction } from "../../../../store";
 
 // Mod modals
 import { ModAddRoom } from "./room/ModAddRoom";
 import { ModEditRoom } from "./room/ModEditRoom";
-import { ModDeleteRoom } from "./room/ModDeleteRoom";
 
 const { Search } = Input;
 
@@ -91,10 +92,8 @@ const getDiscountInfo = (room) => {
 const buildDiscountTooltip = (info) => {
     if (!info || info.percent <= 0 || info.state === "none") return "No discount";
 
-    const range = [
-        info.startRaw ? formatDateShort(info.startRaw) : null,
-        info.endRaw ? formatDateShort(info.endRaw) : null,
-    ].filter(Boolean);
+    const range = [info.startRaw ? formatDateShort(info.startRaw) : null, info.endRaw ? formatDateShort(info.endRaw) : null]
+        .filter(Boolean);
 
     let stateLabel = "";
     if (info.state === "active") stateLabel = "Currently active";
@@ -122,9 +121,11 @@ export const ModRooms = () => {
     const [fetching, setFetching] = useState(false);
 
     const [isModalEditVisible, setIsModalEditVisible] = useState(false);
-    const [isModalDeleteVisible, setIsModalDeleteVisible] = useState(false);
     const [isModalAddVisible, setIsModalAddVisible] = useState(false);
     const [itemACtion, setItemACtion] = useState(null);
+
+    // ✅ loading khi toggle theo roomId
+    const [togglingId, setTogglingId] = useState(null);
 
     const fetchRooms = useCallback(async () => {
         setFetching(true);
@@ -188,22 +189,39 @@ export const ModRooms = () => {
         setIsModalEditVisible(true);
     };
 
-    const handleDeleteRoom = (room) => {
-        setItemACtion(room);
-        setIsModalDeleteVisible(true);
-    };
-
     const handleAddRoom = () => {
         setItemACtion(null);
         setIsModalAddVisible(true);
     };
 
+    // ✅ Toggle availability (thay delete)
+    const handleToggleAvailability = async (room, nextValue) => {
+        if (!room?.id) return;
+
+        try {
+            setTogglingId(room.id);
+
+            const res = await roomServices.setAvailability(room.id, nextValue);
+            const updatedRoom = res?.data?.data ?? res?.data?.room ?? res?.data;
+
+            const finalRoom = updatedRoom?.id ? updatedRoom : { ...room, availability: nextValue };
+
+            dispatch(roomAction.updateRooms(finalRoom));
+            message.success(`Room is now ${nextValue ? "available" : "maintenance"} ✅`);
+        } catch (err) {
+            console.error("Toggle availability error:", err);
+            message.error(err?.response?.data?.message || "Update availability failed.");
+        } finally {
+            setTogglingId(null);
+        }
+    };
+
     /* ========= GRID TEMPLATES =========
-       xl (1280px): ROOM | CAPACITY | PRICE | DISCOUNT | STATUS | ACTIONS  (ẩn TYPE)
-       2xl (>=1536px): ROOM | TYPE | CAPACITY | PRICE | DISCOUNT | STATUS | ACTIONS
+       xl (1280px): ROOM | CAPACITY | PRICE | DISCOUNT | STATUS | AVAI | ACTIONS
+       2xl (>=1536px): ROOM | TYPE | CAPACITY | PRICE | DISCOUNT | STATUS | AVAI | ACTIONS
     */
-    const GRID_XL = "grid-cols-[2.6fr_0.8fr_0.9fr_1.1fr_1fr_1.1fr]";
-    const GRID_2XL = "grid-cols-[2.4fr_1fr_0.8fr_0.9fr_1.1fr_1fr_1.1fr]";
+    const GRID_XL = "grid-cols-[2.4fr_0.8fr_0.9fr_1.1fr_0.9fr_1fr_0.8fr]";
+    const GRID_2XL = "grid-cols-[2.1fr_0.9fr_0.8fr_0.9fr_1.1fr_0.9fr_1fr_0.8fr]";
 
     return (
         <div className="p-3 sm:p-4 space-y-4">
@@ -214,15 +232,6 @@ export const ModRooms = () => {
                 itemACtion={itemACtion}
                 onUpdated={() => {
                     message.success("Room updated.");
-                    fetchRooms();
-                }}
-            />
-            <ModDeleteRoom
-                isModalDeleteVisible={isModalDeleteVisible}
-                setIsModalDeleteVisible={setIsModalDeleteVisible}
-                itemACtion={itemACtion}
-                onDeleted={() => {
-                    message.success("Room deleted.");
                     fetchRooms();
                 }}
             />
@@ -306,7 +315,7 @@ export const ModRooms = () => {
                         options={[
                             { value: "all", label: "All status" },
                             { value: "available", label: "Available" },
-                            { value: "unavailable", label: "In use / closed" },
+                            { value: "unavailable", label: "Unavailable" },
                         ]}
                     />
 
@@ -339,12 +348,7 @@ export const ModRooms = () => {
                     <>
                         {/* ===================== DESKTOP TABLE (xl+) ===================== */}
                         <div className="hidden xl:block space-y-2">
-                            <div
-                                className={[
-                                    "grid items-center gap-2 px-4 pb-2 border-b border-black/5",
-                                    `${GRID_XL} 2xl:${GRID_2XL}`,
-                                ].join(" ")}
-                            >
+                            <div className={["grid items-center gap-2 px-4 pb-2 border-b border-black/5", `${GRID_XL} 2xl:${GRID_2XL}`].join(" ")}>
                                 <div className="text-left font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
                                     ROOM
                                 </div>
@@ -354,11 +358,9 @@ export const ModRooms = () => {
                                     TYPE
                                 </div>
 
-                                {/* ✅ CAPACITY: hiện từ xl */}
                                 <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
                                     CAPACITY
                                 </div>
-
                                 <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
                                     PRICE
                                 </div>
@@ -367,6 +369,9 @@ export const ModRooms = () => {
                                 </div>
                                 <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
                                     STATUS
+                                </div>
+                                <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
+                                    AVAI
                                 </div>
                                 <div className="text-center font-bold text-sm tracking-wide" style={{ color: "var(--text)" }}>
                                     ACTIONS
@@ -384,10 +389,7 @@ export const ModRooms = () => {
                                 return (
                                     <div
                                         key={room.id}
-                                        className={[
-                                            "grid items-center gap-2 px-4 py-2 rounded-xl hover:bg-black/5 transition",
-                                            `${GRID_XL} 2xl:${GRID_2XL}`,
-                                        ].join(" ")}
+                                        className={["grid items-center gap-2 px-4 py-2 rounded-xl hover:bg-black/5 transition", `${GRID_XL} 2xl:${GRID_2XL}`].join(" ")}
                                     >
                                         {/* ROOM */}
                                         <div className="flex items-center gap-2 min-w-0">
@@ -395,25 +397,17 @@ export const ModRooms = () => {
                                                 <RoomImage fileName={room.image} alt={room.name} />
                                             </div>
                                             <div className="min-w-0">
-                                                <div
-                                                    className="text-sm font-semibold truncate leading-tight"
-                                                    style={{ color: "var(--primary)" }}
-                                                    title={room.name}
-                                                >
+                                                <div className="text-sm font-semibold truncate leading-tight" style={{ color: "var(--primary)" }} title={room.name}>
                                                     {room.name}
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* TYPE chỉ 2xl */}
-                                        <div className="hidden 2xl:block text-xs text-center truncate">
-                                            {room.type || "Unspecified"}
-                                        </div>
+                                        <div className="hidden 2xl:block text-xs text-center truncate">{room.type || "Unspecified"}</div>
 
-                                        {/* ✅ CAPACITY */}
-                                        <div className="text-xs text-center whitespace-nowrap">
-                                            {room.capacity} guests
-                                        </div>
+                                        {/* CAPACITY */}
+                                        <div className="text-xs text-center whitespace-nowrap">{room.capacity} guests</div>
 
                                         {/* PRICE */}
                                         <div className="text-xs font-semibold text-center whitespace-nowrap">${room.price}</div>
@@ -429,30 +423,29 @@ export const ModRooms = () => {
                                             )}
                                         </div>
 
-                                        {/* STATUS */}
+                                        {/* STATUS TAG */}
                                         <div className="flex justify-center">
                                             <Tag color={room.availability ? "green" : "red"} className="m-0 text-[11px]">
-                                                {room.availability ? "Available" : "Unavailable"}
+                                                {room.availability ? "Available" : "Maintenance"}
                                             </Tag>
                                         </div>
 
-                                        {/* ACTIONS icon-only */}
-                                        <div className="flex justify-center gap-2">
+                                        {/* ✅ AVAI SWITCH */}
+                                        <div className="flex justify-center">
+                                            <Switch
+                                                checked={Boolean(room.availability)}
+                                                loading={togglingId === room.id}
+                                                checkedChildren="ON"
+                                                unCheckedChildren="OFF"
+                                                onChange={(checked) => handleToggleAvailability(room, checked)}
+                                            />
+                                        </div>
+
+                                        {/* ACTIONS */}
+                                        <div className="flex justify-center">
                                             <Tooltip title="Edit">
                                                 <Button size="small" className="px-2" onClick={() => handleEditRoom(room)} aria-label="Edit room">
                                                     <FaRegEdit />
-                                                </Button>
-                                            </Tooltip>
-
-                                            <Tooltip title="Delete">
-                                                <Button
-                                                    size="small"
-                                                    danger
-                                                    className="px-2"
-                                                    onClick={() => handleDeleteRoom(room)}
-                                                    aria-label="Delete room"
-                                                >
-                                                    <FaRegTrashAlt />
                                                 </Button>
                                             </Tooltip>
                                         </div>
@@ -499,19 +492,26 @@ export const ModRooms = () => {
                                                     )}
 
                                                     <Tag color={room.availability ? "green" : "red"} className="m-0 text-[11px] ml-auto">
-                                                        {room.availability ? "Available" : "Unavailable"}
+                                                        {room.availability ? "Available" : "Maintenance"}
                                                     </Tag>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                        {/* ✅ Toggle + Edit */}
+                                        <div className="mt-3 grid grid-cols-2 gap-2 items-center">
                                             <Button size="small" onClick={() => handleEditRoom(room)}>
                                                 Edit
                                             </Button>
-                                            <Button size="small" danger onClick={() => handleDeleteRoom(room)}>
-                                                Delete
-                                            </Button>
+
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span className="text-[11px] opacity-70">Avai</span>
+                                                <Switch
+                                                    checked={Boolean(room.availability)}
+                                                    loading={togglingId === room.id}
+                                                    onChange={(checked) => handleToggleAvailability(room, checked)}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 );

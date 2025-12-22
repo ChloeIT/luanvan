@@ -2,44 +2,33 @@
 import axios from "axios";
 import { authServices } from "./auth";
 
-const API_URL = import.meta.env.VITE_HOTEL_API; // ví dụ: http://localhost:8080
+const API_URL = import.meta.env.VITE_HOTEL_API; // vd: http://localhost:8080
 
 export const roomServices = {
-  // ===================== GET =====================
-  getAll: () => {
-    return axios.get(API_URL + "/api/room/all");
-  },
+  getAll: () => axios.get(API_URL + "/api/room/all"),
 
-  // ===================== CREATE =====================
-  create: (formData) => {
-    return axios.post(API_URL + "/api/room/create", formData, {
+  create: (formData) =>
+    axios.post(API_URL + "/api/room/create", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
         ...authServices.authHeader(),
       },
-    });
-  },
+    }),
 
-  // ===================== EDIT =====================
-  edit: (id, roomUpdate) => {
-    return axios.put(API_URL + `/api/room/edit/${id}`, roomUpdate, {
+  edit: (id, roomUpdate) =>
+    axios.put(API_URL + `/api/room/edit/${id}`, roomUpdate, {
       headers: authServices.authHeader(),
-    });
-  },
+    }),
 
-  // ===================== DELETE (KHÔNG DÙNG NỮA NHƯNG GIỮ LẠI) =====================
-  delete: (id) => {
-    return axios.delete(API_URL + `/api/room/delete/${id}`, {
+  // ✅ NEW: toggle availability (avai)
+  setAvailability: (id, value) =>
+    axios.patch(API_URL + `/api/room/${id}/availability?value=${value}`, null, {
       headers: authServices.authHeader(),
-    });
-  },
+    }),
 
-  // ===================== ⭐ NEW: TOGGLE AVAILABILITY =====================
-  // PATCH /api/room/{id}/availability?value=true|false
-  setAvailability: (id, value) => {
-    return axios.patch(API_URL + `/api/room/${id}/availability`, null, {
-      params: { value }, // true / false
+  // (có thể giữ để phòng khi cần, nhưng UI sẽ không dùng nữa)
+  delete: (id) =>
+    axios.delete(API_URL + `/api/room/delete/${id}`, {
       headers: authServices.authHeader(),
-    });
-  },
+    }),
 };

@@ -13,35 +13,78 @@ import { AdAddRoom } from "./room/AdAddRoom";
 import { roomServices } from "../../../../services";
 import { roomAction } from "../../../../store/room/slice";
 
-/* ========= Helper: Discount info ========= */
+/* ========= DISCOUNT HELPERS (like MOD) ========= */
+const formatDateShort = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 const getDiscountInfo = (room) => {
-  const raw = room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
+  const raw =
+    room?.discountPercent ?? room?.discount_percent ?? room?.discount ?? 0;
+  const percent = Number(raw);
 
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) return { value: 0, isActive: false };
+  if (!Number.isFinite(percent) || percent <= 0) {
+    return {
+      percent: 0,
+      state: "none",
+      startRaw: null,
+      endRaw: null,
+      label: "0%",
+    };
+  }
 
-  const start = room.discountStart ?? room.discount_start ?? null;
-  const end = room.discountEnd ?? room.discount_end ?? null;
+  const startRaw = room.discountStart ?? room.discount_start ?? null;
+  const endRaw = room.discountEnd ?? room.discount_end ?? null;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const toDate = (d) => {
-    if (!d) return null;
-    const dt = new Date(d);
-    if (Number.isNaN(dt.getTime())) return null;
-    dt.setHours(0, 0, 0, 0);
-    return dt;
+  const toDate = (v) => {
+    if (!v) return null;
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
   };
 
-  const startDate = toDate(start);
-  const endDate = toDate(end);
+  const start = toDate(startRaw);
+  const end = toDate(endRaw);
 
-  let isActive = true;
-  if (startDate && today < startDate) isActive = false;
-  if (endDate && today > endDate) isActive = false;
+  let state = "active";
+  if (start && today < start) state = "scheduled";
+  else if (end && today > end) state = "expired";
 
-  return { value, isActive };
+  let label = `${percent}% Active`;
+  if (state === "scheduled") label = `${percent}% Scheduled`;
+  if (state === "expired") label = `${percent}% Ended`;
+
+  return { percent, state, startRaw, endRaw, label };
+};
+
+const buildDiscountTooltip = (info) => {
+  if (!info || info.percent <= 0 || info.state === "none") return "No discount";
+
+  const range = [
+    info.startRaw ? formatDateShort(info.startRaw) : null,
+    info.endRaw ? formatDateShort(info.endRaw) : null,
+  ].filter(Boolean);
+
+  let stateLabel = "";
+  if (info.state === "active") stateLabel = "Currently active";
+  if (info.state === "scheduled") stateLabel = "Scheduled period";
+  if (info.state === "expired") stateLabel = "Ended period";
+
+  if (range.length === 2)
+    return `${info.percent}% • ${stateLabel} (${range[0]} → ${range[1]})`;
+  if (range.length === 1)
+    return `${info.percent}% • ${stateLabel} (${range[0]})`;
+  return `${info.percent}% • ${stateLabel}`;
 };
 
 export const AdRoom = () => {
@@ -143,19 +186,28 @@ export const AdRoom = () => {
     border: "1px solid #FF7875",
   };
   const availabilityPill = (av) =>
-    av ? { ...basePill, ...availabilityGreen } : { ...basePill, ...availabilityRed };
+    av
+      ? { ...basePill, ...availabilityGreen }
+      : { ...basePill, ...availabilityRed };
 
+  // Discount pill colors theo state (giống MOD)
   const discountActivePill = {
     ...basePill,
-    backgroundColor: "#FFF1B8",
-    color: "#AD6800",
-    border: "1px solid #FFD666",
+    backgroundColor: "#D1FAE5",
+    color: "#047857",
+    border: "1px solid #A7F3D0",
   };
   const discountScheduledPill = {
     ...basePill,
-    backgroundColor: "#E6F4FF",
-    color: "#0958D9",
-    border: "1px solid #91CAFF",
+    backgroundColor: "#FEF3C7",
+    color: "#B45309",
+    border: "1px solid #FDE68A",
+  };
+  const discountExpiredPill = {
+    ...basePill,
+    backgroundColor: "#F5F5F5",
+    color: "#737373",
+    border: "1px solid #E5E5E5",
   };
   const discountNonePill = {
     ...basePill,
@@ -185,13 +237,19 @@ export const AdRoom = () => {
       const res = await roomServices.setAvailability(room.id, nextValue);
 
       const updatedRoom = res?.data?.data ?? res?.data?.room ?? res?.data;
-      const finalRoom = updatedRoom?.id ? updatedRoom : { ...room, availability: nextValue };
+      const finalRoom = updatedRoom?.id
+        ? updatedRoom
+        : { ...room, availability: nextValue };
 
       dispatch(roomAction.updateRooms(finalRoom));
-      message.success(`Room is now ${nextValue ? "available" : "maintenance"} ✅`);
+      message.success(
+        `Room is now ${nextValue ? "available" : "maintenance"} ✅`
+      );
     } catch (err) {
       console.error("Toggle availability error:", err);
-      message.error(err?.response?.data?.message || "Update availability failed.");
+      message.error(
+        err?.response?.data?.message || "Update availability failed."
+      );
     } finally {
       setTogglingId(null);
     }
@@ -223,9 +281,15 @@ export const AdRoom = () => {
           </h2>
 
           {hotelId && hotelAddress && (
-            <p className="mt-1 text-sm text-gray-700 flex items-center gap-2" style={{ minWidth: 0 }}>
+            <p
+              className="mt-1 text-sm text-gray-700 flex items-center gap-2"
+              style={{ minWidth: 0 }}
+            >
               <IoLocationOutline />
-              <span className="block whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: 520 }}>
+              <span
+                className="block whitespace-nowrap overflow-hidden text-ellipsis"
+                style={{ maxWidth: 520 }}
+              >
                 {hotelAddress}
               </span>
             </p>
@@ -235,7 +299,10 @@ export const AdRoom = () => {
         <div className="flex items-center gap-2">
           {hotelId && (
             <>
-              <Button onClick={() => navigate("/admin/hotels")} icon={<HomeOutlined />}>
+              <Button
+                onClick={() => navigate("/admin/hotels")}
+                icon={<HomeOutlined />}
+              >
                 Back
               </Button>
               <Button onClick={() => navigate("/admin/rooms")} ghost>
@@ -265,7 +332,6 @@ export const AdRoom = () => {
         dataSource={dataSource}
         rowKey="id"
         className="themed-table themed-table--center"
-        // ✅ bỏ scroll ngang để table tự co
         pagination={{
           current: page,
           onChange: setPage,
@@ -274,7 +340,6 @@ export const AdRoom = () => {
           itemRender,
         }}
       >
-        {/* ✅ Image nhỏ */}
         <Column
           title="Img"
           dataIndex="image"
@@ -290,7 +355,6 @@ export const AdRoom = () => {
           )}
         />
 
-        {/* ✅ Name ellipsis */}
         <Column
           title="Name"
           dataIndex="name"
@@ -305,7 +369,6 @@ export const AdRoom = () => {
           )}
         />
 
-        {/* ✅ Hotel: chỉ hiện từ md trở lên để khỏi chật */}
         <Column
           title="Hotel"
           key="hotel"
@@ -328,7 +391,9 @@ export const AdRoom = () => {
               } else {
                 const possibleId = room.hotelId ?? room.hotel_id;
                 if (possibleId != null) {
-                  const byId = (hotels || []).find((ht) => String(ht.id) === String(possibleId));
+                  const byId = (hotels || []).find(
+                    (ht) => String(ht.id) === String(possibleId)
+                  );
                   if (byId) {
                     resolvedHotelId = byId.id;
                     resolvedHotelName = byId.name;
@@ -346,7 +411,14 @@ export const AdRoom = () => {
                   style={{ padding: 0, maxWidth: 150 }}
                   onClick={() => navigate(`/hotel/${resolvedHotelId}`)}
                 >
-                  <span style={{ display: "inline-block", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      maxWidth: 150,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
                     {resolvedHotelName || `Hotel #${resolvedHotelId}`}
                   </span>
                 </Button>
@@ -355,7 +427,6 @@ export const AdRoom = () => {
           }}
         />
 
-        {/* ✅ Price nhỏ */}
         <Column
           title="Price"
           dataIndex="price"
@@ -365,27 +436,40 @@ export const AdRoom = () => {
           render={(v) => <span style={{ fontWeight: 800 }}>{fmtPrice(v)}</span>}
         />
 
-        {/* ✅ Discount: ẩn trên màn hình nhỏ */}
+        {/* ✅ Discount: hiển thị giống MOD (tooltip có thời gian) */}
         <Column
           title="Disc"
           key="discount"
-          width={90}
+          width={130}
           align="center"
           responsive={["sm"]}
           render={(_, room) => {
-            const { value, isActive } = getDiscountInfo(room);
-            if (value > 0) {
-              const style = isActive ? discountActivePill : discountScheduledPill;
-              return <span style={style}>{value}%</span>;
+            const info = getDiscountInfo(room);
+
+            if (info.percent <= 0) {
+              return <span style={discountNonePill}>No</span>;
             }
-            return <span style={discountNonePill}>0%</span>;
+
+            let style = discountActivePill;
+            if (info.state === "scheduled") style = discountScheduledPill;
+            if (info.state === "expired") style = discountExpiredPill;
+
+            return (
+              <Tooltip title={buildDiscountTooltip(info)}>
+                <span style={style}>{info.label}</span>
+              </Tooltip>
+            );
           }}
         />
 
-        {/* ✅ Capacity nhỏ */}
-        <Column title="Cap" dataIndex="capacity" key="capacity" width={70} align="center" />
+        <Column
+          title="Cap"
+          dataIndex="capacity"
+          key="capacity"
+          width={70}
+          align="center"
+        />
 
-        {/* ✅ Type: chỉ hiện từ lg trở lên để tránh rộng */}
         <Column
           title="Type"
           dataIndex="type"
@@ -401,7 +485,6 @@ export const AdRoom = () => {
           )}
         />
 
-        {/* ✅ Availability: gọn 1 dòng */}
         <Column
           title="Avail"
           dataIndex="availability"
@@ -409,27 +492,38 @@ export const AdRoom = () => {
           width={120}
           align="center"
           render={(av, room) => (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
               <Switch
                 checked={Boolean(av)}
                 size="small"
                 loading={togglingId === room.id}
                 onChange={(checked) => handleToggleAvailability(room, checked)}
               />
-              <span style={availabilityPill(Boolean(av))}>{av ? "ON" : "OFF"}</span>
+              <span style={availabilityPill(Boolean(av))}>
+                {av ? "ON" : "OFF"}
+              </span>
             </div>
           )}
         />
 
-        {/* ✅ Action nhỏ */}
         <Column
           title="Action"
           key="action"
           width={90}
           align="center"
-          fixed={false}
           render={(_, room) => (
-            <Button size="small" type="primary" onClick={() => handleEditRoom(room)}>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => handleEditRoom(room)}
+            >
               Edit
             </Button>
           )}
