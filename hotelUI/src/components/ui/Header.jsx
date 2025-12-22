@@ -9,6 +9,8 @@ import { authServices } from "../../services/auth";
 import { authAction } from "../../store";
 import { SearchInput } from "./search/SearchInput";
 import { FiSun, FiMoon } from "react-icons/fi";
+import { bookingAction } from "../../store/booking";
+
 
 export const Header = () => {
   const { user } = useSelector((s) => s.auth);
@@ -114,9 +116,17 @@ export const Header = () => {
           <span
             onClick={() => {
               closeMobileMenu();
-              dispatch(authAction.setUser(null));
+
+              // ✅ Clear booking redux state ngay lập tức (không cần reload)
+              dispatch(bookingAction.clearCart());
+
+              // ✅ Clear auth + localStorage (auth slice đã clear booking persist nếu bạn làm)
+              dispatch(authAction.logout());
+
+              // optional
               authServices.logout();
             }}
+
             style={{ cursor: "pointer" }}
           >
             Logout

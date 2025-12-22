@@ -18,6 +18,16 @@ const savePersistedUser = (user) => {
   } catch {}
 };
 
+/** ✅ Clear booking persist (cart/selected/lock + draft checkout data) */
+const clearBookingPersist = () => {
+  try {
+    localStorage.removeItem("sb_booking_cart_v2");
+    localStorage.removeItem("sb_booking_selected_v2");
+    localStorage.removeItem("sb_booking_locked_hotel_v2");
+    localStorage.removeItem("bookData"); // bạn set ở BookingItem -> onProceed
+  } catch {}
+};
+
 export const { actions: authAction, reducer: authReducer } = createSlice({
   name: "auth",
   initialState: {
@@ -71,13 +81,16 @@ export const { actions: authAction, reducer: authReducer } = createSlice({
       savePersistedUser(state.user);
     },
 
-    /** logout: clear store + localStorage */
+    /** ✅ logout: clear auth + clear booking cart in localStorage */
     logout: (state) => {
       state.user = null;
       state.loading = false;
       state.error = null;
       state.message = "";
       savePersistedUser(null);
+
+      // ✅ FIX: tránh dính cart của user trước
+      clearBookingPersist();
     },
   },
 
