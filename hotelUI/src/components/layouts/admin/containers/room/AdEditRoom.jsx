@@ -23,8 +23,6 @@ export const AdEditRoom = ({
   const [type, setType] = useState("");
   const [capacity, setCapacity] = useState("");
   const [availability, setAvailability] = useState(false);
-  const [create_at, setCreate_at] = useState("");
-  const [update_at, setUpdate_at] = useState("");
 
   // DISCOUNT
   const [discountPercent, setDiscountPercent] = useState("");
@@ -44,6 +42,7 @@ export const AdEditRoom = ({
   // reset when close
   useEffect(() => {
     if (isModalEditVisible) return;
+
     setSaving(false);
     setImage("");
     setName("");
@@ -51,8 +50,7 @@ export const AdEditRoom = ({
     setType("");
     setCapacity("");
     setAvailability(false);
-    setCreate_at("");
-    setUpdate_at("");
+
     setDiscountPercent("");
     setDiscountStart("");
     setDiscountEnd("");
@@ -68,8 +66,6 @@ export const AdEditRoom = ({
     setCapacity(itemACtion.capacity ?? "");
     setType(itemACtion.type ?? "");
     setAvailability(Boolean(itemACtion.availability));
-    setCreate_at(itemACtion.create_at ?? "");
-    setUpdate_at(itemACtion.update_at ?? "");
 
     const rawDiscount =
       itemACtion.discountPercent ??
@@ -87,7 +83,6 @@ export const AdEditRoom = ({
 
   const previewSrc = useMemo(() => {
     if (!image) return "";
-    // nếu user nhập full url thì dùng luôn
     if (/^https?:\/\//i.test(image)) return image;
     return `${IMAGE_URL}/rooms/${image}`;
   }, [IMAGE_URL, image]);
@@ -104,10 +99,6 @@ export const AdEditRoom = ({
       image: String(image || "").trim(),
       type: String(type || "").trim(),
       availability: Boolean(availability),
-
-      // nếu BE quản lý 2 field này thì bạn có thể bỏ (tuỳ hệ thống)
-      create_at,
-      update_at,
 
       discountPercent: Number.isNaN(dp) ? 0 : dp,
       discountStart: discountStart || null, // "YYYY-MM-DD"
@@ -135,7 +126,6 @@ export const AdEditRoom = ({
       return false;
     }
 
-    // nếu có set % > 0 thì khuyên nên có ngày (không bắt buộc)
     if (payload.discountPercent > 0) {
       if (!payload.discountStart || !payload.discountEnd) {
         message.info("Tip: set both Start and End for discount period.");
@@ -162,12 +152,14 @@ export const AdEditRoom = ({
 
       const res = await roomServices.edit(itemACtion.id, payload);
 
-      // ✅ handle payload shape linh hoạt: room | {data: room} | {room: room}
+      // handle response shape: room | {data: room} | {room: room}
       const updatedRoom = res?.data?.data ?? res?.data?.room ?? res?.data;
 
       if (!updatedRoom?.id) {
         console.log("EDIT ROOM RESPONSE (unexpected):", res?.data);
-        message.success("Updated, but response format is unexpected. Check console.");
+        message.success(
+          "Updated, but response format is unexpected. Check console."
+        );
       } else {
         dispatch(roomAction.updateRooms(updatedRoom));
         message.success("Updated room successfully ✅");
@@ -176,7 +168,9 @@ export const AdEditRoom = ({
       setIsModalEditVisible(false);
     } catch (err) {
       console.error("Error updating room:", err);
-      message.error(err?.response?.data?.message || "Update failed. Please try again.");
+      message.error(
+        err?.response?.data?.message || "Update failed. Please try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -263,7 +257,7 @@ export const AdEditRoom = ({
         />
       </div>
 
-      {/* Availability (đổi sang Select cho đỡ nhập true/false) */}
+      {/* Availability */}
       <div className="flex items-center mb-2" style={{ gap: 10 }}>
         <p className="min-w-20">Availability</p>
         <Select
@@ -275,17 +269,6 @@ export const AdEditRoom = ({
             { value: "false", label: "false" },
           ]}
         />
-      </div>
-
-      {/* Nếu bạn không cần cho admin sửa 2 field này thì có thể xoá luôn */}
-      <div className="flex items-center mb-2">
-        <p className="min-w-20">create_at</p>
-        <Input value={create_at} onChange={(e) => setCreate_at(e.target.value)} />
-      </div>
-
-      <div className="flex items-center">
-        <p className="min-w-20">update_at</p>
-        <Input value={update_at} onChange={(e) => setUpdate_at(e.target.value)} />
       </div>
     </Modal>
   );
